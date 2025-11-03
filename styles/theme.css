@@ -1,0 +1,85 @@
+:root {
+  --color-bg: #FFFDF7;
+  --color-card: #FFFFFF;
+  --color-border: #E9E6DA;
+  --color-text: #1F2A24;
+  --color-muted: #6B7A69;
+  --brand-dark: #243428;
+  --brand-green: #5DAA4B;
+  --brand-olive: #9CB46A;
+  --brand-yellow: #E2C14B;
+  --brand-brown: #7B5A46;
+  --chart-green: #4BAE4F;
+  --chart-yellow: #D6B83A;
+  --chart-olive: #8FAF52;
+  --chart-brown: #8A6B55;
+  --chart-blue: #4A7BD0;
+  --radius-2xl: 1.25rem;
+  --shadow-soft: 0 8px 24px rgba(0,0,0,0.06);
+  --container: 1160px;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Heebo', sans-serif;
+  text-align: right;
+}
+
+.market-container {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.chart-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-soft);
+}
+
+.metric-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.filter-chip {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 1.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-chip:hover {
+  background: var(--brand-green);
+  color: white;
+  border-color: var(--brand-green);
+}
+
+.filter-chip.active {
+  background: var(--brand-green);
+  color: white;
+  border-color: var(--brand-green);
+}
+
+.export-button {
+  background: var(--brand-green);
+  color: white;
+  border: none;
+  border-radius: 1.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.export-button:hover {
+  background: var(--brand-dark);
+}

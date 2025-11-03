@@ -1,0 +1,161 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* RTL Support */
+[dir="rtl"] {
+  direction: rtl;
+}
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    
+    /* Custom colors for energy data */
+    --renewable-green: 72, 87%, 40%;
+    --solar-orange: 35, 91%, 65%;
+    --wind-blue: 200, 84%, 55%;
+    --gas-gray: 220, 9%, 46%;
+    --coal-dark: 0, 0%, 20%;
+  }
+  
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-heebo;
+  }
+  
+  /* Global text alignment */
+  * {
+    text-align: right;
+  }
+  
+  /* Override for specific elements that should be left-aligned */
+  input[type="email"],
+  input[type="url"],
+  input[type="tel"],
+  code,
+  pre {
+    text-align: left;
+  }
+}
+
+/* Energy-specific color classes */
+.text-renewable { color: hsl(var(--renewable-green)); }
+.bg-renewable { background-color: hsl(var(--renewable-green)); }
+.text-solar { color: hsl(var(--solar-orange)); }
+.bg-solar { background-color: hsl(var(--solar-orange)); }
+.text-wind { color: hsl(var(--wind-blue)); }
+.bg-wind { background-color: hsl(var(--wind-blue)); }
+.text-gas { color: hsl(var(--gas-gray)); }
+.bg-gas { background-color: hsl(var(--gas-gray)); }
+.text-coal { color: hsl(var(--coal-dark)); }
+.bg-coal { background-color: hsl(var(--coal-dark)); }
+
+/* RTL-specific adjustments */
+[dir="rtl"] .ml-auto { margin-left: 0; margin-right: auto; }
+[dir="rtl"] .mr-auto { margin-right: 0; margin-left: auto; }
+[dir="rtl"] .text-left { text-align: right; }
+[dir="rtl"] .text-right { text-align: left; }
+
+/* Chart container styles */
+.chart-container {
+  @apply w-full h-96;
+}
+
+.chart-container-small {
+  @apply w-full h-64;
+}
+
+/* Navigation active state */
+.nav-active {
+  @apply bg-renewable text-white;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #ffffff;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #C3C3C3;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #1E8025;
+}
+
+.recharts-yAxis .recharts-cartesian-axis-tick text{
+    text-anchor: start;
+    /* transform: translateX(5px); */
+}
+
+/* body::-webkit-scrollbar-button {} */
+/* body .overflow-y-auto::-webkit-scrollbar {
+  display: none !important;
+} */

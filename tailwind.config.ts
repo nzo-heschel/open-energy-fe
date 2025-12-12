@@ -60,6 +60,22 @@ const config: Config = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
+        energy: {
+          'other-primary': 'var(--energy-other-primary)',
+          'renewable': 'var(--energy-renewable)',
+          'fossil': 'var(--energy-fossil)',
+          'co2-emissions': 'var(--energy-co2-emissions)',
+          'pumped-storage': 'var(--energy-pumped-storage)',
+          'other': 'var(--energy-other)',
+          'photovoltaic': 'var(--energy-photovoltaic)',
+          'biogas': 'var(--energy-biogas)',
+          'wind': 'var(--energy-wind)',
+          'solar-thermal': 'var(--energy-solar-thermal)',
+          'pv-storage': 'var(--energy-pv-storage)',
+          'coal': 'var(--energy-coal)',
+          'diesel': 'var(--energy-diesel)',
+          'natural-gas': 'var(--energy-natural-gas)',
+        },
       },
       keyframes: {
         'accordion-down': {

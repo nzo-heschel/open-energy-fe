@@ -191,7 +191,7 @@ const CO2DonutChart = () => {
                                     {item.name} | ({item.percent}%)
                                 </span>
                                 <span className="text-sm text-gray-700 flex items-center gap-1">
-                                    5293<span>MTCO2</span>
+                                    5293<span>mTCO2</span>
                                 </span>
                             </div>
                         </div>

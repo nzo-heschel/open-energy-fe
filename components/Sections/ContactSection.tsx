@@ -97,7 +97,7 @@ export default function ContactSection() {
 
   const getInputClassName = (fieldName: string) => {
     const hasError = errors[fieldName as keyof typeof errors];
-    const baseClass = "text-left outline-none placeholder:font-medium placeholder:text-base h-10 w-full !border-b";
+    const baseClass = "text-left outline-none placeholder:font-medium placeholder:text-base h-10 w-full !border-b focus:placeholder:text-[#E9C863]";
 
     if (hasError) {
       return `${baseClass} placeholder:text-[#CEA073] !border-b-[#CEA073]`;
@@ -107,7 +107,7 @@ export default function ContactSection() {
 
   const getTextareaClassName = () => {
     const hasError = errors.message;
-    const baseClass = "text-left outline-none placeholder:font-medium placeholder:text-base min-h-[120px] h-[80px] resize-none w-full border-b";
+    const baseClass = "text-left outline-none placeholder:font-medium placeholder:text-base min-h-[120px] h-[80px] resize-none w-full border-b focus:placeholder:text-[#E9C863]";
 
     if (hasError) {
       return `${baseClass} placeholder:text-[#CEA073] border-b-[#CEA073]`;
@@ -154,14 +154,19 @@ export default function ContactSection() {
               ) : (
                 <form onSubmit={handleSubmit} className="flex flex-col md:gap-10 gap-5">
                   <div className="relative">
-                    <input
-                      name="name"
-                      type="text"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className={getInputClassName('name')}
-                      placeholder="שם *"
-                    />
+                    <div className="relative">
+                      <input
+                        name="name"
+                        type="text"
+                        value={formData.name}
+                        onChange={handleChange}
+                        className={`${getInputClassName('name')} pr-4`}
+                        placeholder="שם"
+                      />
+                      {!formData.name && (
+                        <span className="absolute right-[40px] top-0 h-10 flex items-center text-[#E9C863] pointer-events-none pr-1">*</span>
+                      )}
+                    </div>
                     {errors.name && (
                       <p className="text-right text-[#CEA073] text-sm mt-1 absolute bottom-[-20px] right-0">
                         {errors.name}
@@ -170,14 +175,19 @@ export default function ContactSection() {
                   </div>
 
                   <div className="relative">
-                    <input
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className={getInputClassName('email')}
-                      placeholder="כתובת דוא״ל *"
-                    />
+                    <div className="relative">
+                      <input
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className={`${getInputClassName('email')} pr-4`}
+                        placeholder="כתובת דוא״ל"
+                      />
+                      {!formData.email && (
+                        <span className="absolute right-[100px] top-0 h-10 flex items-center text-[#E9C863] pointer-events-none pr-1">*</span>
+                      )}
+                    </div>
                     {errors.email && (
                       <p className="text-right text-[#CEA073] text-sm mt-1 absolute bottom-[-20px] right-0">
                         {errors.email}

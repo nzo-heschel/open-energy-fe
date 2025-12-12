@@ -133,23 +133,40 @@ const ElectricityLineGraph = () => {
         );
     };
 
-    // const CustomYAxisLabel = (props: any) => {
-    //     const { viewBox } = props;
-    //     return (
-    //         <text
-    //             x={viewBox.x}
-    //             y={viewBox.y}
-    //             dy={-10}
-    //             dx={20}
-    //             textAnchor="middle"
-    //             className="text-sm font-normal text-[#707585]"
-    //             transform={`rotate(0 ${viewBox.x} ${viewBox.y})`}
-    //         >
-    //             <tspan x={viewBox.x} dy="-2.4rem">מחיר שולי</tspan>
-    //             <tspan x={viewBox.x} dy="1.2em" dx="1.3rem">[MWh/₪]</tspan>
-    //         </text>
-    //     );
-    // };
+    // Custom Y-axis label for left axis (price)
+    const CustomLeftYAxisLabel = (props: any) => {
+        const { viewBox } = props;
+        const centerY = (viewBox.y + viewBox.height) / 2;
+        return (
+            <text
+                x={viewBox.x}
+                y={centerY}
+                textAnchor="middle"
+                className="text-sm font-normal text-[#707585]"
+                transform={`rotate(-90 ${viewBox.x} ${centerY})`}
+            >
+                מחיר שולי [MWh/₪]
+            </text>
+        );
+    };
+
+    // Custom Y-axis label for right axis (MW)
+    const CustomRightYAxisLabel = (props: any) => {
+        const { viewBox } = props;
+        const centerY = (viewBox.y + viewBox.height) / 2;
+        const rightX = viewBox.x + viewBox.width;
+        return (
+            <text
+                x={rightX}
+                y={centerY}
+                textAnchor="middle"
+                className="text-sm font-normal text-[#707585]"
+                transform={`rotate(-90 ${rightX} ${centerY})`}
+            >
+                [MW]
+            </text>
+        );
+    };
 
     const getLineOpacity = (dataKey: string) => {
         // If series is manually hidden by click
@@ -171,7 +188,7 @@ const ElectricityLineGraph = () => {
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                     data={lineData}
-                    margin={{ top: 50, right: 10, left: 30, bottom: 0 }}
+                    margin={{ top: 50, right: 50, left: 30, bottom: 0 }}
                 >
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis
@@ -187,7 +204,7 @@ const ElectricityLineGraph = () => {
                         tick={{ fontSize: 12 }}
                         axisLine={true}
                         tickMargin={10}
-                        // label={<CustomYAxisLabel />}
+                        label={<CustomLeftYAxisLabel />}
                     />
                     <YAxis
                         yAxisId="right"
@@ -197,6 +214,7 @@ const ElectricityLineGraph = () => {
                         tick={{ fontSize: 12 }}
                         axisLine={true}
                         tickMargin={35}
+                        label={<CustomRightYAxisLabel />}
                     />
                     <Tooltip content={<CustomLineTooltip />} />
                     <Legend content={renderLegend} />
@@ -234,8 +252,8 @@ const ElectricityGraphWithTabs = () => {
     return (
         <div className="h-full w-full p-4">
             <div className="">
-                <div className="flex flex-col gap-2 my-[30px] w-full">
-                    <div className="md:mt-[60px] mt-10 w-full">
+                <div className="flex flex-col gap-2  w-full">
+                    <div className=" w-full">
                         <div className='flex flex-col gap-6'>
                             <div className="">
                                 {chartView === 'time' ? <ElectricityLineGraph /> : <ElectricityScatterGraph />}

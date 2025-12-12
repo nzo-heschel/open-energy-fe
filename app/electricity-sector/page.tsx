@@ -25,7 +25,7 @@ import Electritiy from '@/components/Electritiy';
 
 
 export default function ElectricitySector() {
-    const [activeTab, setActiveTab] = useState<'market' | 'smp'>();
+    const [activeTab, setActiveTab] = useState<'market' | 'smp'>("market");
     const [smpDetails, setSmpDetails] = useState(false)
     const [marketDetails, setMarketDetails] = useState(false)
     const [selectedTimeframe, setSelectedTimeframe] = useState('יומי');

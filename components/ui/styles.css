@@ -1,0 +1,49 @@
+.ant-picker-range-wrapper .ant-picker-cell-inner {
+  text-align: center;
+}
+.ant-picker-range-wrapper .ant-picker-header-prev-btn {
+  rotate: 90deg;
+}
+.ant-picker-range-wrapper .ant-picker-header-super-prev-btn {
+  rotate: 90deg;
+}
+.ant-picker-range-wrapper .ant-picker-header-next-btn {
+  rotate: 90deg;
+}
+.ant-picker-range-wrapper .ant-picker-header-super-next-btn {
+  rotate: 90deg;
+}
+.ant-picker {
+  border-radius: 32px;
+}
+.ant-picker-clear {
+  display: none !important;
+}
+
+/* Hide range separator */
+.date-range-picker-wrapper .ant-picker-range-separator {
+  display: none !important;
+  width: 0 !important;
+  padding: 0 !important;
+}
+
+/* Style to look like select field */
+.date-range-picker-select .ant-picker-input {
+  cursor: pointer;
+}
+
+.date-range-picker-select .ant-picker-input input {
+  cursor: pointer;
+}
+
+/* Hide the second input to make it look like a single select */
+.date-range-picker-select.ant-picker-range .ant-picker-input:last-child {
+  display: none !important;
+}
+.ant-picker-range-wrapper .ant-picker-panel-layout {
+  flex-direction: row-reverse !important;
+}
+.ant-picker-panel-container .ant-picker-presets {
+  border-inline-end: none !important;
+  border-inline-start: 1px solid #dedede !important;
+}

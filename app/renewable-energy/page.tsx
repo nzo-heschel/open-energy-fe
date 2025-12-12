@@ -14,7 +14,7 @@ import image2 from '@/public/images/Frame 427319913.png'
 import image3 from '@/public/images/Frame 427319914 (4).png'
 
 
-const page = () => {
+const Page = () => {
     const [activeTab, setActiveTab] = useState<'production' | 'municipal' | 'facilities' | 'requests'>('production');
 
     const handleTab = (tab: 'production' | 'municipal' | 'facilities' | 'requests') => {
@@ -194,4 +194,4 @@ const page = () => {
     )
 }
 
-export default page
+export default Page

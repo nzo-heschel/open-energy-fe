@@ -95,17 +95,16 @@ const scatterData1 = Array.from({ length: 100 }).map((_, i) => ({
 
 const CustomYAxisLabel = (props: any) => {
   const { viewBox } = props;
+  const centerY = (viewBox.y + viewBox.height) / 2;
   return (
     <text
       x={viewBox.x}
-      y={viewBox.y}
-      dy={-20}
-      dx={20}
+      y={centerY}
       textAnchor="middle"
       className="text-sm font-normal text-[#707585]"
-      transform={`rotate(0 ${viewBox.x} ${viewBox.y})`}
+      transform={`rotate(-90 ${viewBox.x} ${centerY})`}
     >
-      <tspan x={viewBox.x} dy="em" dx="1.3rem">[MWh]</tspan>
+      [MW]
     </text>
   );
 };

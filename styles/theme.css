@@ -1,28 +1,52 @@
 :root {
-  --color-bg: #FFFDF7;
-  --color-card: #FFFFFF;
-  --color-border: #E9E6DA;
-  --color-text: #1F2A24;
-  --color-muted: #6B7A69;
+  --color-bg: #fffdf7;
+  --color-card: #ffffff;
+  --color-border: #e9e6da;
+  --color-text: #1f2a24;
+  --color-muted: #6b7a69;
   --brand-dark: #243428;
-  --brand-green: #5DAA4B;
-  --brand-olive: #9CB46A;
-  --brand-yellow: #E2C14B;
-  --brand-brown: #7B5A46;
-  --chart-green: #4BAE4F;
-  --chart-yellow: #D6B83A;
-  --chart-olive: #8FAF52;
-  --chart-brown: #8A6B55;
-  --chart-blue: #4A7BD0;
+  --brand-green: #5daa4b;
+  --brand-olive: #9cb46a;
+  --brand-yellow: #e2c14b;
+  --brand-brown: #7b5a46;
+  --chart-green: #4bae4f;
+  --chart-yellow: #d6b83a;
+  --chart-olive: #8faf52;
+  --chart-brown: #8a6b55;
+  --chart-blue: #4a7bd0;
+
+  /* Energy Source Colors - Main Categories */
+  --energy-other-primary: #1665b3;
+  --energy-renewable: #2f7a4f;
+  --energy-fossil: #cea073;
+  --energy-co2-emissions: #5d6fff;
+
+  /* Energy Source Colors - Sub-Categories */
+  /* Other Category */
+  --energy-pumped-storage: #a4dbe4;
+  --energy-other: #a4dbe4;
+
+  /* Renewable Energy Sub-Categories */
+  --energy-photovoltaic: #c4c95c;
+  --energy-biogas: #8a9a2c;
+  --energy-wind: #60a261;
+  --energy-solar-thermal: #60a261;
+  --energy-pv-storage: #357a5b;
+
+  /* Fossil Energy Sub-Categories */
+  --energy-coal: #6b707c;
+  --energy-diesel: #1c1a17;
+  --energy-natural-gas: #957669;
+
   --radius-2xl: 1.25rem;
-  --shadow-soft: 0 8px 24px rgba(0,0,0,0.06);
+  --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.06);
   --container: 1160px;
 }
 
 body {
   background-color: var(--color-bg);
   color: var(--color-text);
-  font-family: 'Heebo', sans-serif;
+  font-family: "Heebo", sans-serif;
   text-align: right;
 }
 

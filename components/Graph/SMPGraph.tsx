@@ -11,24 +11,12 @@ import {
     Legend,
     Text
 } from "recharts";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import type { SMPResponse } from "@/types/dto";
 
-const data = [
-    { time: "00:00", withExc: 7000, withoutExc: 5200 },
-    { time: "02:00", withExc: 6500, withoutExc: 4700 },
-    { time: "04:00", withExc: 6300, withoutExc: 4800 },
-    { time: "06:00", withExc: 7200, withoutExc: 5100 },
-    { time: "07:00", withExc: 3200, withoutExc: 6000 },
-    { time: "08:00", withExc: 6800, withoutExc: 5100 },
-    { time: "10:00", withExc: 6400, withoutExc: 4800 },
-    { time: "12:00", withExc: 6100, withoutExc: 4300 },
-    { time: "14:00", withExc: 5700, withoutExc: 3900 },
-    { time: "16:00", withExc: 5900, withoutExc: 4200 },
-    { time: "18:00", withExc: 5700, withoutExc: 4000 },
-    { time: "20:00", withExc: 5400, withoutExc: 3700 },
-    { time: "22:00", withExc: 5600, withoutExc: 3900 },
-    { time: "24:00", withExc: 5800, withoutExc: 4100 },
-];
+interface SMPGraphProps {
+    data: SMPResponse;
+}
 
 // Custom Tooltip component
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -60,24 +48,22 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 // Custom YAxis Label component
 const CustomYAxisLabel = (props: any) => {
     const { viewBox } = props;
+    const centerY = (viewBox.y + viewBox.height) / 2;
     return (
         <text
             x={viewBox.x}
-            y={viewBox.y}
-            dy={-20}
-            dx={20}
+            y={centerY}
             textAnchor="middle"
             className="text-sm font-normal text-[#707585]"
-            transform={`rotate(0 ${viewBox.x} ${viewBox.y})`}
+            transform={`rotate(-90 ${viewBox.x} ${centerY})`}
         >
-            <tspan x={viewBox.x} dy="-2.4rem">מחיר שולי</tspan>
-            <tspan x={viewBox.x} dy="1.2em" dx="1.3rem">[MWh/₪]</tspan>
+            מחיר שולי [MWh/₪]
         </text>
     );
 };
 
 
-export default function SMPGraph() {
+export default function SMPGraph({ data }: SMPGraphProps) {
     const [hoveredSeries, setHoveredSeries] = useState<string | null>(null);
 
     const handleLegendMouseEnter = (dataKey: string) => {
@@ -87,6 +73,50 @@ export default function SMPGraph() {
     const handleLegendMouseLeave = () => {
         setHoveredSeries(null);
     };
+
+    // Transform API data into chart format
+    const chartData = useMemo(() => {
+        // Create a map to merge data from both arrays
+        const dataMap = new Map<string, { time: string; withExc: number; withoutExc: number }>();
+
+        // Add data from chart_with_constraints
+        data.chart_with_constraints.forEach((item) => {
+            dataMap.set(item.hour, {
+                time: item.hour,
+                withExc: item.price,
+                withoutExc: 0
+            });
+        });
+
+        // Add/update data from chart_without_constraints
+        data.chart_without_constraints.forEach((item) => {
+            const existing = dataMap.get(item.hour);
+            if (existing) {
+                existing.withoutExc = item.price;
+            } else {
+                dataMap.set(item.hour, {
+                    time: item.hour,
+                    withExc: 0,
+                    withoutExc: item.price
+                });
+            }
+        });
+
+        // Convert map to array and sort by hour
+        return Array.from(dataMap.values()).sort((a, b) => {
+            const hourA = parseInt(a.time.split(':')[0]);
+            const hourB = parseInt(b.time.split(':')[0]);
+            return hourA - hourB;
+        });
+    }, [data]);
+
+    // Calculate domain for Y-axis based on min/max prices
+    const yAxisDomain = useMemo(() => {
+        const minPrice = Math.min(data.min_price, ...chartData.map(d => Math.min(d.withExc || 0, d.withoutExc || 0)));
+        const maxPrice = Math.max(data.max_price, ...chartData.map(d => Math.max(d.withExc || 0, d.withoutExc || 0)));
+        const padding = (maxPrice - minPrice) * 0.1; // 10% padding
+        return [Math.max(0, Math.floor(minPrice - padding)), Math.ceil(maxPrice + padding)];
+    }, [data, chartData]);
 
     // Custom legend component that communicates with parent
     const CustomLegend = (props: any) => {
@@ -126,7 +156,7 @@ export default function SMPGraph() {
         <div className="w-full md:h-[500px] h-[300px]">
             <ResponsiveContainer width="100%" height="95%">
                 <LineChart
-                    data={data}
+                    data={chartData}
                     margin={{ top: 50, right: 10, left: 30, bottom: 0 }}
                 >
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -136,8 +166,7 @@ export default function SMPGraph() {
                         axisLine={true}
                     />
                     <YAxis
-                        domain={[0, 10000]}
-                        ticks={[0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000]}
+                        domain={yAxisDomain}
                         tick={{ fontSize: 12 }}
                         axisLine={true}
                         tickMargin={10}

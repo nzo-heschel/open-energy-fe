@@ -6,7 +6,7 @@ import { ElectricityLineGraph } from '@/components/Graph/ElectricityScatterGraph
 import HeatVsProductionChart from '@/components/Charts/HeatVsProductionChart';
 import { useState } from 'react';
 
-const page = () => {
+const Page = () => {
     const [showMore, setShowMore] = useState(true)
 
     const handleChange = () => {
@@ -58,4 +58,4 @@ const page = () => {
     )
 }
 
-export default page
+export default Page

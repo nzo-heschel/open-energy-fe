@@ -26,7 +26,7 @@ export const ENERGY_COLORS = {
   // Fossil Energy Sub-items
   COAL: '#6B707C',
   DIESEL: '#1C1A17',
-  NATURAL_GAS: '#957669',
+  NATURAL_GAS: '#957669', // Note: This color might need to be verified from the actual design
 } as const;
 
 /**

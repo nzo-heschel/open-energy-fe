@@ -103,7 +103,7 @@ const SMP = () => {
                             <p className="text-red-600">שגיאה בטעינת הנתונים</p>
                         </div>
                     ) : smpData ? (
-                        <SMPGraph data={smpData} />
+                        <SMPGraph data={smpData} startDate={startEndDate.start} endDate={startEndDate.end} />
                     ) : null}
                 </CardContent>
             </Card>

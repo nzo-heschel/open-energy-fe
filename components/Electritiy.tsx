@@ -9,6 +9,7 @@ import ElectricityGraphWithTabs from './Graph/ElectricityGraph'
 import DateRangePicker from './ui/DateRangePicker'
 import { startOfYear, endOfYear, format } from 'date-fns'
 import TooltipInfo from './TooltipInfo'
+import { useSMPProductionVsMarginalPrice } from '@/lib/api'
 
 const Electricity = () => {
     //tooltips
@@ -29,6 +30,9 @@ const Electricity = () => {
             end: endDate
         });
     };
+
+    // Fetch SMP production vs marginal price data
+    const { data: smpProductionData, isLoading, error } = useSMPProductionVsMarginalPrice(startEndDate.start, startEndDate.end);
 
     return (
         <div className='flex flex-col md:gap-[30px] gap-5'>
@@ -79,7 +83,14 @@ const Electricity = () => {
                             />
                         </div>
                     </div>
-                    <ElectricityGraphWithTabs />
+                    <ElectricityGraphWithTabs
+                        data={smpProductionData}
+                        isLoading={isLoading}
+                        error={error}
+                        startDate={startEndDate.start}
+                        endDate={startEndDate.end}
+                        selectedPreset={selectedPreset}
+                    />
                 </CardContent>
             </Card>
         </div>

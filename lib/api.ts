@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { differenceInDays, differenceInMonths } from 'date-fns';
 import type {
   MarketOverviewResponse,
   MixResponse,
@@ -6,14 +7,60 @@ import type {
   SmpScatterResponse,
   FilterOptions,
   EnergyMixResponse,
-  SMPResponse
+  SMPResponse,
+  EnergyOverviewResponse,
+  PrivateSupplierConnectedConsumersResponse,
+  SMPProductionVsMarginalPriceResponse,
+  SwitchingRequestsResponse
 } from '@/types/dto';
 
-const API_BASE = 'https://open-energy-be-vo4yi.ondigitalocean.app/';
+const API_BASE = 'https://api.open-energy.madebyomnis.com/';
+const INTERNAL_API_KEY = 'int_api_9f3c7e2a4b8d6c1f0a5e9d2b7c4a1e6f';
+
+// Helper function to calculate granularity based on preset and date range
+const getGranularityFromPresetAndDateRange = (presetLabel: string | undefined, startDate: string, endDate: string): 'day' | 'month' | 'year' => {
+  // If preset is provided, use it to determine granularity
+  if (presetLabel) {
+    switch (presetLabel) {
+      case 'היום': // Today
+        return 'day';
+      case 'חודש זה': // This month
+        return 'month';
+      case 'שנה זו': // This year
+        return 'year';
+      case 'עשור זה': // This decade
+        return 'year';
+      case 'טווח מותאם אישית': // Custom range - fall through to date range logic
+      default:
+        // For custom range or unknown preset, use date range logic
+        break;
+    }
+  }
+
+  // For custom range or when no preset, calculate based on date range
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const days = differenceInDays(end, start);
+  const months = differenceInMonths(end, start);
+  const years = Math.floor(months / 12);
+
+  // Use 'day' granularity only if same day (0 days difference)
+  if (days === 0) {
+    return 'day';
+  } else if (days >= 1 && days <= 62) {
+    return 'month';
+  } else {
+    return 'year';
+  }
+};
 
 // Generic fetcher
 const fetcher = async (url: string) => {
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: {
+      'x-api-key': INTERNAL_API_KEY,
+    },
+  });
   if (!response.ok) {
     throw new Error('Network response was not ok');
   }
@@ -62,100 +109,47 @@ export const useSmpScatter = (filters: Partial<FilterOptions>) => {
   });
 };
 
-//++ Energy mix pie chart data
+
+
+
+
+//
+
+
+//1
 export const useEnergyMix = (startDate: string, endDate: string) => {
   const params = new URLSearchParams();
   params.set('start_date', startDate);
   params.set('end_date', endDate);
 
   return useQuery<EnergyMixResponse>({
-    queryKey: ['energy-mix-pie', startDate, endDate],
+    queryKey: ['energy-mix', startDate, endDate],
     queryFn: async () => {
-      // For development: return real server response
-      return {
-        start_date: "2025-12-01",
-        end_date: "2025-12-31",
-        filter: "month",
-        level1: {
-          "Non-renewables": 1186685.0883333334,
-          "Renewables": 189910.78499999997,
-          "Other": 33407.77166666667
-        },
-        level2: {
-          "Non-renewables": {
-            "coal": 109355.2983333334,
-            "natural_gas": 1077329.79,
-            "diesel": 0.0
-          },
-          "Renewables": {
-            "photoVoltaic": 147196.20416666663,
-            "biogas": 1741.2841666666666,
-            "wind": 19996.850833333338,
-            "solar_thermal": 5815.047499999991,
-            "pv_storage": 15161.398333333333
-          },
-          "Other": {
-            "other": 4855.199166666666,
-            "pumped_storage": 28552.5725
-          }
-        },
-        total_generation: 1410003.645,
-        renewable_share_percent: 13.47,
-        categories: [
-          {
-            category_name: "renewables",
-            total_value: 189910.78499999997,
-            sub_categories: [
-              { sub_category_name: "photo_voltaic", value: 147196.20416666663 },
-              { sub_category_name: "biogas", value: 1741.2841666666666 },
-              { sub_category_name: "wind", value: 19996.850833333338 },
-              { sub_category_name: "solar_thermal", value: 5815.047499999991 },
-              { sub_category_name: "pv_storage", value: 15161.398333333333 }
-            ]
-          },
-          {
-            category_name: "non_renewables",
-            total_value: 1186685.0883333334,
-            sub_categories: [
-              { sub_category_name: "coal", value: 109355.2983333334 },
-              { sub_category_name: "natural_gas", value: 1077329.79 },
-              { sub_category_name: "diesel", value: 0 }
-            ]
-          },
-          {
-            category_name: "other",
-            total_value: 33407.77166666667,
-            sub_categories: [
-              { sub_category_name: "other", value: 4855.199166666666 },
-              { sub_category_name: "pumped_storage", value: 28552.5725 }
-            ]
-          }
-        ],
-        tooltip: "The pie chart shows Israel's electricity generation mix and illustrates the different energy sources: fossil (coal, natural gas, diesel), renewables (photovoltaic, biogas, wind, solar-thermal, photovoltaic with storage), and other (other, pumped storage). Data are updated hourly from the NOGA system operator."
-      } as any;
-
-      // Uncomment to use actual API:
-      // try {
-      //   const data = await fetcher(`${API_BASE}api/v1/energy/production-mix?${params}`);
-      //   return data;
-      // } catch (error) {
-      //   console.warn('API call failed:', error);
-      //   throw error;
-      // }
+      try {
+        const data = await fetcher(`${API_BASE}api/v1/energy/overview?${params}`);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
     },
     staleTime: 5 * 60 * 1000,
     refetchInterval: 15 * 60 * 1000,
   });
 };
 
-//++ Export energy mix data
+
 export const exportEnergyMix = async (startDate: string, endDate: string) => {
   const params = new URLSearchParams();
   params.set('start_date', startDate);
   params.set('end_date', endDate);
 
   try {
-    const response = await fetch(`${API_BASE}api/v1/energy/production-mix/export?${params}`);
+    const response = await fetch(`${API_BASE}api/v1/energy/overview/export?${params}`, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
     if (!response.ok) {
       throw new Error('Export failed');
     }
@@ -189,22 +183,53 @@ export const exportEnergyMix = async (startDate: string, endDate: string) => {
     console.error('Export error:', error);
     throw error;
   }
+}
+
+
+//2
+export const useEnergyOverview = (startDate: string, endDate: string, presetLabel?: string) => {
+  const params = new URLSearchParams();
+  params.set('start_date', startDate);
+  params.set('end_date', endDate);
+
+  return useQuery<EnergyOverviewResponse>({
+    queryKey: ['energy-overview', startDate, endDate, presetLabel],
+    queryFn: async () => {
+      try {
+        // Determine granularity based on preset and date range
+        const granularity = getGranularityFromPresetAndDateRange(presetLabel, startDate, endDate);
+        params.set('granularity', granularity);
+
+        const data = await fetcher(`${API_BASE}api/v1/energy/production-mix?${params}`);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
 };
-//++export energy consumption data 
-export const exportEnergyConsumption = async (startDate: string, endDate: string) => {
+
+export const exportEnergyOverview = async (startDate: string, endDate: string) => {
   const params = new URLSearchParams();
   params.set('start_date', startDate);
   params.set('end_date', endDate);
 
   try {
-    const response = await fetch(`${API_BASE}api/v1/energy/overview/export?${params}`);
+    const response = await fetch(`${API_BASE}api/v1/energy/production-mix/export?${params}`, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
     if (!response.ok) {
       throw new Error('Export failed');
     }
 
     // Get the filename from Content-Disposition header or use a default
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'energy-consumption-export.xlsx'; // default filename
+    let filename = 'energy-overview-export.xlsx'; // default filename
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -231,7 +256,13 @@ export const exportEnergyConsumption = async (startDate: string, endDate: string
     console.error('Export error:', error);
     throw error;
   }
-}
+};
+
+
+
+
+
+
 
 //++ smp #3
 export const useSMP = (startDate: string, endDate: string) => {
@@ -242,81 +273,84 @@ export const useSMP = (startDate: string, endDate: string) => {
   return useQuery<SMPResponse>({
     queryKey: ['smp', startDate, endDate],
     queryFn: async () => {
-      // Mock response for development
-      return {
-        start_date: startDate,
-        end_date: endDate,
-        view: "day",
-        chart_with_constraints: [
-          { hour: "00:00", price: 425.5 },
-          { hour: "01:00", price: 398.2 },
-          { hour: "02:00", price: 410.3 },
-          { hour: "03:00", price: 395.8 },
-          { hour: "04:00", price: 402.1 },
-          { hour: "05:00", price: 415.7 },
-          { hour: "06:00", price: 450.2 },
-          { hour: "07:00", price: 480.5 },
-          { hour: "08:00", price: 495.3 },
-          { hour: "09:00", price: 510.3 },
-          { hour: "10:00", price: 505.1 },
-          { hour: "11:00", price: 498.7 },
-          { hour: "12:00", price: 490.2 },
-          { hour: "13:00", price: 485.4 },
-          { hour: "14:00", price: 480.1 },
-          { hour: "15:00", price: 475.8 },
-          { hour: "16:00", price: 470.3 },
-          { hour: "17:00", price: 465.2 },
-          { hour: "18:00", price: 460.5 },
-          { hour: "19:00", price: 455.8 },
-          { hour: "20:00", price: 445.2 },
-          { hour: "21:00", price: 435.7 },
-          { hour: "22:00", price: 420.3 },
-          { hour: "23:00", price: 410.1 }
-        ],
-        chart_without_constraints: [
-          { hour: "00:00", price: 420.0 },
-          { hour: "01:00", price: 390.5 },
-          { hour: "02:00", price: 400.2 },
-          { hour: "03:00", price: 385.7 },
-          { hour: "04:00", price: 392.1 },
-          { hour: "05:00", price: 405.5 },
-          { hour: "06:00", price: 440.0 },
-          { hour: "07:00", price: 470.3 },
-          { hour: "08:00", price: 485.1 },
-          { hour: "09:00", price: 500.2 },
-          { hour: "10:00", price: 495.0 },
-          { hour: "11:00", price: 488.5 },
-          { hour: "12:00", price: 480.0 },
-          { hour: "13:00", price: 475.2 },
-          { hour: "14:00", price: 470.0 },
-          { hour: "15:00", price: 465.5 },
-          { hour: "16:00", price: 460.1 },
-          { hour: "17:00", price: 455.0 },
-          { hour: "18:00", price: 450.3 },
-          { hour: "19:00", price: 445.5 },
-          { hour: "20:00", price: 435.0 },
-          { hour: "21:00", price: 425.5 },
-          { hour: "22:00", price: 410.1 },
-          { hour: "23:00", price: 400.0 }
-        ],
-        min_price: 380.5,
-        max_price: 510.3,
-        avg_price: 445.2
-      } as SMPResponse;
-
-      // Uncomment to use actual API:
-      // try {
-      //   const data = await fetcher(`${API_BASE}api/v1/smp?${params}`);
-      //   return data;
-      // } catch (error) {
-      //   console.warn('API call failed:', error);
-      //   throw error;
-      // }
+      try {
+        // Use trailing slash to avoid redirect (redirects don't include custom headers)
+        const data = await fetcher(`${API_BASE}api/v1/energy/smp/?${params}`);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
     },
     staleTime: 5 * 60 * 1000,
     refetchInterval: 15 * 60 * 1000,
   });
 };
+
+//++ SMP production vs marginal price data
+export const useSMPProductionVsMarginalPrice = (startDate: string, endDate: string) => {
+  const params = new URLSearchParams();
+  params.set('start_date', startDate);
+  params.set('end_date', endDate);
+
+  return useQuery<SMPProductionVsMarginalPriceResponse>({
+    queryKey: ['smp-production-vs-marginal-price', startDate, endDate],
+    queryFn: async () => {
+      try {
+        const data = await fetcher(`${API_BASE}api/v1/energy/smp-production-vs-marginal-price/?${params}`);
+
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+//++ Private supplier connected consumers data
+export const usePrivateSupplierConnectedConsumers = (startDate: string, endDate: string) => {
+  return useQuery<PrivateSupplierConnectedConsumersResponse>({
+    queryKey: ['private-supplier-connected-consumers', startDate, endDate],
+    queryFn: async () => {
+      try {
+        const params = new URLSearchParams();
+        params.set('start_date', startDate);
+        params.set('end_date', endDate);
+
+        const data = await fetcher(`${API_BASE}api/v1/private-supplier-connected-consumers/?${params}`);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+//++ Switching requests data
+export const useSwitchingRequests = () => {
+  return useQuery<SwitchingRequestsResponse>({
+    queryKey: ['switching-requests'],
+    queryFn: async () => {
+      try {
+
+        const data = await fetcher(`${API_BASE}api/v1/switching-requests/`);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
 // Mock data generators for development
 export const generateMockMarketData = (): MarketOverviewResponse => {
   const hours = Array.from({ length: 24 }, (_, i) => i);

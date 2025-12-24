@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import EnergyMixPieChart from '@/components/Charts/EnergyMixPieChart';
@@ -20,11 +20,12 @@ import Electritiy from '../Electritiy';
 import Market from '../Market';
 import DashChart from '../DashChart';
 import RejectionChart from '../RejectionChart';
-import { useEnergyMix, exportEnergyMix, exportEnergyConsumption } from '@/lib/api';
+import { useEnergyMix, useEnergyOverview, exportEnergyMix, exportEnergyOverview } from '@/lib/api';
 import Chart2 from '../Charts/Chart2';
 import DateRangePicker from '@/components/ui/DateRangePicker';
 import { startOfYear, endOfYear, format } from 'date-fns';
 import TooltipInfo from '../TooltipInfo';
+import { LEVEL2_HEBREW_COLORS, LEVEL1_COLORS } from '@/lib/colors';
 
 
 export default function HomePage() {
@@ -33,10 +34,10 @@ export default function HomePage() {
   const [marketDetails, setMarketDetails] = useState(false)
 
   const [showMore, setShowMore] = useState(true)
-  const [showLevel2, setShowLevel2] = useState(false)
+  const [showMixLevel2, setShowMixLevel2] = useState(false)
+  const [showOverviewLevel2, setShowOverviewLevel2] = useState(false)
 
   // Date range picker state for energy mix
-  const [mixSelectedPreset, setMixSelectedPreset] = useState<string>('שנה זו');
   const [startEndMixDate, setStartEndMixDate] = useState(() => {
     const today = new Date();
     return {
@@ -45,9 +46,9 @@ export default function HomePage() {
     };
   });
 
-  // Date range picker state for consumption chart
-  const [consumptionSelectedPreset, setConsumptionSelectedPreset] = useState<string>('שנה זו');
-  const [startEndConsumptionDate, setStartEndConsumptionDate] = useState(() => {
+  // Date range picker state for overview chart
+  const [overviewSelectedPreset, setOverviewSelectedPreset] = useState<string>('שנה זו');
+  const [startEndOverviewDate, setStartEndOverviewDate] = useState(() => {
     const today = new Date();
     return {
       start: format(startOfYear(today), 'yyyy-MM-dd'),
@@ -55,8 +56,8 @@ export default function HomePage() {
     };
   });
   //tooltips
-  const [showSourceTooltip, setShowSourceTooltip] = useState(false);
-  const [showConsumptionTooltip, setShowConsumptionTooltip] = useState(false);
+  const [showMixTooltip, setShowMixTooltip] = useState(false);
+  const [showOverviewTooltip, setShowOverviewTooltip] = useState(false);
 
   // Handle date range change from DateRangePicker
   const handleMixDateRangeChange = (startDate: string, endDate: string) => {
@@ -66,8 +67,8 @@ export default function HomePage() {
     });
   };
 
-  const handleConsumptionDateRangeChange = (startDate: string, endDate: string) => {
-    setStartEndConsumptionDate({
+  const handleOverviewDateRangeChange = (startDate: string, endDate: string) => {
+    setStartEndOverviewDate({
       start: startDate,
       end: endDate
     });
@@ -94,37 +95,178 @@ export default function HomePage() {
     }
   }
 
-  const handleConsumptionExport = async () => {
+  const handleOverviewExport = async () => {
     try {
-      await exportEnergyConsumption(startEndConsumptionDate.start, startEndConsumptionDate.end);
+      await exportEnergyOverview(startEndOverviewDate.start, startEndOverviewDate.end);
     } catch (error) {
       console.error('Failed to export data:', error);
     }
   }
-  // Data for electricity consumption line chart - matching Figma design
-  const electricityData = {
-    dates: ['0', '2', '4', '6', '8', '10', '12', '14', '16', '18', '20', '22', '24'],
-    series: [
-      {
-        name: 'אחר',
-        data: [1000, 800, 600, 500, 400, 300, 200, 150, 200, 400, 600, 800, 1000],
-        color: '#64748b'
-      },
-      {
-        name: 'אנרגיות מתחדשות',
-        data: [0, 0, 0, 200, 800, 1200, 1600, 1800, 1600, 1200, 800, 200, 0],
-        color: '#10b981'
-      },
-      {
-        name: 'אנרגיות פוסיליות',
-        data: [7500, 7000, 6500, 6000, 5500, 5000, 4500, 4000, 4500, 5500, 6500, 7000, 7500],
-        color: '#f59e0b'
-      }
-    ]
-  };
-
-  // Fetch energy mix data from API
+  // Fetch energy mix data from API (for Chart2 - line chart)
   const { data: energyMixData, isLoading: isLoadingEnergyMix, error: energyMixError } = useEnergyMix(startEndMixDate.start, startEndMixDate.end);
+
+  // Fetch energy overview data from API (for pie chart)
+  const { data: energyOverviewData, isLoading: isLoadingEnergyOverview, error: energyOverviewError } = useEnergyOverview(startEndOverviewDate.start, startEndOverviewDate.end, overviewSelectedPreset);
+
+
+  // Transform energy mix series data for Chart2 - uses label from API response for X-axis
+  const chart2Data = useMemo(() => {
+    if (!energyOverviewData?.series) return null;
+
+    // Use period field for date parsing (more reliable than label)
+    const dates = energyOverviewData.series.map(item => item.period || item.label);
+    const series: Array<{ name: string; data: number[]; color?: string }> = [];
+
+    if (showOverviewLevel2) {
+      // Show level 2 breakdown
+      // Helper function to get value from item (check both direct fields and level2 object)
+      const getValue = (item: typeof energyOverviewData.series[0], key: string): number => {
+        // First try direct field (e.g., coal_mw)
+        const directKey = `${key}_mw` as keyof typeof item;
+        if (directKey in item && typeof item[directKey] === 'number') {
+          return item[directKey] as number;
+        }
+        // Then try level2 object
+        if (item.level2) {
+          if (key === 'coal' && item.level2['Non-renewables']?.coal) {
+            return item.level2['Non-renewables'].coal;
+          }
+          if (key === 'natural_gas' && item.level2['Non-renewables']?.natural_gas) {
+            return item.level2['Non-renewables'].natural_gas;
+          }
+          if (key === 'diesel' && item.level2['Non-renewables']?.diesel) {
+            return item.level2['Non-renewables'].diesel;
+          }
+          if (key === 'photoVoltaic' && item.level2['Renewables']?.photoVoltaic) {
+            return item.level2['Renewables'].photoVoltaic;
+          }
+          if (key === 'biogas' && item.level2['Renewables']?.biogas) {
+            return item.level2['Renewables'].biogas;
+          }
+          if (key === 'wind' && item.level2['Renewables']?.wind) {
+            return item.level2['Renewables'].wind;
+          }
+          if (key === 'solar_thermal' && item.level2['Renewables']?.solar_thermal) {
+            return item.level2['Renewables'].solar_thermal;
+          }
+          if (key === 'pv_storage' && item.level2['Renewables']?.pv_storage) {
+            return item.level2['Renewables'].pv_storage;
+          }
+          if (key === 'other' && item.level2['Other']?.other) {
+            return item.level2['Other'].other;
+          }
+          if (key === 'pumped_storage' && item.level2['Other']?.pumped_storage) {
+            return item.level2['Other'].pumped_storage;
+          }
+        }
+        return 0;
+      };
+
+      // Fossil Energy sources
+      if (energyOverviewData.series.some(item => getValue(item, 'coal') > 0)) {
+        series.push({
+          name: 'פחם',
+          data: energyOverviewData.series.map(item => getValue(item, 'coal')),
+          color: LEVEL2_HEBREW_COLORS['פחם']
+        });
+      }
+      if (energyOverviewData.series.some(item => getValue(item, 'natural_gas') > 0)) {
+        series.push({
+          name: 'גז טבעי',
+          data: energyOverviewData.series.map(item => getValue(item, 'natural_gas')),
+          color: LEVEL2_HEBREW_COLORS['גז טבעי']
+        });
+      }
+      if (energyOverviewData.series.some(item => getValue(item, 'diesel') > 0)) {
+        series.push({
+          name: 'סולר',
+          data: energyOverviewData.series.map(item => getValue(item, 'diesel')),
+          color: LEVEL2_HEBREW_COLORS['סולר']
+        });
+      }
+
+      // Renewable Energy sources
+      if (energyOverviewData.series.some(item => getValue(item, 'photoVoltaic') > 0)) {
+        series.push({
+          name: 'פוטו וולטאי',
+          data: energyOverviewData.series.map(item => getValue(item, 'photoVoltaic')),
+          color: LEVEL2_HEBREW_COLORS['פוטו וולטאי']
+        });
+      }
+      if (energyOverviewData.series.some(item => getValue(item, 'biogas') > 0)) {
+        series.push({
+          name: 'ביו גז',
+          data: energyOverviewData.series.map(item => getValue(item, 'biogas')),
+          color: LEVEL2_HEBREW_COLORS['ביו גז']
+        });
+      }
+      if (energyOverviewData.series.some(item => getValue(item, 'wind') > 0)) {
+        series.push({
+          name: 'רוח',
+          data: energyOverviewData.series.map(item => getValue(item, 'wind')),
+          color: LEVEL2_HEBREW_COLORS['רוח']
+        });
+      }
+      if (energyOverviewData.series.some(item => getValue(item, 'solar_thermal') > 0)) {
+        series.push({
+          name: 'תרמו סולרי',
+          data: energyOverviewData.series.map(item => getValue(item, 'solar_thermal')),
+          color: LEVEL2_HEBREW_COLORS['תרמו סולרי']
+        });
+      }
+      if (energyOverviewData.series.some(item => getValue(item, 'pv_storage') > 0)) {
+        series.push({
+          name: 'פוטו וולטאי משולב אגירה',
+          data: energyOverviewData.series.map(item => getValue(item, 'pv_storage')),
+          color: LEVEL2_HEBREW_COLORS['פוטו וולטאי משולב אגירה']
+        });
+      }
+
+      // Other sources
+      if (energyOverviewData.series.some(item => getValue(item, 'other') > 0)) {
+        series.push({
+          name: 'אחר',
+          data: energyOverviewData.series.map(item => getValue(item, 'other')),
+          color: LEVEL2_HEBREW_COLORS['אחר']
+        });
+      }
+      if (energyOverviewData.series.some(item => getValue(item, 'pumped_storage') > 0)) {
+        series.push({
+          name: 'אגירה שאובה',
+          data: energyOverviewData.series.map(item => getValue(item, 'pumped_storage')),
+          color: LEVEL2_HEBREW_COLORS['אגירה שאובה']
+        });
+      }
+
+      // Add total line
+      series.push({
+        name: 'סה"כ',
+        data: energyOverviewData.series.map(item => item.total_mw || 0),
+        color: '#000000'
+      });
+    } else {
+      // Show level 1 only
+      series.push(
+        {
+          name: 'אנרגיות פוסיליות',
+          data: energyOverviewData.series.map(item => item.non_renewables_mw),
+          color: '#f59e0b'
+        },
+        {
+          name: 'אנרגיות מתחדשות',
+          data: energyOverviewData.series.map(item => item.renewables_mw),
+          color: '#10b981'
+        },
+        {
+          name: 'אחר',
+          data: energyOverviewData.series.map(item => item.other_mw),
+          color: '#64748b'
+        }
+      );
+    }
+
+    return { dates, series };
+  }, [energyOverviewData, showOverviewLevel2]);
 
 
   return (
@@ -296,8 +438,8 @@ export default function HomePage() {
                     <CardTitle className="md:text-lg text-base text-right flex flex-row-reverse items-center gap-2 text-[#484C56] font-extrabold">
                       <div
                         className="relative"
-                        onMouseEnter={() => setShowSourceTooltip(true)}
-                        onMouseLeave={() => setShowSourceTooltip(false)}
+                        onMouseEnter={() => setShowMixTooltip(true)}
+                        onMouseLeave={() => setShowMixTooltip(false)}
                       >
                         <svg
                           width="21"
@@ -314,7 +456,7 @@ export default function HomePage() {
                         </svg>
 
                         {/* Tooltip that appears on hover */}
-                        {showSourceTooltip && (
+                        {showMixTooltip && (
                           <div className="absolute top-full left-1/2 -translate-x-1/2 mb-2 z-50">
                             <TooltipInfo
                               content="Lorem ipsum"
@@ -337,7 +479,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="md:text-sm text-xs text-slate-600 mr-[90px]">
-                    פרק זמן: {mixSelectedPreset || 'שנה זו'}
+                    פרק זמן:
                   </div>
                 </div>
               </CardHeader>
@@ -347,25 +489,34 @@ export default function HomePage() {
                     <span className="text-sm text-slate-600">מיון לפי:</span>
                     <DateRangePicker
                       onDateRangeChange={handleMixDateRangeChange}
-                      onPresetChange={setMixSelectedPreset}
                       defaultPreset="thisYear"
                     />
                   </div>
                 </div>
-                <EnergyMixPieChart
-                  key={`energy-mix-${showLevel2 ? 'nested' : 'single'}`}
-                  energyMixData={energyMixData}
-                  height={300}
-                  showLevel2={showLevel2}
-                />
+                {isLoadingEnergyMix ? (
+                  <div className="flex justify-center items-center h-[300px]">
+                    <p className="text-slate-600">טוען נתונים...</p>
+                  </div>
+                ) : energyMixError ? (
+                  <div className="flex justify-center items-center h-[300px]">
+                    <p className="text-red-600">שגיאה בטעינת הנתונים</p>
+                  </div>
+                ) : energyMixData ? (
+                  <EnergyMixPieChart
+                    key={`energy-mix-${showMixLevel2 ? 'nested' : 'single'}`}
+                    energyMixData={energyMixData}
+                    height={300}
+                    showLevel2={showMixLevel2}
+                  />
+                ) : null}
 
                 <div className="flex justify-start">
                   <Button
                     variant="link"
                     className="text-blue-600 text-sm"
-                    onClick={() => setShowLevel2(!showLevel2)}
+                    onClick={() => setShowMixLevel2(!showMixLevel2)}
                   >
-                    {showLevel2 ? 'הסתר פירוט' : 'הצג נתונים'} <ChevronLeft className="w-4 h-4 mr-1" />
+                    {showMixLevel2 ? 'הסתר פירוט' : 'הצג נתונים'} <ChevronLeft className="w-4 h-4 mr-1" />
                   </Button>
                 </div>
               </CardContent>
@@ -379,8 +530,8 @@ export default function HomePage() {
                     <CardTitle className="md:text-lg text-sm text-right flex flex-row-reverse items-center gap-2 text-[#484C56] font-extrabold">
                       <div
                         className="relative"
-                        onMouseEnter={() => setShowConsumptionTooltip(true)}
-                        onMouseLeave={() => setShowConsumptionTooltip(false)}
+                        onMouseEnter={() => setShowOverviewTooltip(true)}
+                        onMouseLeave={() => setShowOverviewTooltip(false)}
                       >
                         <svg width="21" height="21" viewBox="0 0 21 21" fill="none" className="cursor-help" xmlns="http://www.w3.org/2000/svg">
                           <g opacity="0.5">
@@ -388,7 +539,7 @@ export default function HomePage() {
                             <path d="M9.5 5.5459H11.5V7.5459H9.5V5.5459ZM9.5 9.5459H11.5V15.5459H9.5V9.5459Z" fill="#A1A1A1" />
                           </g>
                         </svg>
-                        {showConsumptionTooltip && (
+                        {showOverviewTooltip && (
                           <div className="absolute top-full left-1/2 -translate-x-1/2 mb-2 z-50">
                             <TooltipInfo
                               content="Lorem ipsum"
@@ -401,7 +552,7 @@ export default function HomePage() {
                     <div className="flex items-start md:gap-4 gap-2">
                       <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
                       <button
-                        onClick={handleConsumptionExport}
+                        onClick={handleOverviewExport}
                         className="cursor-pointer hover:opacity-80 transition-opacity"
                         aria-label="Download data"
                       >
@@ -410,7 +561,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="md:text-sm text-xs text-slate-600 mr-[90px]">
-                    פרק זמן: {consumptionSelectedPreset || 'שנה זו'}
+                    פרק זמן:
                   </div>
                 </div>
               </CardHeader>
@@ -419,19 +570,41 @@ export default function HomePage() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-slate-600">מיון לפי:</span>
                     <DateRangePicker
-                      onDateRangeChange={handleConsumptionDateRangeChange}
-                      onPresetChange={setConsumptionSelectedPreset}
+                      onDateRangeChange={handleOverviewDateRangeChange}
+                      onPresetChange={setOverviewSelectedPreset}
                       defaultPreset="thisYear"
                     />
                   </div>
                 </div>
-                <Chart2
-                  data={electricityData}
-                />
+                {isLoadingEnergyOverview ? (
+                  <div className="flex justify-center items-center h-[300px]">
+                    <p className="text-slate-600">טוען נתונים...</p>
+                  </div>
+                ) : energyOverviewError ? (
+                  <div className="flex justify-center items-center h-[300px]">
+                    <p className="text-red-600">שגיאה בטעינת הנתונים</p>
+                  </div>
+                ) : chart2Data ? (
+                  <Chart2
+                    key={`chart2-${startEndOverviewDate.start}-${startEndOverviewDate.end}-${showOverviewLevel2}`}
+                    data={chart2Data}
+                    startDate={startEndOverviewDate.start}
+                    endDate={startEndOverviewDate.end}
+                    showLevel2={showOverviewLevel2}
+                  />
+                ) : (
+                  <div className="flex justify-center items-center h-[300px]">
+                    <p className="text-slate-600">אין נתונים להצגה</p>
+                  </div>
+                )}
                 {/* Legend */}
                 <div className="mt-4 flex justify-start">
-                  <Button variant="link" className="text-blue-600 text-sm">
-                    הצג נתונים <ChevronLeft className="w-4 h-4 mr-1" />
+                  <Button
+                    variant="link"
+                    className="text-blue-600 text-sm"
+                    onClick={() => setShowOverviewLevel2(!showOverviewLevel2)}
+                  >
+                    {showOverviewLevel2 ? 'הסתר פירוט' : 'הצג נתונים'} <ChevronLeft className="w-4 h-4 mr-1" />
                   </Button>
                 </div>
               </CardContent>

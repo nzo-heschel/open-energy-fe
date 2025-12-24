@@ -12,18 +12,34 @@ import {
     Text
 } from "recharts";
 import { useState, useMemo } from "react";
+import { differenceInDays, differenceInMonths, differenceInYears, format } from "date-fns";
+import { enUS } from "date-fns/locale";
 import type { SMPResponse } from "@/types/dto";
 
 interface SMPGraphProps {
     data: SMPResponse;
+    startDate: string;
+    endDate: string;
 }
 
 // Custom Tooltip component
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+        // Get the full timestamp from the payload data
+        const dataPoint = payload[0]?.payload;
+        const fullDate = dataPoint?.timestamp
+            ? new Date(dataPoint.timestamp).toLocaleString('he-IL', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            })
+            : label;
+
         return (
             <div className="bg-white p-2 rounded-[10px] shadow-md border-none" style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}>
-                <p className="text-gray-700 font-medium mb-2 border-b border-[#59687D]">{label}</p>
+                <p className="text-gray-700 font-medium mb-2 border-b border-[#59687D]">{fullDate}</p>
                 <div className="space-y-1">
                     {payload.map((entry: any, index: number) => (
                         <div key={`item-${index}`} className="flex items-center">
@@ -63,7 +79,7 @@ const CustomYAxisLabel = (props: any) => {
 };
 
 
-export default function SMPGraph({ data }: SMPGraphProps) {
+export default function SMPGraph({ data, startDate, endDate }: SMPGraphProps) {
     const [hoveredSeries, setHoveredSeries] = useState<string | null>(null);
 
     const handleLegendMouseEnter = (dataKey: string) => {
@@ -74,15 +90,35 @@ export default function SMPGraph({ data }: SMPGraphProps) {
         setHoveredSeries(null);
     };
 
+    // Calculate date range to determine X-axis format
+    const dateRangeInfo = useMemo(() => {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const days = differenceInDays(end, start);
+        const months = differenceInMonths(end, start);
+        const years = differenceInYears(end, start);
+
+        if (years >= 1) {
+            return { type: 'year' as const, days, months, years };
+        } else if (months >= 1) {
+            return { type: 'month' as const, days, months, years };
+        } else if (days <= 1) {
+            return { type: 'time' as const, days, months, years };
+        } else {
+            return { type: 'day' as const, days, months, years };
+        }
+    }, [startDate, endDate]);
+
     // Transform API data into chart format
     const chartData = useMemo(() => {
-        // Create a map to merge data from both arrays
-        const dataMap = new Map<string, { time: string; withExc: number; withoutExc: number }>();
+        // Create a map to merge data from both arrays using timestamp as key
+        const dataMap = new Map<string, { time: string; timestamp: string; withExc: number; withoutExc: number }>();
 
         // Add data from chart_with_constraints
         data.chart_with_constraints.forEach((item) => {
-            dataMap.set(item.hour, {
-                time: item.hour,
+            dataMap.set(item.timestamp, {
+                time: '',
+                timestamp: item.timestamp,
                 withExc: item.price,
                 withoutExc: 0
             });
@@ -90,33 +126,147 @@ export default function SMPGraph({ data }: SMPGraphProps) {
 
         // Add/update data from chart_without_constraints
         data.chart_without_constraints.forEach((item) => {
-            const existing = dataMap.get(item.hour);
+            const existing = dataMap.get(item.timestamp);
             if (existing) {
                 existing.withoutExc = item.price;
             } else {
-                dataMap.set(item.hour, {
-                    time: item.hour,
+                dataMap.set(item.timestamp, {
+                    time: '',
+                    timestamp: item.timestamp,
                     withExc: 0,
                     withoutExc: item.price
                 });
             }
         });
 
-        // Convert map to array and sort by hour
-        return Array.from(dataMap.values()).sort((a, b) => {
-            const hourA = parseInt(a.time.split(':')[0]);
-            const hourB = parseInt(b.time.split(':')[0]);
-            return hourA - hourB;
+        // Convert map to array and sort by timestamp
+        const sortedData = Array.from(dataMap.values()).sort((a, b) => {
+            return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
         });
-    }, [data]);
 
-    // Calculate domain for Y-axis based on min/max prices
+        // For year and month views, aggregate data by period
+        if (dateRangeInfo.type === 'year' || dateRangeInfo.type === 'month') {
+            const aggregatedMap = new Map<string, { time: string; periodKey: string; withExc: number[]; withoutExc: number[] }>();
+
+            sortedData.forEach((item) => {
+                const date = new Date(item.timestamp);
+                let periodKey = '';
+
+                if (dateRangeInfo.type === 'year') {
+                    periodKey = format(date, 'yyyy');
+                } else {
+                    periodKey = format(date, 'yyyy-MM');
+                }
+
+                const existing = aggregatedMap.get(periodKey);
+                if (existing) {
+                    existing.withExc.push(item.withExc);
+                    existing.withoutExc.push(item.withoutExc);
+                } else {
+                    aggregatedMap.set(periodKey, {
+                        time: dateRangeInfo.type === 'year' ? format(date, 'yyyy') : format(date, 'MM/yy'),
+                        periodKey: periodKey,
+                        withExc: [item.withExc],
+                        withoutExc: [item.withoutExc]
+                    });
+                }
+            });
+
+            // Calculate averages and format
+            return Array.from(aggregatedMap.values())
+                .map(item => ({
+                    time: item.time,
+                    timestamp: item.periodKey, // Use period key for consistent sorting
+                    withExc: item.withExc.length > 0
+                        ? item.withExc.reduce((sum, val) => sum + val, 0) / item.withExc.length
+                        : 0,
+                    withoutExc: item.withoutExc.length > 0
+                        ? item.withoutExc.reduce((sum, val) => sum + val, 0) / item.withoutExc.length
+                        : 0
+                }))
+                .sort((a, b) => {
+                    // Sort by period key (year or year-month)
+                    return a.timestamp.localeCompare(b.timestamp);
+                });
+        }
+
+        // For day and time views, format timestamps appropriately
+        return sortedData.map(item => {
+            const date = new Date(item.timestamp);
+            let timeStr = '';
+
+            if (dateRangeInfo.type === 'time') {
+                // 1 day: show time only (HH:mm)
+                timeStr = format(date, 'HH:mm');
+            } else {
+                // Multiple days but less than month: show days (DD/MM)
+                timeStr = format(date, 'dd/MM');
+            }
+
+            return {
+                ...item,
+                time: timeStr
+            };
+        });
+    }, [data, dateRangeInfo]);
+
+    // Calculate domain for Y-axis based on min/max prices from chart data (aggregated values)
     const yAxisDomain = useMemo(() => {
-        const minPrice = Math.min(data.min_price, ...chartData.map(d => Math.min(d.withExc || 0, d.withoutExc || 0)));
-        const maxPrice = Math.max(data.max_price, ...chartData.map(d => Math.max(d.withExc || 0, d.withoutExc || 0)));
+        // Use chartData values instead of raw data to account for aggregation
+        const allPrices = chartData.flatMap(item => [
+            item.withExc || 0,
+            item.withoutExc || 0
+        ]).filter(price => price > 0);
+
+        if (allPrices.length === 0) {
+            return [0, 100]; // Default range if no data
+        }
+
+        const minPrice = Math.min(...allPrices);
+        const maxPrice = Math.max(...allPrices);
+
+        if (minPrice === maxPrice) {
+            // If all prices are the same, add some padding
+            return [Math.max(0, Math.floor(minPrice - 10)), Math.ceil(maxPrice + 10)];
+        }
+
         const padding = (maxPrice - minPrice) * 0.1; // 10% padding
         return [Math.max(0, Math.floor(minPrice - padding)), Math.ceil(maxPrice + padding)];
-    }, [data, chartData]);
+    }, [chartData]);
+
+    // Custom XAxis tick formatter - labels are already formatted correctly in chartData
+    const formatXAxisTick = (tickItem: string) => {
+        return tickItem;
+    };
+
+    // Determine if labels should be rotated
+    const shouldRotateLabels = useMemo(() => {
+        // No rotation - show all labels horizontally
+        return false;
+    }, []);
+
+    // Calculate X-axis interval to prevent label overlap
+    const xAxisInterval = useMemo(() => {
+        const dataLength = chartData.length;
+
+        if (dateRangeInfo.type === 'year') {
+            // For year view, show every label (monthly data - usually 12 months or less)
+            return 0;
+        } else if (dateRangeInfo.type === 'month') {
+            // For month view with rotated labels, show all labels
+            // Rotated labels can fit more, so show all data points
+            return 0;
+        } else {
+            // For day/time views, calculate interval based on data length
+            if (dataLength > 30) {
+                return Math.floor(dataLength / 15); // Show ~15 labels max
+            } else if (dataLength > 15) {
+                return Math.floor(dataLength / 10); // Show ~10 labels max
+            } else {
+                return 0; // Show all labels if 15 or fewer
+            }
+        }
+    }, [chartData.length, dateRangeInfo.type]);
 
     // Custom legend component that communicates with parent
     const CustomLegend = (props: any) => {
@@ -157,13 +307,26 @@ export default function SMPGraph({ data }: SMPGraphProps) {
             <ResponsiveContainer width="100%" height="95%">
                 <LineChart
                     data={chartData}
-                    margin={{ top: 50, right: 10, left: 30, bottom: 0 }}
+                    margin={{
+                        top: 50,
+                        right: 20,
+                        left: 30,
+                        bottom: shouldRotateLabels ? 80 : 40
+                    }}
                 >
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis
                         dataKey="time"
-                        tick={{ fontSize: 12 }}
+                        tick={{ fontSize: 11 }}
                         axisLine={true}
+                        tickFormatter={formatXAxisTick}
+                        interval={xAxisInterval}
+                        angle={shouldRotateLabels ? -45 : 0}
+                        textAnchor={shouldRotateLabels ? 'end' : 'middle'}
+                        height={shouldRotateLabels ? 70 : 40}
+                        tickMargin={shouldRotateLabels ? 20 : 5}
+                        minTickGap={shouldRotateLabels ? 20 : 0}
+                        dy={shouldRotateLabels ? 10 : 0}
                     />
                     <YAxis
                         domain={yAxisDomain}

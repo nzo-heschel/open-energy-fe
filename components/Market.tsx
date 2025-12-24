@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import Image from 'next/image'
@@ -8,10 +8,34 @@ import download from '@/public/images/download_2.png'
 import api from '@/public/images/API.png'
 import PrivateConsumersChart from './Charts/PrivateConsumersChart'
 import TooltipInfo from './TooltipInfo'
+import { startOfYear, endOfYear, format } from 'date-fns'
+import { usePrivateSupplierConnectedConsumers } from '@/lib/api'
 
 const Market = () => {
     //tooltips
     const [showTooltip, setShowTooltip] = useState(false);
+    const [selectedYear, setSelectedYear] = useState<string>('2025');
+
+    // Calculate start and end dates based on selected year
+    const startEndDate = useMemo(() => {
+        const year = parseInt(selectedYear);
+        const start = new Date(year, 0, 1); // January 1st
+        const end = new Date(year, 11, 31); // December 31st
+        return {
+            start: format(start, 'yyyy-MM-dd'),
+            end: format(end, 'yyyy-MM-dd')
+        };
+    }, [selectedYear]);
+
+    // Fetch private supplier connected consumers data
+    const { data: privateConsumersData, isLoading, error } = usePrivateSupplierConnectedConsumers(
+        startEndDate.start,
+        startEndDate.end
+    );
+
+    const handleYearChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        setSelectedYear(event.target.value);
+    };
     return (
         <div className='flex flex-col md:gap-[30px] gap-5'>
             <div className="flex flex-col md:gap-5 gap-3 max-w-[1043px] w-full">
@@ -56,14 +80,17 @@ const Market = () => {
                             <span className="text-sm text-slate-600 mt-6">מיון לפי:</span>
 
                             <div className="relative w-[113px]">
-                                <label htmlFor="" className='flex flex-col gap-1'>
-                                    <span className='text-sm text-slate-600'>מיקום:</span>
+                                <label htmlFor="year-selector" className='flex flex-col gap-1'>
+                                    <span className='text-sm text-slate-600'>שנה:</span>
                                     <select
+                                        id="year-selector"
+                                        value={selectedYear}
+                                        onChange={handleYearChange}
                                         className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
                                     >
-                                        <option>2025</option>
-                                        <option>2024</option>
-                                        <option>2023</option>
+                                        <option value="2025">2025</option>
+                                        <option value="2024">2024</option>
+                                        <option value="2023">2023</option>
                                     </select>
                                     {/* Custom dropdown arrow */}
                                     <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
@@ -122,7 +149,17 @@ const Market = () => {
 
                         </div>
                     </div>
-                    <PrivateConsumersChart />
+                    {isLoading ? (
+                        <div className="flex justify-center items-center h-[300px]">
+                            <p className="text-slate-600">טוען נתונים...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="flex justify-center items-center h-[300px]">
+                            <p className="text-red-600">שגיאה בטעינת הנתונים</p>
+                        </div>
+                    ) : (
+                        <PrivateConsumersChart />
+                    )}
                 </CardContent>
             </Card>
         </div>

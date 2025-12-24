@@ -12,8 +12,9 @@ import {
   ScatterChart,
   Scatter,
 } from "recharts";
-import { useState } from "react";
-import { Button } from "../ui/button";
+import { useState, useMemo } from "react";
+import type { SMPProductionVsMarginalPriceResponse } from "@/types/dto";
+import { differenceInDays, differenceInMonths } from "date-fns";
 
 // --- Custom Tooltip Component ---
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -86,12 +87,14 @@ const CustomLegend = (props: any) => {
   );
 };
 
-// --- Component 1: Scatter Graph ---
-const scatterData1 = Array.from({ length: 100 }).map((_, i) => ({
-  price: Math.floor(Math.random() * 13000) + 1,
-  demand: Math.floor(Math.random() * 200) + 5,
-  type: i % 2 === 0 ? "ביקוש נטו" : "מחיר שוליי כולל אילוצים",
-}));
+interface ElectricityScatterGraphProps {
+  data?: SMPProductionVsMarginalPriceResponse;
+  isLoading?: boolean;
+  error?: Error | null;
+  startDate?: string;
+  endDate?: string;
+  selectedPreset?: string;
+}
 
 const CustomYAxisLabel = (props: any) => {
   const { viewBox } = props;
@@ -109,17 +112,142 @@ const CustomYAxisLabel = (props: any) => {
   );
 };
 
-export function ElectricityScatterGraph() {
+export function ElectricityScatterGraph({ data, isLoading, error, startDate, endDate, selectedPreset }: ElectricityScatterGraphProps) {
+  // Determine date range type based on actual date range duration
+  const dateRangeType = useMemo(() => {
+    // Always calculate from actual date range, regardless of preset
+    if (!startDate || !endDate) return 'day';
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const days = differenceInDays(end, start);
+    const twoYearsInDays = 730; // 2 years = 730 days
+
+    // Determine range type based on actual duration:
+    // - Less than 62 days: use daily correlation data
+    // - 62 days to less than 2 years (730 days): use monthly correlation data
+    // - 2 years (730 days) or more: use yearly correlation data
+    if (days < 62) {
+      return 'day'; // Use correlation_by_view.day for ranges less than 62 days
+    } else if (days < twoYearsInDays) {
+      return 'month'; // Use correlation_by_view.month for ranges 62 days to less than 2 years
+    } else {
+      return 'year'; // Use correlation_by_view.year for ranges 2 years or more
+    }
+  }, [startDate, endDate]);
+
+  // Transform correlation data for scatter chart - format as original UI expected
+  // Use correlation_by_view based on date range type
+  const scatterData1 = useMemo(() => {
+    if (!data?.correlation_by_view) {
+      // Fallback to old correlation if correlation_by_view doesn't exist
+      if (data?.correlation && data.correlation.length > 0) {
+        return data.correlation.map((item, i) => ({
+          price: item.smp || 0,
+          demand: item.net_demand || 0,
+          type: i % 2 === 0 ? "ביקוש נטו" : "מחיר שוליי כולל אילוצים",
+        }));
+      }
+      return [];
+    }
+
+    // Get the appropriate correlation data based on date range type
+    let correlationData: Array<{
+      timestamp: string;
+      net_demand: number;
+      price_with_constraints: number;
+      price_without_constraints: number;
+    }> = [];
+
+    if (dateRangeType === 'day' && data.correlation_by_view.day) {
+      correlationData = data.correlation_by_view.day;
+    } else if (dateRangeType === 'month' && data.correlation_by_view.month) {
+      correlationData = data.correlation_by_view.month;
+    } else if (dateRangeType === 'year' && data.correlation_by_view.year) {
+      correlationData = data.correlation_by_view.year;
+    }
+
+    if (correlationData.length === 0) {
+      return [];
+    }
+
+    // Transform to the format expected by the UI
+    return correlationData.map((item, i) => ({
+      price: item.price_with_constraints || 0,
+      demand: item.net_demand || 0,
+      type: i % 2 === 0 ? "ביקוש נטו" : "מחיר שוליי כולל אילוצים",
+    }));
+  }, [data, dateRangeType]);
+
+  // Calculate X-axis domain based on actual data
+  const priceDomain = useMemo(() => {
+    if (!scatterData1 || scatterData1.length === 0) return [0, 220];
+    const prices = scatterData1.map(item => item.price).filter(p => p > 0);
+    if (prices.length === 0) return [0, 220];
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const padding = Math.max((maxPrice - minPrice) * 0.1, maxPrice * 0.05);
+    return [Math.max(0, Math.floor(minPrice - padding)), Math.ceil(maxPrice + padding)];
+  }, [scatterData1]);
+
+  // Calculate Y-axis domain based on actual data
+  const demandDomain = useMemo(() => {
+    if (!scatterData1 || scatterData1.length === 0) return [0, 12000];
+    const demands = scatterData1.map(item => item.demand).filter(d => d > 0);
+    if (demands.length === 0) return [0, 12000];
+    const minDemand = Math.min(...demands);
+    const maxDemand = Math.max(...demands);
+    const padding = Math.max((maxDemand - minDemand) * 0.1, maxDemand * 0.05);
+    return [Math.max(0, Math.floor(minDemand - padding)), Math.ceil(maxDemand + padding)];
+  }, [scatterData1]);
+
+  if (isLoading) {
+    return (
+      <div className="w-full md:h-[500px] h-[300px] flex items-center justify-center">
+        <p className="text-slate-600">טוען נתונים...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full md:h-[500px] h-[300px] flex items-center justify-center">
+        <p className="text-red-600">שגיאה בטעינת הנתונים</p>
+      </div>
+    );
+  }
+
+  if (!data || scatterData1.length === 0) {
+    return (
+      <div className="w-full md:h-[500px] h-[300px] flex items-center justify-center">
+        <p className="text-slate-600">אין נתונים להצגה</p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full md:h-[500px] h-[300px] md:mt-0 -mt-10">
       {/* <h2 className="text-xl font-bold text-gray-800 mb-4 text-right">
         ייצור חשמל אל מול המחיר השוליי
       </h2> */}
       <ResponsiveContainer width="100%" height="100%">
-        <ScatterChart margin={{ top: 50, right: 10, left: 30, bottom: 0 }}>
+        <ScatterChart margin={{ top: 50, right: 20, left: 30, bottom: 40 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis dataKey="price" name="מחיר שוליי" tick={{ fontSize: 12 }} />
-          <YAxis dataKey="demand" name="MW" tick={{ fontSize: 12 }} label={<CustomYAxisLabel />} />
+          <XAxis
+            type="number"
+            dataKey="price"
+            name="מחיר שוליי"
+            domain={priceDomain}
+            tick={{ fontSize: 12 }}
+            allowDecimals={false}
+          />
+          <YAxis
+            type="number"
+            dataKey="demand"
+            name="MW"
+            domain={demandDomain}
+            tick={{ fontSize: 12 }}
+            label={<CustomYAxisLabel />}
+          />
           <Tooltip content={<CustomTooltip />} />
           <Legend content={<CustomLegend />} />
           <Scatter name="ביקוש נטו" data={scatterData1.filter((d) => d.type === "ביקוש נטו")} fill="#166534" />

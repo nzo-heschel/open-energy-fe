@@ -196,13 +196,8 @@ export default function DateRangePicker({
   const formatValue = (value: Dayjs | null): string => {
     if (!value) return '';
 
-    // If preset is selected, show preset label only for the start date input
+    // If preset is selected, return empty to avoid duplication with placeholder
     if (isPresetSelected) {
-      // Check if this is the start date (first input)
-      if (dayjsDateRange[0] && value.isSame(dayjsDateRange[0], 'day')) {
-        return selectedPreset || '';
-      }
-      // For end date input with preset, return empty
       return '';
     }
 

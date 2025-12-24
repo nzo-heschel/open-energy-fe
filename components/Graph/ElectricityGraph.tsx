@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
     LineChart,
     Line,
@@ -13,61 +13,59 @@ import {
 } from "recharts";
 import { Button } from "../ui/button";
 import { ElectricityScatterGraph } from "./ElectricityScatterGraph";
-
-// Data for the line chart
-const lineData = [
-    { time: "00:00", withExc: 110, withoutExc: 130, demandWith: 2800, demandWithout: 6300 },
-    { time: "01:00", withExc: 135, withoutExc: 155, demandWith: 2600, demandWithout: 6100 },
-    { time: "02:00", withExc: 75, withoutExc: 95, demandWith: 2500, demandWithout: 6000 },
-    { time: "03:00", withExc: 74, withoutExc: 94, demandWith: 2700, demandWithout: 6200 },
-    { time: "04:00", withExc: 73, withoutExc: 93, demandWith: 2800, demandWithout: 6300 },
-    { time: "05:00", withExc: 100, withoutExc: 120, demandWith: 2600, demandWithout: 6000 },
-    { time: "06:00", withExc: 120, withoutExc: 140, demandWith: 2500, demandWithout: 5900 },
-    { time: "07:00", withExc: 100, withoutExc: 120, demandWith: 2650, demandWithout: 6050 },
-    { time: "08:00", withExc: 75, withoutExc: 95, demandWith: 2700, demandWithout: 6100 },
-    { time: "09:00", withExc: 75, withoutExc: 95, demandWith: 2800, demandWithout: 6300 },
-    { time: "10:00", withExc: 45, withoutExc: 65, demandWith: 2600, demandWithout: 6100 },
-    { time: "11:00", withExc: 45, withoutExc: 65, demandWith: 2500, demandWithout: 6000 },
-    { time: "12:00", withExc: 40, withoutExc: 60, demandWith: 2700, demandWithout: 6200 },
-    { time: "13:00", withExc: 61, withoutExc: 81, demandWith: 2800, demandWithout: 6300 },
-    { time: "14:00", withExc: 57, withoutExc: 77, demandWith: 2600, demandWithout: 6000 },
-    { time: "15:00", withExc: 59, withoutExc: 79, demandWith: 2500, demandWithout: 5900 },
-    { time: "16:00", withExc: 49, withoutExc: 69, demandWith: 2650, demandWithout: 6050 },
-    { time: "17:00", withExc: 89, withoutExc: 109, demandWith: 2700, demandWithout: 6100 },
-    { time: "18:00", withExc: 56, withoutExc: 76, demandWith: 2800, demandWithout: 6300 },
-    { time: "19:00", withExc: 23, withoutExc: 33, demandWith: 2600, demandWithout: 6100 },
-    { time: "20:00", withExc: 56, withoutExc: 76, demandWith: 2500, demandWithout: 6000 },
-    { time: "21:00", withExc: 20, withoutExc: 40, demandWith: 2700, demandWithout: 6200 },
-    { time: "22:00", withExc: 50, withoutExc: 70, demandWith: 2800, demandWithout: 6300 },
-    { time: "23:00", withExc: 80, withoutExc: 100, demandWith: 2600, demandWithout: 6000 },
-    { time: "24:00", withExc: 56, withoutExc: 76, demandWith: 2500, demandWithout: 5900 },
-];
+import type { SMPProductionVsMarginalPriceResponse } from "@/types/dto";
+import { format, parseISO, differenceInDays, differenceInMonths } from "date-fns";
+import { enUS } from "date-fns/locale";
 
 // Custom Tooltip component for Line Chart
 const CustomLineTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+        const dataPoint = payload[0]?.payload;
+        // Use label directly (which comes from the period field in the API response)
+        const timeLabel = label || dataPoint?.time || dataPoint?.timestamp;
+
         return (
             <div className="bg-white p-2 rounded-[10px] shadow-md border-none" style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}>
-                <p className="text-gray-700 font-medium mb-2 border-b border-[#59687D]">{label}</p>
+                <p className="text-gray-700 font-medium mb-2 border-b border-[#59687D]">
+                    {timeLabel}
+                </p>
                 <div className="space-y-1">
-                    {payload.map((entry: any, index: number) => (
-                        <div key={`item-${index}`} className="flex flex-col">
-                            <div className="flex items-center">
+                    {payload.map((entry: any, index: number) => {
+                        const isPrice = entry.dataKey === 'price_with_constraints' || entry.dataKey === 'price_without_constraints';
+                        const isDemand = entry.dataKey === 'net_demand';
+
+                        return (
+                            <div key={`item-${index}`} className="flex items-center">
                                 <div
                                     className="w-2 h-2 rounded-full ml-2"
                                     style={{ backgroundColor: entry.color }}
                                 ></div>
                                 <span className="text-sm text-[#484C56]">{entry.name}</span>
-                                <span className="text-gray-600 mx-1">|</span>
-                                <span className="text-sm text-[#484C56] ml-1">
-                                    {entry.value.toLocaleString()} ₪
-                                </span>
+                                {isPrice && (
+                                    <>
+                                        <span className="text-gray-600 mx-1">|</span>
+                                        <span className="text-sm text-[#484C56] ml-1">
+                                            {Math.round(entry.value).toLocaleString()} ₪
+                                        </span>
+                                    </>
+                                )}
+                                {isDemand && (
+                                    <>
+                                        <span className="text-gray-600 mx-1">|</span>
+                                        <span className="text-sm text-[#484C56] ml-1">
+                                            {Math.round(entry.value).toLocaleString()} MW
+                                        </span>
+                                    </>
+                                )}
                             </div>
-                            <span className="text-sm text-[#484C56] mr-4 leading-3">
-                                {entry.value.toLocaleString()} MW
-                            </span>
+                        );
+                    })}
+                    {/* Show net_demand separately if price line is shown */}
+                    {dataPoint && dataPoint.net_demand && payload.some((p: any) => p.dataKey === 'price_with_constraints' || p.dataKey === 'price_without_constraints') && !payload.some((p: any) => p.dataKey === 'net_demand') && (
+                        <div className="text-xs text-[#484C56] mr-4 mt-1 pt-1 border-t border-gray-200">
+                            {Math.round(dataPoint.net_demand).toLocaleString()} MW
                         </div>
-                    ))}
+                    )}
                 </div>
             </div>
         );
@@ -76,9 +74,293 @@ const CustomLineTooltip = ({ active, payload, label }: any) => {
 };
 
 // Line Chart Component
-const ElectricityLineGraph = () => {
+interface ElectricityLineGraphProps {
+    data?: SMPProductionVsMarginalPriceResponse;
+    startDate?: string;
+    endDate?: string;
+    selectedPreset?: string;
+}
+
+const ElectricityLineGraph = ({ data, startDate, endDate, selectedPreset }: ElectricityLineGraphProps) => {
     const [activeSeries, setActiveSeries] = useState<string[]>([]);
     const [hoveredSeries, setHoveredSeries] = useState<string | null>(null);
+
+    // Determine date range type based on actual date range duration
+    const dateRangeType = useMemo(() => {
+        if (!startDate || !endDate) return 'other';
+
+        // Always calculate from actual date range, regardless of preset
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const days = differenceInDays(end, start);
+        const twoYearsInDays = 730; // 2 years = 730 days
+
+        // Determine range type based on actual duration:
+        // - Less than 62 days: use daily data
+        // - 62 days to less than 2 years (730 days): use monthly data
+        // - 2 years (730 days) or more: use yearly data
+        if (days < 62) {
+            return 'day'; // Use daily_average for ranges less than 62 days
+        } else if (days < twoYearsInDays) {
+            return 'month'; // Use monthly_average for ranges 62 days to less than 2 years
+        } else {
+            return 'year'; // Use yearly_average for ranges 2 years or more
+        }
+    }, [startDate, endDate]);
+
+    // Transform API data to chart format
+    const chartData = useMemo(() => {
+        if (!data) return [];
+
+        // Use daily_average for day ranges, monthly_average for month ranges, yearly_average for year ranges
+        if (dateRangeType === 'day' && data.daily_average && data.daily_average.length > 0) {
+            // For day ranges (0-1 days or up to 2 months), use daily_average
+            return data.daily_average.map(item => {
+                // Parse and format period based on date range type
+                let timeStr = item.period;
+                let timestamp = item.period;
+
+                try {
+                    // Try to parse period as date (could be ISO format like "2025-12-01")
+                    let date: Date | null = null;
+
+                    // Try ISO date first
+                    if (item.period.match(/^\d{4}-\d{2}-\d{2}/)) {
+                        date = parseISO(item.period);
+                    } else if (item.period.match(/^\d{4}-\d{2}/)) {
+                        // Year-month format
+                        date = parseISO(item.period + '-01');
+                    } else {
+                        // Try general date parsing
+                        date = new Date(item.period);
+                    }
+
+                    if (date && !isNaN(date.getTime())) {
+                        // For day range (can be up to 2 months), format based on data
+                        // If it's a full date (YYYY-MM-DD), format as "dd/MM"
+                        // If it's a time, format as "HH:mm"
+                        if (item.period.match(/^\d{4}-\d{2}-\d{2}/)) {
+                            timeStr = format(date, 'dd/MM');
+                        } else {
+                            timeStr = format(date, 'HH:mm');
+                        }
+                        timestamp = item.period;
+                    }
+                } catch (e) {
+                    // If parsing fails, use period as-is
+                    timeStr = item.period;
+                    timestamp = item.period;
+                }
+
+                return {
+                    time: timeStr,
+                    timestamp: timestamp,
+                    price_with_constraints: item.price_with_constraints ?? item.avg_smp ?? 0,
+                    price_without_constraints: item.price_without_constraints ?? 0,
+                    net_demand: item.net_demand ?? 0,
+                    smp: item.avg_smp ?? 0
+                };
+            }).sort((a, b) => {
+                // Sort by timestamp/period
+                try {
+                    const dateA = new Date(a.timestamp);
+                    const dateB = new Date(b.timestamp);
+                    if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) {
+                        return dateA.getTime() - dateB.getTime();
+                    }
+                } catch (e) {
+                    // If sorting fails, keep original order
+                }
+                return a.timestamp.localeCompare(b.timestamp);
+            });
+        } else if (dateRangeType === 'month' && data.monthly_average && data.monthly_average.length > 0) {
+            // Use monthly_average for month ranges (less than 24 months)
+            return data.monthly_average.map(item => {
+                // Parse and format period for month view
+                let timeStr = item.period;
+                let timestamp = item.period;
+
+                try {
+                    // Try to parse period as date
+                    let date: Date | null = null;
+
+                    // Try year-month format (YYYY-MM)
+                    if (item.period.match(/^\d{4}-\d{2}$/)) {
+                        date = parseISO(item.period + '-01');
+                    } else {
+                        // Try general date parsing
+                        date = new Date(item.period);
+                    }
+
+                    if (date && !isNaN(date.getTime())) {
+                        // For month view, format as "MM/yy" (e.g., "12/25")
+                        timeStr = format(date, 'MM/yy');
+                        timestamp = item.period;
+                    }
+                } catch (e) {
+                    // If parsing fails, use period as-is
+                    timeStr = item.period;
+                    timestamp = item.period;
+                }
+
+                return {
+                    time: timeStr,
+                    timestamp: timestamp,
+                    price_with_constraints: item.price_with_constraints ?? item.avg_smp ?? 0,
+                    price_without_constraints: item.price_without_constraints ?? 0,
+                    net_demand: item.net_demand ?? 0,
+                    smp: item.avg_smp ?? 0
+                };
+            }).sort((a, b) => {
+                // Sort by timestamp/period
+                try {
+                    const dateA = new Date(a.timestamp);
+                    const dateB = new Date(b.timestamp);
+                    if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) {
+                        return dateA.getTime() - dateB.getTime();
+                    }
+                } catch (e) {
+                    // If sorting fails, keep original order
+                }
+                return a.timestamp.localeCompare(b.timestamp);
+            });
+        } else if (dateRangeType === 'year') {
+            // Use yearly_average for ranges more than 1 year
+            // Only fallback to monthly_average if yearly_average is not available
+            const yearData = (data.yearly_average && data.yearly_average.length > 0)
+                ? data.yearly_average
+                : (data.monthly_average && data.monthly_average.length > 0 ? data.monthly_average : []);
+
+            if (yearData.length === 0) return [];
+
+            return yearData.map(item => {
+                // Parse and format period for year view
+                let timeStr = item.period;
+                let timestamp = item.period;
+
+                try {
+                    // Try to parse period as date
+                    let date: Date | null = null;
+
+                    // Try year-month format (YYYY-MM) or year format (YYYY)
+                    if (item.period.match(/^\d{4}-\d{2}$/)) {
+                        date = parseISO(item.period + '-01');
+                    } else if (item.period.match(/^\d{4}$/)) {
+                        // Year only format
+                        date = parseISO(item.period + '-01-01');
+                    } else {
+                        // Try general date parsing
+                        date = new Date(item.period);
+                    }
+
+                    if (date && !isNaN(date.getTime())) {
+                        // For year view, format as "MM/yy" (e.g., "12/25") or "yyyy" for year-only
+                        if (item.period.match(/^\d{4}$/)) {
+                            timeStr = format(date, 'yyyy');
+                        } else {
+                            timeStr = format(date, 'MM/yy');
+                        }
+                        timestamp = item.period;
+                    }
+                } catch (e) {
+                    // If parsing fails, use period as-is
+                    timeStr = item.period;
+                    timestamp = item.period;
+                }
+
+                return {
+                    time: timeStr,
+                    timestamp: timestamp,
+                    price_with_constraints: item.price_with_constraints ?? item.avg_smp ?? 0,
+                    price_without_constraints: item.price_without_constraints ?? 0,
+                    net_demand: item.net_demand ?? 0,
+                    smp: item.avg_smp ?? 0
+                };
+            }).sort((a, b) => {
+                // Sort by timestamp/period
+                try {
+                    const dateA = new Date(a.timestamp);
+                    const dateB = new Date(b.timestamp);
+                    if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) {
+                        return dateA.getTime() - dateB.getTime();
+                    }
+                } catch (e) {
+                    // If sorting fails, keep original order
+                }
+                return a.timestamp.localeCompare(b.timestamp);
+            });
+        }
+
+        // Fallback to combined_series if averages are not available
+        if (data.combined_series && data.combined_series.length > 0) {
+            return data.combined_series
+                .filter(item => item.timestamp)
+                .map(item => {
+                    try {
+                        const date = parseISO(item.timestamp);
+                        const timeStr = format(date, 'HH:mm');
+
+                        return {
+                            time: timeStr,
+                            timestamp: item.timestamp,
+                            price_with_constraints: item.price_with_constraints ?? item.smp ?? 0,
+                            price_without_constraints: item.price_without_constraints ?? 0,
+                            net_demand: item.net_demand ?? 0,
+                            smp: item.smp ?? 0
+                        };
+                    } catch (e) {
+                        console.error('Error parsing timestamp:', item.timestamp, e);
+                        return null;
+                    }
+                })
+                .filter(item => item !== null)
+                .sort((a, b) => {
+                    if (!a || !b) return 0;
+                    return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+                }) as Array<{
+                    time: string;
+                    timestamp: string;
+                    price_with_constraints: number;
+                    price_without_constraints: number;
+                    net_demand: number;
+                    smp: number;
+                }>;
+        }
+
+        return [];
+    }, [data, dateRangeType]);
+
+    // Calculate Y-axis domains
+    const priceDomain = useMemo(() => {
+        if (!chartData || chartData.length === 0) return [0, 220];
+        const prices = chartData
+            .map(item => item.price_with_constraints || item.smp || 0)
+            .filter(p => p > 0);
+        if (prices.length === 0) return [0, 220];
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        const padding = Math.max((maxPrice - minPrice) * 0.1, maxPrice * 0.05);
+        return [Math.max(0, Math.floor(minPrice - padding)), Math.ceil(maxPrice + padding)];
+    }, [chartData]);
+
+    const demandDomain = useMemo(() => {
+        if (!chartData || chartData.length === 0) return [0, 11000];
+        const demands = chartData.map(item => item.net_demand || 0).filter(d => d > 0);
+        if (demands.length === 0) return [0, 11000];
+        const minDemand = Math.min(...demands);
+        const maxDemand = Math.max(...demands);
+        const padding = Math.max((maxDemand - minDemand) * 0.1, maxDemand * 0.05);
+        return [Math.max(0, Math.floor(minDemand - padding)), Math.ceil(maxDemand + padding)];
+    }, [chartData]);
+
+    // Show labels for every data point
+    const xAxisInterval = 0;
+
+    // Determine if labels should be rotated
+    const shouldRotateLabels = useMemo(() => {
+        // No rotation - show all labels horizontally
+        return false;
+    }, []);
 
     const handleLegendClick = (dataKey: string) => {
         if (activeSeries.includes(dataKey)) {
@@ -183,24 +465,50 @@ const ElectricityLineGraph = () => {
         return 1;
     };
 
+    if (!data) {
+        return (
+            <div className="w-full md:h-[500px] h-[300px] flex items-center justify-center">
+                <p className="text-slate-600">טוען נתונים...</p>
+            </div>
+        );
+    }
+
+    if (chartData.length === 0) {
+        return (
+            <div className="w-full md:h-[500px] h-[300px] flex items-center justify-center">
+                <p className="text-slate-600">אין נתונים להצגה</p>
+            </div>
+        );
+    }
+
     return (
         <div className="w-full md:h-[500px] h-[300px] md:mt-0 -mt-10">
             <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                    data={lineData}
-                    margin={{ top: 50, right: 50, left: 30, bottom: 0 }}
+                    data={chartData}
+                    margin={{
+                        top: 50,
+                        right: 50,
+                        left: 30,
+                        bottom: 40
+                    }}
                 >
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis
                         dataKey="time"
-                        tick={{ fontSize: 12 }}
+                        tick={{ fontSize: 11 }}
                         axisLine={true}
+                        interval={xAxisInterval}
+                        angle={shouldRotateLabels ? -45 : 0}
+                        textAnchor={shouldRotateLabels ? 'end' : 'middle'}
+                        height={shouldRotateLabels ? 70 : 30}
+                        tickMargin={shouldRotateLabels ? 20 : 5}
+                        dy={shouldRotateLabels ? 10 : 0}
                     />
                     <YAxis
                         yAxisId="left"
                         orientation="left"
-                        domain={[0, 220]}
-                        ticks={[0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220]}
+                        domain={priceDomain}
                         tick={{ fontSize: 12 }}
                         axisLine={true}
                         tickMargin={10}
@@ -209,8 +517,7 @@ const ElectricityLineGraph = () => {
                     <YAxis
                         yAxisId="right"
                         orientation="right"
-                        domain={[0, 11000]}
-                        ticks={[0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000]}
+                        domain={demandDomain}
                         tick={{ fontSize: 12 }}
                         axisLine={true}
                         tickMargin={35}
@@ -220,23 +527,23 @@ const ElectricityLineGraph = () => {
                     <Legend content={renderLegend} />
                     <Line
                         yAxisId="left"
-                        type="linear"
-                        dataKey="withoutExc"
-                        stroke="#166534"
+                        type="monotone"
+                        dataKey="price_with_constraints"
+                        stroke="#10b981"
                         strokeWidth={2}
-                        strokeOpacity={getLineOpacity("withoutExc")}
+                        strokeOpacity={getLineOpacity("price_with_constraints")}
                         dot={false}
-                        name="מחיר שוליי ללא אילוצים"
+                        name="מחיר שולי כולל אילוצים"
                     />
                     <Line
-                        yAxisId="left"
-                        type="linear"
-                        dataKey="withExc"
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="net_demand"
                         stroke="#eab308"
                         strokeWidth={2}
-                        strokeOpacity={getLineOpacity("withExc")}
+                        strokeOpacity={getLineOpacity("net_demand")}
                         dot={false}
-                        name="מחיר שוליי כולל אילוצים"
+                        name="ביקוש נטו"
                     />
                 </LineChart>
             </ResponsiveContainer>
@@ -245,7 +552,16 @@ const ElectricityLineGraph = () => {
 };
 
 // Main Component with Tab Switching
-const ElectricityGraphWithTabs = () => {
+interface ElectricityGraphWithTabsProps {
+    data?: SMPProductionVsMarginalPriceResponse;
+    isLoading?: boolean;
+    error?: Error | null;
+    startDate?: string;
+    endDate?: string;
+    selectedPreset?: string;
+}
+
+const ElectricityGraphWithTabs = ({ data, isLoading, error, startDate, endDate, selectedPreset }: ElectricityGraphWithTabsProps) => {
     const [selectedTimeframe, setSelectedTimeframe] = useState('יומי');
     const [chartView, setChartView] = useState<'time' | 'scatter'>('time');
 
@@ -256,7 +572,19 @@ const ElectricityGraphWithTabs = () => {
                     <div className=" w-full">
                         <div className='flex flex-col gap-6'>
                             <div className="">
-                                {chartView === 'time' ? <ElectricityLineGraph /> : <ElectricityScatterGraph />}
+                                {isLoading ? (
+                                    <div className="w-full md:h-[500px] h-[300px] flex items-center justify-center">
+                                        <p className="text-slate-600">טוען נתונים...</p>
+                                    </div>
+                                ) : error ? (
+                                    <div className="w-full md:h-[500px] h-[300px] flex items-center justify-center">
+                                        <p className="text-red-600">שגיאה בטעינת הנתונים</p>
+                                    </div>
+                                ) : chartView === 'time' ? (
+                                    <ElectricityLineGraph data={data} startDate={startDate} endDate={endDate} selectedPreset={selectedPreset} />
+                                ) : (
+                                    <ElectricityScatterGraph data={data} isLoading={isLoading} error={error} startDate={startDate} endDate={endDate} selectedPreset={selectedPreset} />
+                                )}
                                 <div className="flex gap-1 md:p-[6px] p-1 rounded-full bg-[#F8F8F8] mb-4 w-fit ml-auto mt-5" style={{ boxShadow: "inset 0px 4px 10px 0px #0000001A" }}>
                                     <Button
                                         onClick={() => setChartView('time')}

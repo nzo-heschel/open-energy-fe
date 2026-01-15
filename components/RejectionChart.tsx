@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import Image from 'next/image'
@@ -6,10 +6,96 @@ import download from '@/public/images/download_2.png'
 import api from '@/public/images/API.png'
 import RejectionReasonsCharts from './Charts/RejectionReasonsCharts'
 import TooltipInfo from './TooltipInfo'
+import { useSwitchingRequests, exportSwitchingRequests } from '@/lib/api'
 
 const RejectionChart = () => {
     //tooltips
     const [showTooltip, setShowTooltip] = useState(false);
+
+    // State for filters
+    const [selectedYear, setSelectedYear] = useState<string>('all');
+    const [customerType, setCustomerType] = useState<'residential' | 'non_residential' | undefined>(undefined);
+    const [selectedRegulationType, setSelectedRegulationType] = useState<string>('all');
+    const [selectedRejectionReasons, setSelectedRejectionReasons] = useState<string[]>(['missing_power_of_attorney', 'meter_issues', 'request_form_issues', 'other']);
+    const [showRejectionReasonDropdown, setShowRejectionReasonDropdown] = useState(false);
+
+    // All available rejection reasons
+    const allRejectionReasons = [
+        { value: 'missing_power_of_attorney', label: 'ייפוי כח חסר' },
+        { value: 'meter_issues', label: 'בעיות בתמונה' },
+        { value: 'request_form_issues', label: 'בעיות במילוי הבקשה' },
+        { value: 'other', label: 'אחר' },
+    ];
+
+    // Get display text for rejection reason filter
+    const getRejectionReasonDisplayText = () => {
+        if (selectedRejectionReasons.length === 0) {
+            return 'הכל';
+        }
+        if (selectedRejectionReasons.length === allRejectionReasons.length) {
+            return 'הכל';
+        }
+        if (selectedRejectionReasons.length === 1) {
+            const selected = allRejectionReasons.find(r => r.value === selectedRejectionReasons[0]);
+            return selected?.label || 'הכל';
+        }
+        return 'בחירה מרובה';
+    };
+
+    // Handle rejection reason toggle
+    const toggleRejectionReason = (reason: string) => {
+        setSelectedRejectionReasons(prev => {
+            if (prev.includes(reason)) {
+                const newSelection = prev.filter(r => r !== reason);
+                return newSelection.length > 0 ? newSelection : [reason]; // Keep at least one selected
+            } else {
+                return [...prev, reason];
+            }
+        });
+    };
+
+    // Fetch data to get available years (without filters initially)
+    const { data: initialData } = useSwitchingRequests();
+
+    // Set default to last year when data is available
+    useEffect(() => {
+        if (initialData?.available_years && initialData.available_years.length > 0 && selectedYear === 'all') {
+            const lastYear = Math.max(...initialData.available_years).toString();
+            setSelectedYear(lastYear);
+        }
+    }, [initialData?.available_years, selectedYear]);
+
+    // Fetch data with filters
+    const { data: switchingData } = useSwitchingRequests(
+        customerType,
+        selectedYear !== 'all' ? selectedYear : undefined
+    );
+
+    // Handle export
+    const handleExport = async () => {
+        try {
+            const year = selectedYear !== 'all' ? selectedYear : undefined;
+            await exportSwitchingRequests(year, customerType);
+        } catch (error) {
+            console.error('Failed to export data:', error);
+        }
+    };
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            if (!target.closest('.rejection-reason-dropdown')) {
+                setShowRejectionReasonDropdown(false);
+            }
+        };
+        if (showRejectionReasonDropdown) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showRejectionReasonDropdown]);
+
     return (
         <div className='flex flex-col md:gap-[30px] gap-5'>
             <Card className="bg-white border border-[#E9C863] rounded-none rounded-b-2xl">
@@ -39,7 +125,13 @@ const RejectionChart = () => {
                             </CardTitle>
                             <div className="flex items-start md:gap-4 gap-2">
                                 <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
-                                <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
+                                <button
+                                    onClick={handleExport}
+                                    className="cursor-pointer hover:opacity-80 transition-opacity"
+                                    aria-label="Export to Excel"
+                                >
+                                    <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='export' />
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -54,10 +146,15 @@ const RejectionChart = () => {
                                     <span className='text-sm text-slate-600'>שנה:</span>
                                     <select
                                         className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
+                                        value={selectedYear}
+                                        onChange={(e) => setSelectedYear(e.target.value)}
                                     >
-                                        <option>2025</option>
-                                        <option>2024</option>
-                                        <option>2023</option>
+                                        <option value="all">הכל</option>
+                                        {switchingData?.available_years?.map((year) => (
+                                            <option key={year} value={year.toString()}>
+                                                {year}
+                                            </option>
+                                        ))}
                                     </select>
                                     {/* Custom dropdown arrow */}
                                     <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
@@ -70,10 +167,12 @@ const RejectionChart = () => {
                                     <span className='text-sm text-slate-600'>סוג מספק:</span>
                                     <select
                                         className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
+                                        value={selectedRegulationType}
+                                        onChange={(e) => setSelectedRegulationType(e.target.value)}
                                     >
-                                        <option>יומי</option>
-                                        <option>שבועי</option>
-                                        <option>חודשי</option>
+                                        <option value="all">הכל</option>
+                                        <option value="virtual_suppliers">מספקים וירטואליים</option>
+                                        <option value="suppliers_with_generation">מספקים עם אמצעי ייצור</option>
                                     </select>
                                 </label>
                                 <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
@@ -86,10 +185,15 @@ const RejectionChart = () => {
                                     <span className='text-sm text-slate-600'>ביתי / לא ביתי:</span>
                                     <select
                                         className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
+                                        value={customerType || 'all'}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            setCustomerType(value === 'all' ? undefined : value as 'residential' | 'non_residential');
+                                        }}
                                     >
-                                        <option>יומי</option>
-                                        <option>שבועי</option>
-                                        <option>חודשי</option>
+                                        <option value="all">הכל</option>
+                                        <option value="residential">ביתי</option>
+                                        <option value="non_residential">לא ביתי</option>
                                     </select>
                                 </label>
                                 <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
@@ -100,23 +204,46 @@ const RejectionChart = () => {
                             <div className="relative w-[179px]">
                                 <label htmlFor="" className='flex flex-col gap-1'>
                                     <span className='text-sm text-slate-600'>סיבה דחיה:</span>
-                                    <select
-                                        className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
-                                    >
-                                        <option>יומי</option>
-                                        <option>שבועי</option>
-                                        <option>חודשי</option>
-                                    </select>
+                                    <div className="relative rejection-reason-dropdown">
+                                        <button
+                                            type="button"
+                                            className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6 text-right flex items-center justify-between"
+                                            onClick={() => setShowRejectionReasonDropdown(!showRejectionReasonDropdown)}
+                                        >
+                                            <span className="text-black text-xs">{getRejectionReasonDisplayText()}</span>
+                                            <ChevronDown size={14} className="text-black" />
+                                        </button>
+                                        {showRejectionReasonDropdown && (
+                                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                                                {allRejectionReasons.map((reason) => (
+                                                    <label
+                                                        key={reason.value}
+                                                        className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedRejectionReasons.includes(reason.value)}
+                                                            onChange={() => toggleRejectionReason(reason.value)}
+                                                            className="cursor-pointer"
+                                                        />
+                                                        <span className="text-xs text-gray-700">{reason.label}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </label>
-                                <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
-                                    <ChevronDown size={14} />
-                                </span>
-                                {/* Custom dropdown arrow */}
                             </div>
 
                         </div>
                     </div>
-                    <RejectionReasonsCharts />
+                    <RejectionReasonsCharts
+                        data={switchingData}
+                        customerType={customerType}
+                        year={selectedYear !== 'all' ? selectedYear : undefined}
+                        regulationType={selectedRegulationType}
+                        rejectionReasons={selectedRejectionReasons}
+                    />
                 </CardContent>
             </Card>
         </div>

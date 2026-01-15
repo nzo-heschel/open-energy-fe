@@ -42,7 +42,7 @@ export default function EnergyMixPieChart({
 
     const { level1 } = energyMixData;
 
-    // Check if it's EnergyOverviewResponse format (fossil_energy, renewable_energy, other)
+    // Check if it's EnergyMixResponse format (fossil_energy, renewable_energy, other)
     if ('fossil_energy' in level1) {
       return [
         { name: 'אנרגיות פוסיליות', value: level1.fossil_energy || 0, color: LEVEL1_COLORS['אנרגיות פוסיליות'] },
@@ -51,7 +51,17 @@ export default function EnergyMixPieChart({
       ];
     }
 
-    // EnergyMixResponse format (Non-renewables, Renewables, Other)
+    // Check if it's format with non_renewables, renewables, other (lowercase with underscores)
+    if ('non_renewables' in level1) {
+      const level1Any = level1 as any;
+      return [
+        { name: 'אנרגיות פוסיליות', value: level1Any.non_renewables || 0, color: LEVEL1_COLORS['אנרגיות פוסיליות'] },
+        { name: 'אנרגיות מתחדשות', value: level1Any.renewables || 0, color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
+        { name: 'אחר', value: level1Any.other || 0, color: LEVEL1_COLORS['אחר'] },
+      ];
+    }
+
+    // EnergyOverviewResponse format (Non-renewables, Renewables, Other)
     return [
       { name: 'אנרגיות פוסיליות', value: level1['Non-renewables'] || 0, color: LEVEL1_COLORS['אנרגיות פוסיליות'] },
       { name: 'אנרגיות מתחדשות', value: level1['Renewables'] || 0, color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
@@ -67,7 +77,7 @@ export default function EnergyMixPieChart({
 
     const level2DataArray: Array<{ name: string; value: number; color: string }> = [];
 
-    // Check if it's EnergyOverviewResponse format (fossil_energy, renewable_energy, other)
+    // Check if it's EnergyMixResponse format (fossil_energy, renewable_energy, other)
     if ('fossil_energy' in energyMixData.level2) {
       // Transform fossil_energy
       if (energyMixData.level2.fossil_energy) {
@@ -110,8 +120,55 @@ export default function EnergyMixPieChart({
           }
         });
       }
+    } else if ('non_renewables' in energyMixData.level2) {
+      // Format with non_renewables, renewables, other (lowercase with underscores)
+      const level2Any = energyMixData.level2 as any;
+      // Transform non_renewables
+      if (level2Any.non_renewables) {
+        const nonRenewables = level2Any.non_renewables;
+        Object.entries(nonRenewables).forEach(([key, value]) => {
+          const numValue = typeof value === 'number' ? value : 0;
+          if (numValue > 0) {
+            level2DataArray.push({
+              name: level2NameTranslations[key] || key,
+              value: numValue,
+              color: LEVEL2_COLORS[key] || '#5470c6'
+            });
+          }
+        });
+      }
+
+      // Transform renewables
+      if (level2Any.renewables) {
+        const renewables = level2Any.renewables;
+        Object.entries(renewables).forEach(([key, value]) => {
+          const numValue = typeof value === 'number' ? value : 0;
+          if (numValue > 0) {
+            level2DataArray.push({
+              name: level2NameTranslations[key] || key,
+              value: numValue,
+              color: LEVEL2_COLORS[key] || '#5470c6'
+            });
+          }
+        });
+      }
+
+      // Transform other
+      if (level2Any.other) {
+        const other = level2Any.other;
+        Object.entries(other).forEach(([key, value]) => {
+          const numValue = typeof value === 'number' ? value : 0;
+          if (numValue > 0) {
+            level2DataArray.push({
+              name: level2NameTranslations[key] || key,
+              value: numValue,
+              color: LEVEL2_COLORS[key] || '#5470c6'
+            });
+          }
+        });
+      }
     } else {
-      // EnergyMixResponse format (Non-renewables, Renewables, Other)
+      // EnergyOverviewResponse format (Non-renewables, Renewables, Other)
       // Transform Non-renewables
       if (energyMixData.level2['Non-renewables']) {
         const nonRenewables = energyMixData.level2['Non-renewables'];

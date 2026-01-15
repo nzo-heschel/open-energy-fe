@@ -9,12 +9,14 @@ import api from '@/public/images/API.png'
 import PrivateConsumersChart from './Charts/PrivateConsumersChart'
 import TooltipInfo from './TooltipInfo'
 import { startOfYear, endOfYear, format } from 'date-fns'
-import { usePrivateSupplierConnectedConsumers } from '@/lib/api'
+import { usePrivateSupplierConnectedConsumers, exportPrivateSupplierConnectedConsumers } from '@/lib/api'
 
 const Market = () => {
     //tooltips
     const [showTooltip, setShowTooltip] = useState(false);
     const [selectedYear, setSelectedYear] = useState<string>('2025');
+    const [segmentType, setSegmentType] = useState<'regulation_type' | 'sector' | 'meter_type' | 'status' | 'rejection_reason'>('regulation_type');
+    const [selectedSegment, setSelectedSegment] = useState<string>('');
 
     // Calculate start and end dates based on selected year
     const startEndDate = useMemo(() => {
@@ -36,6 +38,16 @@ const Market = () => {
     const handleYearChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedYear(event.target.value);
     };
+
+    const handleExport = async () => {
+        try {
+            await exportPrivateSupplierConnectedConsumers(startEndDate.start, startEndDate.end);
+        } catch (error) {
+            console.error('Failed to export data:', error);
+            // You could add a toast notification here
+        }
+    };
+
     return (
         <div className='flex flex-col md:gap-[30px] gap-5'>
             <div className="flex flex-col md:gap-5 gap-3 max-w-[1043px] w-full">
@@ -68,7 +80,13 @@ const Market = () => {
                                 צרכנים פרטיים המחוברים למספקי חשמל                            </CardTitle>
                             <div className="flex items-start md:gap-4 gap-2">
                                 <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
-                                <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
+                                <button
+                                    onClick={handleExport}
+                                    className="cursor-pointer hover:opacity-80 transition-opacity"
+                                    aria-label="Export to Excel"
+                                >
+                                    <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='export' />
+                                </button>
                             </div>
                         </div>
                         {/* <div className="md:text-sm text-xs text-slate-600 mr-[90px]">פרק זמן:</div> */}
@@ -99,53 +117,76 @@ const Market = () => {
                                 </label>
                             </div>
                             <div className="relative w-[179px]">
-                                <label htmlFor="" className='flex flex-col gap-1'>
-                                    <span className='text-sm text-slate-600'>מיקום:</span>
+                                <label htmlFor="segment-type-selector" className='flex flex-col gap-1'>
+                                    <span className='text-sm text-slate-600'>סוג פילוח:</span>
                                     <select
+                                        id="segment-type-selector"
+                                        value={segmentType}
+                                        onChange={(e) => {
+                                            setSegmentType(e.target.value as typeof segmentType);
+                                            setSelectedSegment(''); // Reset selected segment when changing type
+                                        }}
                                         className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
                                     >
-                                        <option>יומי</option>
-                                        <option>שבועי</option>
-                                        <option>חודשי</option>
+                                        <option value="regulation_type">סוג רגולציה</option>
+                                        <option value="sector">מגזר</option>
+                                        <option value="meter_type">סוג מונה</option>
+                                        <option value="status">סטטוס</option>
+                                        <option value="rejection_reason">סיבת דחייה</option>
                                     </select>
                                 </label>
                                 <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
                                     <ChevronDown size={14} />
                                 </span>
-                                {/* Custom dropdown arrow */}
                             </div>
-                            <div className="relative w-[179px]">
-                                <label htmlFor="" className='flex flex-col gap-1'>
-                                    <span className='text-sm text-slate-600'>מיקום:</span>
-                                    <select
-                                        className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
-                                    >
-                                        <option>יומי</option>
-                                        <option>שבועי</option>
-                                        <option>חודשי</option>
-                                    </select>
-                                </label>
-                                <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
-                                    <ChevronDown size={14} />
-                                </span>
-                                {/* Custom dropdown arrow */}
-                            </div>
-                            <div className="relative w-[179px]">
-                                <label htmlFor="" className='flex flex-col gap-1'>
-                                    <span className='text-sm text-slate-600'>מיקום:</span>
-                                    <select
-                                        className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
-                                    >
-                                        <option>יומי</option>
-                                        <option>שבועי</option>
-                                        <option>חודשי</option>
-                                    </select>
-                                </label>
-                                <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
-                                    <ChevronDown size={14} />
-                                </span>
-                                {/* Custom dropdown arrow */}
-                            </div>
+                            {privateConsumersData?.segments[segmentType] && privateConsumersData.segments[segmentType].length > 0 && (
+                                <div className="relative w-[179px]">
+                                    <label htmlFor="segment-selector" className='flex flex-col gap-1'>
+                                        <span className='text-sm text-slate-600'>ערך ספציפי:</span>
+                                        <select
+                                            id="segment-selector"
+                                            value={selectedSegment}
+                                            onChange={(e) => setSelectedSegment(e.target.value)}
+                                            className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
+                                        >
+                                            <option value="">הכל</option>
+                                            {Array.from(new Set(
+                                                privateConsumersData.segments[segmentType].map((item: any) => {
+                                                    const key = segmentType === 'regulation_type' ? item.regulation_type :
+                                                        segmentType === 'sector' ? item.sector :
+                                                            segmentType === 'meter_type' ? item.meter_type :
+                                                                segmentType === 'status' ? item.status : item.rejection_reason;
+                                                    return key;
+                                                })
+                                            )).map(key => {
+                                                // Hebrew labels mapping
+                                                const labelMap: Record<string, Record<string, string>> = {
+                                                    sector: {
+                                                        residential: 'ביתי',
+                                                        non_residential: 'לא ביתי',
+                                                    },
+                                                    regulation_type: {
+                                                        competitive_supply: 'אספקה תחרותית',
+                                                        existing_regulation: 'רגולציה קיימת',
+                                                    },
+                                                    meter_type: {
+                                                        basic: 'בסיסי',
+                                                        smart: 'חכם',
+                                                    },
+                                                };
+
+                                                const label = labelMap[segmentType]?.[key] || key;
+                                                return (
+                                                    <option key={key} value={key}>{label}</option>
+                                                );
+                                            })}
+                                        </select>
+                                    </label>
+                                    <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
+                                        <ChevronDown size={14} />
+                                    </span>
+                                </div>
+                            )}
 
                         </div>
                     </div>
@@ -158,7 +199,11 @@ const Market = () => {
                             <p className="text-red-600">שגיאה בטעינת הנתונים</p>
                         </div>
                     ) : (
-                        <PrivateConsumersChart />
+                        <PrivateConsumersChart
+                            data={privateConsumersData}
+                            segmentType={segmentType}
+                            selectedSegment={selectedSegment || undefined}
+                        />
                     )}
                 </CardContent>
             </Card>

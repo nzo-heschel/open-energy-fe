@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
     ComposedChart,
     Bar,
@@ -13,9 +13,11 @@ import {
     Pie,
     Cell,
 } from "recharts";
+import { useSwitchingRequests } from "@/lib/api";
+import type { SwitchingRequestsResponse } from "@/types/dto";
 
 // -------------------------
-// Mock Data
+// Data Interfaces
 // -------------------------
 interface DataItem {
     month: string;
@@ -25,39 +27,49 @@ interface DataItem {
     other: number;
 }
 
-const barData: DataItem[] = [
-    { month: "01/24", missingDocs: 20, photoIssues: 10, formErrors: 15, other: 5 },
-    { month: "02/24", missingDocs: 15, photoIssues: 12, formErrors: 10, other: 13 },
-    { month: "03/24", missingDocs: 25, photoIssues: 15, formErrors: 20, other: 10 },
-    { month: "04/24", missingDocs: 30, photoIssues: 20, formErrors: 15, other: 15 },
-    { month: "05/24", missingDocs: 35, photoIssues: 25, formErrors: 20, other: 10 },
-    { month: "06/24", missingDocs: 25, photoIssues: 20, formErrors: 15, other: 15 },
-    { month: "07/24", missingDocs: 30, photoIssues: 15, formErrors: 10, other: 20 },
-    { month: "08/24", missingDocs: 20, photoIssues: 10, formErrors: 15, other: 5 },
-    { month: "09/24", missingDocs: 40, photoIssues: 25, formErrors: 15, other: 15 },
-    { month: "10/24", missingDocs: 30, photoIssues: 20, formErrors: 15, other: 10 },
-    { month: "11/24", missingDocs: 25, photoIssues: 15, formErrors: 10, other: 10 },
-    { month: "12/24", missingDocs: 20, photoIssues: 10, formErrors: 15, other: 5 },
-];
+interface PieDataItem {
+    name: string;
+    value: number;
+    color: string;
+}
 
-const pieData = [
-    { name: "ייפוי כח חסר", value: 214897, color: "#3D843F" },
-    { name: "בעיות בתמונה", value: 113946, color: "#E0B441" },
-    { name: "בעיות במילוי הבקשה", value: 214897, color: "#9AC348" },
-    { name: "אחר", value: 214897, color: "#7DB2CE" },
-];
+interface RejectionReasonsChartsProps {
+    data?: SwitchingRequestsResponse | null;
+    customerType?: 'residential' | 'non_residential';
+    year?: string;
+    regulationType?: string;
+    rejectionReasons?: string[];
+}
+
+// Label mapping from API to Hebrew
+const rejectionReasonLabelMap: Record<string, string> = {
+    "missing_power_of_attorney": "ייפוי כח חסר",
+    "meter_issues": "בעיות בתמונה",
+    "request_form_issues": "בעיות במילוי הבקשה",
+    "other": "אחר",
+};
+
+// Color mapping for rejection reasons
+const rejectionReasonColorMap: Record<string, string> = {
+    "missing_power_of_attorney": "#3D843F",
+    "meter_issues": "#E0B441",
+    "request_form_issues": "#9AC348",
+    "other": "#7DB2CE",
+};
 
 // -------------------------
 // Custom Tooltip
 // -------------------------
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+        // Calculate total from displayed values (which are now original values)
         const total = payload.reduce((acc: number, cur: any) => acc + cur.value, 0);
+
         return (
             <div className="bg-white shadow-lg rounded-lg px-3 py-2 border border-gray-200 text-sm" style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}>
                 <p className="mr-3 font-normal text-gray-800">{label}</p>
                 {label ? (
-                    <p className="mr-3 text-[#59687D] font-semibold text-base border-b border-[#59687D]">סה"כ {total.toLocaleString()}</p>
+                    <p className="mr-3 text-[#59687D] font-semibold text-base border-b border-[#59687D]">סה&quot;כ {Math.round(total).toLocaleString()}</p>
                 ) : (
                     ""
                 )
@@ -69,7 +81,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                             style={{ backgroundColor: entry.color }}
                         ></span>
                         <div className="flex flex-col space-y-2">
-                            {entry.name} <span className="ml-1 font-semibold">{entry.value}</span>
+                            {entry.name} <span className="ml-1 font-semibold">{Math.round(entry.value).toLocaleString()}</span>
                         </div>
                     </div>
                 ))}
@@ -82,9 +94,111 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 // -------------------------
 // Main Component
 // -------------------------
-const RejectionReasonsCharts: React.FC = () => {
+const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
+    data: propData,
+    customerType,
+    year,
+    regulationType,
+    rejectionReasons = ['missing_power_of_attorney', 'meter_issues', 'request_form_issues', 'other']
+}) => {
     const [hiddenKeys, setHiddenKeys] = useState<string[]>([]);
     const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+
+    // Fetch data if not provided as prop
+    const { data: queryData } = useSwitchingRequests(customerType, year);
+    const switchingData = propData || queryData;
+
+    // Transform pie chart data from API response with filtering
+    const pieData = useMemo<PieDataItem[]>(() => {
+        if (!switchingData?.charts?.requests_by_rejection_reason?.data) {
+            return [
+                { name: "ייפוי כח חסר", value: 0, color: "#3D843F" },
+                { name: "בעיות בתמונה", value: 0, color: "#E0B441" },
+                { name: "בעיות במילוי הבקשה", value: 0, color: "#9AC348" },
+                { name: "אחר", value: 0, color: "#7DB2CE" },
+            ];
+        }
+
+        let data = switchingData.charts.requests_by_rejection_reason.data;
+
+        // Filter by selected rejection reasons
+        if (rejectionReasons && rejectionReasons.length > 0 && rejectionReasons.length < 4) {
+            data = data.filter(item => rejectionReasons.includes(item.label));
+        }
+
+        return data.map((item) => {
+            const hebrewLabel = rejectionReasonLabelMap[item.label] || item.label;
+            const color = rejectionReasonColorMap[item.label] || "#7DB2CE";
+
+            return {
+                name: hebrewLabel,
+                value: item.count,
+                color: color,
+            };
+        });
+    }, [switchingData, rejectionReasons]);
+
+    // Transform bar chart data from monthly_rejections_by_reason with filtering and thousands formatting
+    const barData = useMemo<DataItem[]>(() => {
+        if (!switchingData?.monthly_rejections_by_reason) {
+            return [];
+        }
+
+        // Calculate regulation type ratio for filtering (client-side)
+        let regulationTypeRatio = 1;
+        if (regulationType && regulationType !== 'all' && switchingData?.charts?.requests_by_regulation_type?.data) {
+            const selectedRegulation = switchingData.charts.requests_by_regulation_type.data.find(
+                item => item.label === regulationType
+            );
+            const totalRegulation = switchingData.charts.requests_by_regulation_type.data.reduce(
+                (sum, item) => sum + item.count, 0
+            );
+
+            if (selectedRegulation && totalRegulation > 0) {
+                regulationTypeRatio = selectedRegulation.count / totalRegulation;
+            }
+        }
+
+        return switchingData.monthly_rejections_by_reason.map((item) => {
+            // Format month from "2021-09" to "09/21"
+            const [year, month] = item.month.split('-');
+            const formattedMonth = `${month}/${year.slice(-2)}`;
+
+            // Apply regulation type filter by scaling proportionally
+            let missingDocs = (item.missing_power_of_attorney || 0) * regulationTypeRatio;
+            let photoIssues = (item.meter_issues || 0) * regulationTypeRatio;
+            let formErrors = (item.request_form_issues || 0) * regulationTypeRatio;
+            let other = (item.other || 0) * regulationTypeRatio;
+
+            // Filter by selected rejection reasons
+            if (rejectionReasons && rejectionReasons.length > 0 && rejectionReasons.length < 4) {
+                if (!rejectionReasons.includes('missing_power_of_attorney')) {
+                    missingDocs = 0;
+                }
+                if (!rejectionReasons.includes('meter_issues')) {
+                    photoIssues = 0;
+                }
+                if (!rejectionReasons.includes('request_form_issues')) {
+                    formErrors = 0;
+                }
+                if (!rejectionReasons.includes('other')) {
+                    other = 0;
+                }
+            }
+
+            // Keep original values (no rounding, no conversion to thousands)
+            return {
+                month: formattedMonth,
+                missingDocs: missingDocs,
+                photoIssues: photoIssues,
+                formErrors: formErrors,
+                other: other,
+            };
+        });
+    }, [switchingData, regulationType, rejectionReasons]);
+
+    // Get total rejections for center display
+    const totalRejections = switchingData?.total_rejections || 0;
 
     const handleLegendClick = (key: string) => {
         setHiddenKeys((prev) =>
@@ -186,8 +300,8 @@ const RejectionReasonsCharts: React.FC = () => {
                         </Pie>
                     </PieChart>
                 </ResponsiveContainer>
-                  <div className="absolute text-sm flex flex-col items-center top-1/2  right-1/2 -translate-y-[60%] translate-x-1/2 pb-14">
-                    <b className="text-xl">12,531</b>
+                <div className="absolute text-sm flex flex-col items-center top-1/2  right-1/2 -translate-y-[60%] translate-x-1/2 pb-14">
+                    <b className="text-xl">{totalRejections.toLocaleString()}</b>
                     <span className="text-gray-500 text-sm font-normal">סה״כ פניות</span>
                 </div>
             </div>
@@ -201,57 +315,60 @@ const RejectionReasonsCharts: React.FC = () => {
                         margin={{ top: 10, right: 10, left: 20, bottom: 0 }}
                     >
                         <XAxis dataKey="month" />
-                        <YAxis 
-                            domain={[0, 100]} 
-                            ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
+                        <YAxis
                             label={{
-                                value: "מספר מונים [באלפים]",
+                                value: "מספר דחיות",
                                 angle: -90,
                                 position: "insideLeft",
                                 style: { textAnchor: 'middle' }
                             }}
+                            tickFormatter={(value) => value.toLocaleString()}
                         />
                         <Tooltip content={<CustomTooltip />} />
-                        {!hiddenKeys.includes("ייפוי כח חסר") && (
-                            <Bar
-                                barSize={28}
-                                dataKey="missingDocs"
-                                name="ייפוי כח חסר"
-                                fill="#3D843F"
-                                stackId="a"
-                                opacity={getOpacity("ייפוי כח חסר")}
-                            />
-                        )}
-                        {!hiddenKeys.includes("בעיות בתמונה") && (
-                            <Bar
-                                barSize={28}
-                                dataKey="photoIssues"
-                                name="בעיות בתמונה"
-                                fill="#E0B441"
-                                stackId="a"
-                                opacity={getOpacity("בעיות בתמונה")}
-                            />
-                        )}
-                        {!hiddenKeys.includes("בעיות במילוי הבקשה") && (
-                            <Bar
-                                barSize={28}
-                                dataKey="formErrors"
-                                name="בעיות במילוי הבקשה"
-                                fill="#9AC348"
-                                stackId="a"
-                                opacity={getOpacity("בעיות במילוי הבקשה")}
-                            />
-                        )}
-                        {!hiddenKeys.includes("אחר") && (
-                            <Bar
-                                barSize={28}
-                                dataKey="other"
-                                name="אחר"
-                                fill="#7DB2CE"
-                                stackId="a"
-                                opacity={getOpacity("אחר")}
-                            />
-                        )}
+                        {!hiddenKeys.includes("ייפוי כח חסר") &&
+                            (!rejectionReasons || rejectionReasons.length === 4 || rejectionReasons.includes('missing_power_of_attorney')) && (
+                                <Bar
+                                    barSize={28}
+                                    dataKey="missingDocs"
+                                    name="ייפוי כח חסר"
+                                    fill="#3D843F"
+                                    stackId="a"
+                                    opacity={getOpacity("ייפוי כח חסר")}
+                                />
+                            )}
+                        {!hiddenKeys.includes("בעיות בתמונה") &&
+                            (!rejectionReasons || rejectionReasons.length === 4 || rejectionReasons.includes('meter_issues')) && (
+                                <Bar
+                                    barSize={28}
+                                    dataKey="photoIssues"
+                                    name="בעיות בתמונה"
+                                    fill="#E0B441"
+                                    stackId="a"
+                                    opacity={getOpacity("בעיות בתמונה")}
+                                />
+                            )}
+                        {!hiddenKeys.includes("בעיות במילוי הבקשה") &&
+                            (!rejectionReasons || rejectionReasons.length === 4 || rejectionReasons.includes('request_form_issues')) && (
+                                <Bar
+                                    barSize={28}
+                                    dataKey="formErrors"
+                                    name="בעיות במילוי הבקשה"
+                                    fill="#9AC348"
+                                    stackId="a"
+                                    opacity={getOpacity("בעיות במילוי הבקשה")}
+                                />
+                            )}
+                        {!hiddenKeys.includes("אחר") &&
+                            (!rejectionReasons || rejectionReasons.length === 4 || rejectionReasons.includes('other')) && (
+                                <Bar
+                                    barSize={28}
+                                    dataKey="other"
+                                    name="אחר"
+                                    fill="#7DB2CE"
+                                    stackId="a"
+                                    opacity={getOpacity("אחר")}
+                                />
+                            )}
                     </ComposedChart>
                 </ResponsiveContainer>
             </div>

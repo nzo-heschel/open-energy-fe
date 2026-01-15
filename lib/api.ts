@@ -332,14 +332,81 @@ export const usePrivateSupplierConnectedConsumers = (startDate: string, endDate:
   });
 };
 
+//++ Export private supplier connected consumers data
+export const exportPrivateSupplierConnectedConsumers = async (startDate?: string, endDate?: string) => {
+  const params = new URLSearchParams();
+  if (startDate) {
+    params.set('start_date', startDate);
+  }
+  if (endDate) {
+    params.set('end_date', endDate);
+  }
+
+  try {
+    const url = params.toString()
+      ? `${API_BASE}api/v1/private-supplier-connected-consumers/export?${params}`
+      : `${API_BASE}api/v1/private-supplier-connected-consumers/export`;
+
+    const response = await fetch(url, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    // Get the filename from Content-Disposition header or use a default
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'private_suppliers_consumers.xlsx'; // default filename
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+
+    // Get the blob from response
+    const blob = await response.blob();
+
+    // Create a temporary URL and trigger download
+    const urlObject = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = urlObject;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(urlObject);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
 //++ Switching requests data
-export const useSwitchingRequests = () => {
+export const useSwitchingRequests = (customerType?: 'residential' | 'non_residential', year?: string) => {
   return useQuery<SwitchingRequestsResponse>({
-    queryKey: ['switching-requests'],
+    queryKey: ['switching-requests', customerType, year],
     queryFn: async () => {
       try {
+        const params = new URLSearchParams();
+        if (customerType) {
+          params.set('customer_type', customerType);
+        }
+        if (year) {
+          params.set('year', year);
+        }
 
-        const data = await fetcher(`${API_BASE}api/v1/switching-requests/`);
+        const url = params.toString()
+          ? `${API_BASE}api/v1/switching-requests/?${params}`
+          : `${API_BASE}api/v1/switching-requests/`;
+
+        const data = await fetcher(url);
         return data;
       } catch (error) {
         console.warn('API call failed:', error);
@@ -349,6 +416,65 @@ export const useSwitchingRequests = () => {
     staleTime: 5 * 60 * 1000,
     refetchInterval: 15 * 60 * 1000,
   });
+};
+
+//++ Export switching requests data
+export const exportSwitchingRequests = async (year?: string, customerType?: 'residential' | 'non_residential') => {
+  const params = new URLSearchParams();
+  if (year) {
+    params.set('year', year);
+  }
+  if (customerType) {
+    params.set('customer_type', customerType);
+  }
+
+  try {
+    const url = params.toString()
+      ? `${API_BASE}api/v1/switching-requests/export?${params}`
+      : `${API_BASE}api/v1/switching-requests/export`;
+
+    const response = await fetch(url, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    // Get the filename from Content-Disposition header or use a default
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'switching_requests.xlsx'; // default filename
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    } else if (year) {
+      // Fallback: use year in filename if provided
+      filename = `switching_requests_${year}.xlsx`;
+    }
+
+    // Get the blob from response
+    const blob = await response.blob();
+
+    // Create a temporary URL and trigger download
+    const urlObject = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = urlObject;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(urlObject);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
 };
 
 // Mock data generators for development

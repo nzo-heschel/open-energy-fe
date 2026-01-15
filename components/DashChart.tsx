@@ -6,10 +6,41 @@ import download from '@/public/images/download_2.png'
 import api from '@/public/images/API.png'
 import DashboardCharts from './Charts/DashboardChart'
 import TooltipInfo from './TooltipInfo'
+import { useSwitchingRequests, exportSwitchingRequests } from '@/lib/api'
 
 const DashChart = () => {
     //tooltips
     const [showTooltip, setShowTooltip] = useState(false);
+    const [customerType, setCustomerType] = useState<'residential' | 'non_residential' | undefined>(undefined);
+    const [selectedYear, setSelectedYear] = useState<string>('all');
+    const [selectedRegulationType, setSelectedRegulationType] = useState<string>('all');
+
+    // Fetch switching requests data to get available years
+    // First fetch without year filter to get available years
+    const { data: switchingData } = useSwitchingRequests(customerType);
+
+    // Get available years from API response, default to empty array
+    const availableYears = switchingData?.available_years || [];
+
+    // Fetch data with selected year filter (only if year is not 'all')
+    const { data: filteredData } = useSwitchingRequests(
+        customerType,
+        selectedYear !== 'all' ? selectedYear : undefined
+    );
+
+    // Use filtered data if year is selected, otherwise use all data
+    // Note: regulation_type filtering is done client-side in the chart component
+    const chartData = selectedYear !== 'all' && filteredData ? filteredData : switchingData;
+
+    const handleExport = async () => {
+        try {
+            const year = selectedYear !== 'all' ? selectedYear : undefined;
+            await exportSwitchingRequests(year, customerType);
+        } catch (error) {
+            console.error('Failed to export data:', error);
+            // You could add a toast notification here
+        }
+    };
 
     return (
         <div className='flex flex-col md:gap-[30px] gap-5'>
@@ -41,7 +72,13 @@ const DashChart = () => {
                             </CardTitle>
                             <div className="flex items-start md:gap-4 gap-2">
                                 <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
-                                <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
+                                <button
+                                    onClick={handleExport}
+                                    className="cursor-pointer hover:opacity-80 transition-opacity"
+                                    aria-label="Export to Excel"
+                                >
+                                    <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='export' />
+                                </button>
                             </div>
                         </div>
                         {/* <div className="md:text-sm text-xs text-slate-600 mr-[90px]">פרק זמן:</div> */}
@@ -53,14 +90,21 @@ const DashChart = () => {
                             <span className="text-sm text-slate-600 mt-6">סינון לפי:</span>
 
                             <div className="relative w-[113px]">
-                                <label htmlFor="" className='flex flex-col gap-1'>
+                                <label htmlFor="year-selector" className='flex flex-col gap-1'>
                                     <span className='text-sm text-slate-600'>שנה:</span>
                                     <select
+                                        id="year-selector"
+                                        value={selectedYear}
+                                        onChange={(e) => setSelectedYear(e.target.value)}
                                         className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
+                                        disabled={availableYears.length === 0}
                                     >
-                                        <option>2025</option>
-                                        <option>2024</option>
-                                        <option>2023</option>
+                                        <option value="all">הכל</option>
+                                        {availableYears
+                                            .sort((a, b) => b - a) // Sort descending (newest first)
+                                            .map(year => (
+                                                <option key={year} value={year.toString()}>{year}</option>
+                                            ))}
                                     </select>
                                     {/* Custom dropdown arrow */}
                                     <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
@@ -69,41 +113,52 @@ const DashChart = () => {
                                 </label>
                             </div>
                             <div className="relative w-[179px]">
-                                <label htmlFor="" className='flex flex-col gap-1'>
+                                <label htmlFor="regulation-type-selector" className='flex flex-col gap-1'>
                                     <span className='text-sm text-slate-600'>סוג מספק:</span>
                                     <select
+                                        id="regulation-type-selector"
+                                        value={selectedRegulationType}
+                                        onChange={(e) => setSelectedRegulationType(e.target.value)}
                                         className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
                                     >
-                                        <option>יומי</option>
-                                        <option>שבועי</option>
-                                        <option>חודשי</option>
+                                        <option value="all">הכל</option>
+                                        <option value="virtual_suppliers">מספקים וירטואליים</option>
+                                        <option value="suppliers_with_generation">מספקים עם אמצעי ייצור</option>
                                     </select>
                                 </label>
                                 <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
                                     <ChevronDown size={14} />
                                 </span>
-                                {/* Custom dropdown arrow */}
                             </div>
                             <div className="relative w-[179px]">
-                                <label htmlFor="" className='flex flex-col gap-1'>
+                                <label htmlFor="customer-type-selector" className='flex flex-col gap-1'>
                                     <span className='text-sm text-slate-600'>ביתי / לא ביתי:</span>
                                     <select
+                                        id="customer-type-selector"
+                                        value={customerType || 'all'}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            setCustomerType(value === 'all' ? undefined : value as 'residential' | 'non_residential');
+                                        }}
                                         className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
                                     >
-                                        <option>יומי</option>
-                                        <option>שבועי</option>
-                                        <option>חודשי</option>
+                                        <option value="all">הכל</option>
+                                        <option value="residential">ביתי</option>
+                                        <option value="non_residential">לא ביתי</option>
                                     </select>
                                 </label>
                                 <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
                                     <ChevronDown size={14} />
                                 </span>
-                                {/* Custom dropdown arrow */}
                             </div>
 
                         </div>
                     </div>
-                    <DashboardCharts />
+                    <DashboardCharts
+                        customerType={customerType}
+                        data={chartData}
+                        regulationType={selectedRegulationType}
+                    />
                 </CardContent>
             </Card>
         </div>

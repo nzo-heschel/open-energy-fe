@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
     ComposedChart,
     Bar,
@@ -13,6 +13,8 @@ import {
     Pie,
     Cell,
 } from "recharts";
+import { useSwitchingRequests } from "@/lib/api";
+import type { SwitchingRequestsResponse } from '@/types/dto';
 
 interface DataItem {
     month: string;
@@ -20,25 +22,21 @@ interface DataItem {
     rejected: number;
 }
 
-const barData: DataItem[] = [
-    { month: "01/24", approved: 15, rejected: 10 },
-    { month: "02/24", approved: 12, rejected: 13 },
-    { month: "03/24", approved: 10, rejected: 15 },
-    { month: "04/24", approved: 37, rejected: 20 },
-    { month: "05/24", approved: 15, rejected: 10 },
-    { month: "06/24", approved: 12, rejected: 13 },
-    { month: "07/24", approved: 15, rejected: 10 },
-    { month: "08/24", approved: 12, rejected: 13 },
-    { month: "09/24", approved: 15, rejected: 10 },
-    { month: "10/24", approved: 12, rejected: 13 },
-    { month: "11/24", approved: 15, rejected: 10 },
-    { month: "12/24", approved: 12, rejected: 13 },
-];
+interface DashboardChartsProps {
+    customerType?: 'residential' | 'non_residential';
+    data?: SwitchingRequestsResponse | null;
+    regulationType?: string;
+}
 
-const pieData = [
-    { name: "אושרו", value: 214897, color: "#648AA3" },
-    { name: "נדחו", value: 214897, color: "#DACF61" },
-];
+// Color mapping for status labels
+const statusColorMap: Record<string, string> = {
+    "approved": "#648AA3",
+    "rejected": "#DACF61",
+    "pending": "#957669",
+    "אושרו": "#648AA3",
+    "נדחו": "#DACF61",
+    "ממתין": "#957669",
+};
 
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -47,7 +45,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             <div className="bg-white shadow-lg rounded-lg px-2 py-1 border border-gray-200 md:w-[150px] w-max" style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}>
                 <p className="font-semibold text-gray-800">{label}</p>
                 {label ? (
-                    <p className="text-[#59687D] font-medium text-base border-b border-[#59687D]">סה"כ {total.toLocaleString()}</p>
+                    <p className="text-[#59687D] font-medium text-base border-b border-[#59687D]">סה&quot;כ {total.toLocaleString()}</p>
                 ) : (
                     ""
                 )
@@ -73,9 +71,101 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-const DashboardCharts: React.FC = () => {
+const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: propData, regulationType }) => {
     const [hiddenKeys, setHiddenKeys] = useState<string[]>([]);
     const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+
+    // Use provided data or fetch switching requests data
+    const { data: fetchedData, isLoading, error } = useSwitchingRequests(customerType);
+    const switchingData = propData || fetchedData;
+
+    // Transform pie chart data from API response with client-side filtering
+    const pieData = useMemo(() => {
+        // If regulation type is selected, show regulation type breakdown instead of status
+        if (regulationType && regulationType !== 'all') {
+            if (switchingData?.charts?.requests_by_regulation_type?.data) {
+                const labelMap: Record<string, string> = {
+                    "virtual_suppliers": "מספקים וירטואליים",
+                    "suppliers_with_generation": "מספקים עם אמצעי ייצור",
+                };
+
+                // Show regulation type breakdown (both types) when a regulation type filter is active
+                return switchingData.charts.requests_by_regulation_type.data.map((item) => {
+                    const hebrewLabel = labelMap[item.label] || item.label;
+                    return {
+                        name: hebrewLabel,
+                        value: item.count,
+                        color: item.label === 'virtual_suppliers' ? '#F4D150' : '#3A7C2F',
+                    };
+                });
+            }
+        }
+
+        // Default: show status breakdown (approved/rejected)
+        if (!switchingData?.charts?.requests_by_status?.data) {
+            return [
+                { name: "אושרו", value: 0, color: "#648AA3" },
+                { name: "נדחו", value: 0, color: "#DACF61" },
+            ];
+        }
+
+        return switchingData.charts.requests_by_status.data.map((item) => {
+            // Map English labels to Hebrew
+            const labelMap: Record<string, string> = {
+                "approved": "אושרו",
+                "rejected": "נדחו",
+                "pending": "ממתין",
+            };
+
+            const hebrewLabel = labelMap[item.label] || item.label;
+            return {
+                name: hebrewLabel,
+                value: item.count,
+                color: statusColorMap[item.label] || statusColorMap[hebrewLabel] || "#648AA3",
+            };
+        });
+    }, [switchingData, regulationType]);
+
+    // Transform bar chart data from monthly_requests with client-side filtering
+    const barData = useMemo(() => {
+        if (!switchingData?.monthly_requests) {
+            return [];
+        }
+
+        // Calculate regulation type percentage for filtering
+        let regulationTypeRatio = 1; // Default: show 100% of data
+        if (regulationType && regulationType !== 'all' && switchingData?.charts?.requests_by_regulation_type?.data) {
+            const selectedRegulation = switchingData.charts.requests_by_regulation_type.data.find(
+                item => item.label === regulationType
+            );
+            const totalRegulation = switchingData.charts.requests_by_regulation_type.data.reduce(
+                (sum, item) => sum + item.count, 0
+            );
+
+            if (selectedRegulation && totalRegulation > 0) {
+                // Calculate the ratio of selected regulation type to total
+                regulationTypeRatio = selectedRegulation.count / totalRegulation;
+            }
+        }
+
+        // Format monthly requests data and apply regulation type filter
+        return switchingData.monthly_requests.map((item) => {
+            // Format month from "2021-09" to "09/21"
+            const [year, month] = item.month.split('-');
+            const formattedMonth = `${month}/${year.slice(-2)}`;
+
+            // Apply regulation type filter by scaling the requests proportionally
+            const filteredRequests = Math.round(item.requests * regulationTypeRatio);
+
+            return {
+                month: formattedMonth,
+                requests: filteredRequests,
+            };
+        });
+    }, [switchingData, regulationType]);
+
+    // Get total requests for center display
+    const totalRequests = switchingData?.total_requests || 0;
 
     const handleLegendClick = (key: string) => {
         setHiddenKeys((prev) =>
@@ -135,6 +225,22 @@ const DashboardCharts: React.FC = () => {
         );
     };
 
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-[500px]">
+                <p className="text-slate-600">טוען נתונים...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex items-center justify-center h-[500px]">
+                <p className="text-red-600">שגיאה בטעינת הנתונים</p>
+            </div>
+        );
+    }
+
     return (
         <div className="flex md:flex-row flex-col gap-12">
             {/* Pie Chart */}
@@ -176,7 +282,7 @@ const DashboardCharts: React.FC = () => {
                     </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute text-sm flex flex-col items-center top-1/2  right-1/2 -translate-y-[60%] translate-x-1/2 pb-4">
-                    <b className="text-xl">314,932</b>
+                    <b className="text-xl">{totalRequests.toLocaleString()}</b>
                     <span className="text-gray-500 text-sm font-normal">בקשות</span>
                 </div>
             </div>
@@ -186,39 +292,23 @@ const DashboardCharts: React.FC = () => {
                 <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={barData} barCategoryGap="100%" margin={{ top: 20, right: 10, left: 20, bottom: 20 }}>
                         <XAxis dataKey="month" />
-                        <YAxis 
-                            domain={[0, 100]} 
-                            ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
+                        <YAxis
                             label={{
-                                value: "מספר מונים [באלפים]",
+                                value: "מספר בקשות",
                                 angle: -90,
                                 position: "insideLeft",
                                 style: { textAnchor: 'middle' }
                             }}
                         />
                         <Tooltip content={<CustomTooltip />} />
-                        {!hiddenKeys.includes("אושרו") && (
-                            <Bar
-                                barSize={28}
-                                radius={[0, 0, 0, 0]}
-                                dataKey="approved"
-                                name="אושרו"
-                                fill="#648AA3"
-                                stackId="a"
-                                opacity={getOpacity("אושרו")}
-                            />
-                        )}
-                        {!hiddenKeys.includes("נדחו") && (
-                            <Bar
-                                barSize={28}
-                                radius={[4, 4, 0, 0]}
-                                dataKey="rejected"
-                                name="נדחו"
-                                fill="#DACF61"
-                                stackId="a"
-                                opacity={getOpacity("נדחו")}
-                            />
-                        )}
+                        <Bar
+                            barSize={28}
+                            radius={[4, 4, 0, 0]}
+                            dataKey="requests"
+                            name="בקשות"
+                            fill="#648AA3"
+                            opacity={1}
+                        />
                     </ComposedChart>
                 </ResponsiveContainer>
             </div>

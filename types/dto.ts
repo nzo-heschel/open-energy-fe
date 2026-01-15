@@ -210,8 +210,55 @@ export type EnergyMixResponse = {
   renewable_share_percent: number;
 };
 
-// Private supplier connected consumers API response (placeholder - will be updated after testing endpoint)
-export type PrivateSupplierConnectedConsumersResponse = any;
+// Private supplier connected consumers API response
+export type PrivateSupplierConnectedConsumersResponse = {
+  start_date: string;
+  end_date: string;
+  unit: 'count';
+  labels: {
+    month: string;
+    total_consumers: string;
+    new_additions: string;
+  };
+  data: Array<{
+    month: string;
+    total_consumers: number;
+    new_additions: number;
+  }>;
+  segments: {
+    regulation_type: Array<{
+      month: string;
+      regulation_type: string;
+      total_consumers: number;
+      new_additions: number;
+    }>;
+    sector: Array<{
+      month: string;
+      sector: string;
+      total_consumers: number;
+      new_additions: number;
+    }>;
+    meter_type: Array<{
+      month: string;
+      meter_type: string;
+      total_consumers: number;
+      new_additions: number;
+    }>;
+    status: Array<{
+      month: string;
+      status: string;
+      total_consumers: number;
+      new_additions: number;
+    }>;
+    rejection_reason: Array<{
+      month: string;
+      rejection_reason: string;
+      total_consumers: number;
+      new_additions: number;
+    }>;
+  };
+  note?: string;
+};
 
 // SMP production vs marginal price API response
 export type SMPProductionVsMarginalPriceResponse = {
@@ -288,5 +335,64 @@ export type SMPProductionVsMarginalPriceResponse = {
   }
 };
 
-// Switching requests API response (placeholder - will be updated after testing endpoint)
-export type SwitchingRequestsResponse = any;
+// Switching requests API response
+export type SwitchingRequestsResponse = {
+  filter: {
+    customer_type: 'all' | 'residential' | 'non_residential';
+    year: 'all' | string;
+  };
+  unit: 'count';
+  available_years: number[];
+  start_year: number;
+  charts: {
+    requests_by_status: {
+      label: string;
+      data: Array<{
+        label: string;
+        count: number;
+      }>;
+    };
+    requests_by_customer_type: {
+      label: string;
+      data: Array<{
+        label: string;
+        count: number;
+      }>;
+    };
+    requests_by_regulation_type: {
+      label: string;
+      data: Array<{
+        label: string;
+        count: number;
+      }>;
+    };
+    requests_by_competition_type: {
+      label: string;
+      data: Array<{
+        label: string;
+        count: number;
+      }>;
+    };
+    requests_by_rejection_reason: {
+      label: string;
+      data: Array<{
+        label: string;
+        count: number;
+      }>;
+    }
+  };
+  monthly_requests: Array<{
+    month: string;
+    requests: number;
+  }>;
+  monthly_rejections_by_reason: Array<{
+    month: string;
+    missing_power_of_attorney: number;
+    meter_issues: number;
+    request_form_issues: number;
+    other: number;
+    total_rejections: number;
+  }>;
+  total_requests: number;
+  total_rejections: number;
+};

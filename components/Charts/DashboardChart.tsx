@@ -164,8 +164,15 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
         });
     }, [switchingData, regulationType]);
 
-    // Get total requests for center display
-    const totalRequests = switchingData?.total_requests || 0;
+    // Filter pie data to exclude hidden segments
+    const visiblePieData = useMemo(() => {
+        return pieData.filter(entry => !hiddenKeys.includes(entry.name));
+    }, [pieData, hiddenKeys]);
+
+    // Calculate visible total based on hidden segments
+    const visibleTotal = useMemo(() => {
+        return visiblePieData.reduce((sum, entry) => sum + entry.value, 0);
+    }, [visiblePieData]);
 
     const handleLegendClick = (key: string) => {
         setHiddenKeys((prev) =>
@@ -189,34 +196,38 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
     };
 
     // Custom Legend component with hover effects
-    const CustomLegend = ({ payload, onClick, hiddenKeys, onMouseEnter, onMouseLeave }: any) => {
+    const CustomLegend = ({ onClick, hiddenKeys, onMouseEnter, onMouseLeave }: any) => {
         return (
             <div className="flex gap-4 justify-start mt-2">
-                {payload.map((entry: any, index: number) => {
-                    const isHidden = hiddenKeys.includes(entry.value);
-                    const isHovered = hoveredItem === entry.value;
+                {pieData.map((entry, index: number) => {
+                    const isHidden = hiddenKeys.includes(entry.name);
+                    const isHovered = hoveredItem === entry.name;
 
                     return (
                         <button
                             key={`legend-${index}`}
-                            onClick={() => onClick(entry.value)}
-                            onMouseEnter={() => onMouseEnter(entry.value)}
+                            onClick={() => onClick(entry.name)}
+                            onMouseEnter={() => onMouseEnter(entry.name)}
                             onMouseLeave={onMouseLeave}
                             className={`flex items-center gap-1 cursor-pointer px-3 py-1 rounded-lg transition-all duration-200 ${isHovered ? 'bg-gray-100' : ''
                                 }`}
+                            style={{
+                                opacity: isHidden ? 0.4 : 1,
+                                transition: 'opacity 0.2s ease'
+                            }}
                         >
                             <span
                                 className="w-2 h-2 rounded-full"
                                 style={{
-                                    backgroundColor: isHidden ? "#ccc" : entry.color,
-                                    opacity: isHovered ? 1 : getOpacity(entry.value)
+                                    backgroundColor: entry.color,
+                                    opacity: isHovered ? 1 : getOpacity(entry.name)
                                 }}
                             />
                             <span
-                                className={`text-sm ${isHidden ? "opacity-50" : ""}`}
-                                style={{ opacity: isHovered ? 1 : getOpacity(entry.value) }}
+                                className="text-sm"
+                                style={{ opacity: isHovered ? 1 : getOpacity(entry.name) }}
                             >
-                                {entry.value}
+                                {entry.name}
                             </span>
                         </button>
                     );
@@ -259,30 +270,28 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
                             }
                         />
                         <Pie
-                            data={pieData}
+                            data={visiblePieData}
                             dataKey="value"
                             nameKey="name"
                             innerRadius={70}
                             outerRadius={120}
                             paddingAngle={0}
                         >
-                            {pieData.map((entry, index) =>
-                                hiddenKeys.includes(entry.name) ? null : (
-                                    <Cell
-                                        key={`cell-${index}`}
-                                        fill={entry.color}
-                                        opacity={getOpacity(entry.name)}
-                                        style={{
-                                            transition: 'opacity 0.2s ease-in-out'
-                                        }}
-                                    />
-                                )
-                            )}
+                            {visiblePieData.map((entry, index) => (
+                                <Cell
+                                    key={`cell-${index}`}
+                                    fill={entry.color}
+                                    opacity={getOpacity(entry.name)}
+                                    style={{
+                                        transition: 'opacity 0.2s ease-in-out'
+                                    }}
+                                />
+                            ))}
                         </Pie>
                     </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute text-sm flex flex-col items-center top-1/2  right-1/2 -translate-y-[60%] translate-x-1/2 pb-4">
-                    <b className="text-xl">{totalRequests.toLocaleString()}</b>
+                    <b className="text-xl">{visibleTotal.toLocaleString()}</b>
                     <span className="text-gray-500 text-sm font-normal">בקשות</span>
                 </div>
             </div>

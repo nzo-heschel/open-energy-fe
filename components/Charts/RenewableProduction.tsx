@@ -119,7 +119,7 @@ export default function RenewableProduction() {
 
     return (
         <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[20px] p-6">
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col md:flex-row items-start justify-between">
                 <div className="flex flex-col gap-2 mb-3">
                     <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
                         תחמ״ל ייצור אנרגיות מתחדשות

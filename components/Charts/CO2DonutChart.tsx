@@ -67,7 +67,7 @@ const CO2DonutChart = () => {
 
     return (
         <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[16px] py-6">
-            <div className="flex items-start justify-between px-6">
+            <div className="flex flex-col md:flex-row items-start justify-between px-6">
                 <div className="flex flex-col gap-2 mb-3">
                     <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
                         תמהיל פליטות CO2
@@ -123,9 +123,9 @@ const CO2DonutChart = () => {
                 </div>
             </div>
 
-            <div className="flex justify-between flex-row-reverse px-6">
+            <div className="flex flex-col md:flex-row justify-between md:flex-row-reverse px-6">
                 {/* Donut Chart */}
-                <div className="relative w-full h-[300px] flex justify-center items-center">
+                <div className="relative w-full md:h-[300px] flex justify-center items-center">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
@@ -200,7 +200,7 @@ const CO2DonutChart = () => {
             </div>
 
             {/* Bottom Stats */}
-            <div className="grid grid-cols-3 text-center mt-8 border-t border-[#C3C3C3] pt-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 text-center mt-8 border-t border-[#C3C3C3] pt-3">
                 <div className="flex flex-col gap-3 items-center justify-between">
                     <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M8.12691 19.4933C8.45828 19.4933 8.72691 19.2246 8.72691 18.8933C8.72691 18.5619 8.45828 18.2933 8.12691 18.2933V19.4933ZM7.82176 8.96359C7.74988 8.64011 7.42937 8.43615 7.10589 8.50804L1.83448 9.67946C1.511 9.75135 1.30704 10.0719 1.37893 10.3953C1.45081 10.7188 1.77132 10.9228 2.0948 10.8509L6.7805 9.80962L7.82176 14.4953C7.89365 14.8188 8.21415 15.0228 8.53763 14.9509C8.86111 14.879 9.06507 14.5585 8.99319 14.235L7.82176 8.96359ZM8.12691 18.2933H3.73251V19.4933H8.12691V18.2933ZM2.97321 16.9101L7.74225 9.41588L6.72985 8.77162L1.96082 16.2658L2.97321 16.9101ZM3.73251 18.2933C3.02233 18.2933 2.59194 17.5092 2.97321 16.9101L1.96082 16.2658C1.07117 17.6638 2.07542 19.4933 3.73251 19.4933V18.2933Z" fill="#484C56" />

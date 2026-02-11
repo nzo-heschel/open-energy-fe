@@ -111,7 +111,7 @@ const HeatVsProductionChart: React.FC = () => {
 
     return (
         <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[18px] p-6">
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex flex-col md:flex-row items-start justify-between mb-4">
                 <div className="flex flex-col">
                     <h2 className="text-lg font-bold text-gray-700 mb-2 flex items-center gap-3">
                         עומס חום מול ייצור חשמל

@@ -1,21 +1,20 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import type { SMPProductionVsMarginalPriceResponse } from "@/types/dto";
+import { differenceInDays, format, parseISO } from "date-fns";
+import { useMemo, useState } from "react";
 import {
-    LineChart,
+    CartesianGrid,
+    Legend,
     Line,
+    LineChart,
+    ResponsiveContainer,
+    Tooltip,
     XAxis,
     YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    Legend,
 } from "recharts";
 import { Button } from "../ui/button";
 import { ElectricityScatterGraph } from "./ElectricityScatterGraph";
-import type { SMPProductionVsMarginalPriceResponse } from "@/types/dto";
-import { format, parseISO, differenceInDays, differenceInMonths } from "date-fns";
-import { enUS } from "date-fns/locale";
 
 // Custom Tooltip component for Line Chart
 const CustomLineTooltip = ({ active, payload, label }: any) => {

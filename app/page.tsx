@@ -1,16 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Header from '@/components/Layout/Header';
-import Footer from '@/components/Layout/Footer';
+import AboutSection from '@/components/Sections/AboutSection';
+import ApiSection from '@/components/Sections/ApiSection';
+import ContactSection from '@/components/Sections/ContactSection';
+import DataSourcesSection from '@/components/Sections/DataSourcesSection';
 import HomePage from '@/components/Sections/HomePage';
 import RenewableEnergySection from '@/components/Sections/RenewableEnergySection';
 import RenewableTargetsSection from '@/components/Sections/RenewableTargetsSection';
-import ApiSection from '@/components/Sections/ApiSection';
-import AboutSection from '@/components/Sections/AboutSection';
-import DataSourcesSection from '@/components/Sections/DataSourcesSection';
-import ContactSection from '@/components/Sections/ContactSection';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState('home');

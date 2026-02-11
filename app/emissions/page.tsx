@@ -1,30 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import LineChart from '@/components/Charts/LineChart';
-import PieChart from '@/components/Charts/PieChart';
-import NewsletterPopup from '@/components/NewsletterPopup';
-import { Download, Info, BarChart3, ChevronLeft, ChevronRight, ExternalLink, ChevronDown } from 'lucide-react';
-import Image from 'next/image';
-import topleft from '@/public/images/Ellipse 89.png'
-import image1 from '@/public/Frame 427319915.png'
-import image2 from '@/public/Frame 427319913.png'
-import image3 from '@/public/Frame 427319914.png'
-import download from '@/public/images/download_2.png'
-import api from '@/public/images/API.png'
-import InterestPage from '@/components/InterestPage';
-import RejectionChart from '@/components/RejectionChart';
-import DashChart from '@/components/DashChart';
-import Market from '@/components/Market';
-import SMP from '@/components/SMP';
-import Electritiy from '@/components/Electritiy';
-import Electricity from '@/components/Electritiy';
+import CO2DonutChart from '@/components/Charts/CO2DonutChart';
 import CO2EmissionsChart from '@/components/Charts/CO2EmissionsChart';
 import CO2LineChart from '@/components/Charts/CO2LineChart';
-import CO2DonutChart from '@/components/Charts/CO2DonutChart';
+import InterestPage from '@/components/InterestPage';
+import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 
 
 

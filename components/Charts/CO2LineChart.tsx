@@ -85,7 +85,7 @@ const CO2LineChart = () => {
 
     return (
         <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[16px] p-6">
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col md:flex-row items-start justify-between">
                 <div className="flex flex-col gap-2 mb-3">
                     <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
                         פליטות CO₂ על פני זמן
@@ -187,7 +187,7 @@ const CO2LineChart = () => {
             </div>
 
             {/* Legend */}
-            <div className="flex justify-start gap-6 mt-4">
+            <div className="flex flex-col md:flex-row justify-start gap-6 mt-4">
                 <div
                     className="flex items-center gap-2 cursor-pointer transition-opacity duration-200"
                     onClick={() => toggleLine("co2")}

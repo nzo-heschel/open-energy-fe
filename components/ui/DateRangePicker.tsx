@@ -1,21 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { DatePicker } from 'antd';
 import type { RangePickerProps } from 'antd/es/date-picker';
-import dayjs, { Dayjs } from 'dayjs';
+import heILocale from 'antd/locale/he_IL';
 import {
-  startOfMonth,
   endOfMonth,
-  startOfYear,
   endOfYear,
-  subYears,
   format as formatDate,
   isSameDay,
+  startOfMonth,
   startOfToday,
+  startOfYear,
+  subYears,
 } from 'date-fns';
-import heILocale from 'antd/locale/he_IL';
+import dayjs, { Dayjs } from 'dayjs';
 import { ChevronDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import './styles.css';
 // Configure dayjs to use Hebrew locale at module level
 if (typeof window !== 'undefined') {

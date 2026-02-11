@@ -1,9 +1,7 @@
 'use client'
-import { Button } from '@/components/ui/button';
-import InterestPage from '@/components/InterestPage';
-import Electricity from '@/components/Electritiy';
-import { ElectricityLineGraph } from '@/components/Graph/ElectricityScatterGraph';
 import HeatVsProductionChart from '@/components/Charts/HeatVsProductionChart';
+import InterestPage from '@/components/InterestPage';
+import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 
 const Page = () => {
@@ -15,7 +13,6 @@ const Page = () => {
     return (
         <div className="">
             <div className="container mx-auto px-5 md:py-[52px] py-5 md:space-y-[52px] space-y-5 relative w-full overflow-hidden" >
-                {/* Main Content */}
                 <div className="md:space-y-[52px] space-y-8 bg-[#FDFBF6] border border-[#DEDEDE]/70 md:px-[60px] px-6 md:py-[50px] py-6 md:rounded-[40px] rounded-[20px]">
                     <div className="">
                         <h2 className="md:text-3xl text-2xl font-bold text-[#276E4E]">אקלים</h2>
@@ -49,8 +46,6 @@ const Page = () => {
                     </div>
                     <HeatVsProductionChart />
                 </div>
-
-                {/* Bottom Section - Additional Data Links */}
             </div>
 
             <InterestPage />

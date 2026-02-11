@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
-import ReactECharts from 'echarts-for-react';
-import { ECharts, ECElementEvent } from 'echarts';
 import { LEVEL1_COLORS, LEVEL2_COLORS } from '@/lib/colors';
 import type { EnergyMixResponse, EnergyOverviewResponse } from '@/types/dto';
+import { ECElementEvent, ECharts } from 'echarts';
+import ReactECharts from 'echarts-for-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 // Translation map for level 2 energy source names
 const level2NameTranslations: Record<string, string> = {
@@ -30,7 +30,7 @@ interface EnergyMixPieChartProps {
 
 export default function EnergyMixPieChart({
   energyMixData,
-  height = 300,
+  height = 450,
   showLevel2 = false
 }: EnergyMixPieChartProps) {
 
@@ -217,6 +217,7 @@ export default function EnergyMixPieChart({
 
   const [isClient, setIsClient] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isMdPlus, setIsMdPlus] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const chartRef = useRef<ECharts | null>(null);
   const [selectedLegends, setSelectedLegends] = useState<Record<string, boolean>>({});
@@ -233,22 +234,19 @@ export default function EnergyMixPieChart({
     });
     setSelectedLegends(initialSelection);
 
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
+    const checkScreenSize = () => {
+      const width = window.innerWidth;
+      setIsMobile(width <= 768);
+      setIsMdPlus(width >= 768); // md breakpoint and above
     };
 
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
 
     return () => {
-      window.removeEventListener('resize', checkIsMobile);
+      window.removeEventListener('resize', checkScreenSize);
     };
   }, [level1Data, level2Data, showLevel2]);
-
-  const getOpacity = (name: string) => {
-    if (!hoveredItem) return 1;
-    return hoveredItem === name ? 1 : 0.3;
-  };
 
   const onChartReady = (chart: ECharts) => {
     chartRef.current = chart;
@@ -277,7 +275,20 @@ export default function EnergyMixPieChart({
   };
 
   const option = useMemo(() => {
+    const getOpacity = (name: string) => {
+      if (!hoveredItem) return 1;
+      return hoveredItem === name ? 1 : 0.3;
+    };
+
     const series: any[] = [];
+
+    // Radius values with larger gap between inner and outer rings to prevent label overlap
+    const innerRingInner = isMdPlus ? '28%' : '25%'; // Smaller inner ring
+    const innerRingOuter = isMdPlus ? '38%' : '35%'; // Smaller outer radius to create larger gap
+    const outerRingInner = isMdPlus ? '50%' : '45%'; // Larger gap between rings (12% gap)
+    const outerRingOuter = isMdPlus ? (isMobile ? '95%' : '85%') : (isMobile ? '95%' : '80%');
+    const singleRingInner = isMdPlus ? '45%' : '40%';
+    const singleRingOuter = isMdPlus ? (isMobile ? '95%' : '85%') : (isMobile ? '95%' : '80%');
 
     if (showLevel2 && level2Data && level2Data.length > 0) {
       // Nested donut chart: inner ring (level 1) and outer ring (level 2)
@@ -286,38 +297,30 @@ export default function EnergyMixPieChart({
       series.push({
         name: 'Level 1',
         type: 'pie',
-        radius: ['30%', '45%'], // Inner ring dimensions
+        radius: [innerRingInner, innerRingOuter], // Inner ring dimensions
         center: ['50%', '50%'],
         avoidLabelOverlap: false,
         label: {
-          show: (params: any) => {
-            if (!params || params.percent === undefined) return false;
-            return params.percent > 30;
-          },
-          formatter: '{b}\n{d}%',
-          position: 'outside',
-          fontSize: 12,
-          fontWeight: 'normal'
+          show: false // Hide inner ring labels
         },
         labelLine: {
-          show: true,
+          show: false, // Hide label lines for inner ring since labels are inside
           length: 10,
           length2: 5
         },
         emphasis: {
           disabled: true, // Disable click interactions
           label: {
-            show: (params: any) => {
-              console.log(params);
-              if (!params || params.percent === undefined) return false;
-              return params.percent > 30;
-            },
-            formatter: '{b}\n{d}%'
+            show: false // Hide inner ring labels on hover
           }
         },
         tooltip: {
           show: true,
-          formatter: '{b}: {c} MW ({d}%)'
+          formatter: (params: any) => {
+            const value = typeof params.value === 'number' ? params.value : 0;
+            const percent = params.percent || 0;
+            return `${params.name}: ${value.toFixed(2)} MW (${percent.toFixed(2)}%)`;
+          }
         },
         data: level1Data.map(item => ({
           value: item.value,
@@ -333,19 +336,35 @@ export default function EnergyMixPieChart({
       series.push({
         name: 'Level 2',
         type: 'pie',
-        radius: ['50%', isMobile ? '90%' : '80%'], // Outer ring dimensions
+        radius: [outerRingInner, outerRingOuter], // Outer ring dimensions
         center: ['50%', '50%'],
         avoidLabelOverlap: false,
         label: {
           show: (params: any) => {
-            console.log(params);
             if (!params || params.percent === undefined) return false;
             return params.percent > 30;
           },
-          formatter: '{b}\n{d}%',
+          formatter: (params: any) => {
+            const percent = params.percent || 0;
+            return `{name|${params.name}}\n{percent|${percent.toFixed(2)}%}`;
+          },
           position: 'outside',
-          fontSize: 12,
-          fontWeight: 'normal'
+          rich: {
+            name: {
+              fontSize: 16,
+              fontWeight: 500,
+              color: '#484C56',
+              fontFamily: 'Heebo, sans-serif',
+              lineHeight: 20
+            },
+            percent: {
+              fontSize: 14,
+              fontWeight: 400,
+              color: '#484C56',
+              fontFamily: 'Heebo, sans-serif',
+              lineHeight: 18
+            }
+          }
         },
         labelLine: {
           show: true,
@@ -356,16 +375,38 @@ export default function EnergyMixPieChart({
           disabled: true, // Disable click interactions
           label: {
             show: (params: any) => {
-              console.log(params);
               if (!params || params.percent === undefined) return false;
               return params.percent > 30;
             },
-            formatter: '{b}\n{d}%'
+            formatter: (params: any) => {
+              const percent = params.percent || 0;
+              return `{name|${params.name}}\n{percent|${percent.toFixed(2)}%}`;
+            },
+            rich: {
+              name: {
+                fontSize: 16,
+                fontWeight: 500,
+                color: '#484C56',
+                fontFamily: 'Heebo, sans-serif',
+                lineHeight: 20
+              },
+              percent: {
+                fontSize: 14,
+                fontWeight: 400,
+                color: '#484C56',
+                fontFamily: 'Heebo, sans-serif',
+                lineHeight: 18
+              }
+            }
           }
         },
         tooltip: {
           show: true,
-          formatter: '{b}: {c} MW ({d}%)'
+          formatter: (params: any) => {
+            const value = typeof params.value === 'number' ? params.value : 0;
+            const percent = params.percent || 0;
+            return `${params.name}: ${value.toFixed(2)} MW (${percent.toFixed(2)}%)`;
+          }
         },
         data: level2Data.map(item => ({
           value: item.value,
@@ -381,19 +422,35 @@ export default function EnergyMixPieChart({
       series.push({
         name: 'Energy Mix',
         type: 'pie',
-        radius: ['40%', isMobile ? '90%' : '80%'],
+        radius: [singleRingInner, singleRingOuter],
         center: ['50%', '50%'],
         avoidLabelOverlap: false,
         label: {
           show: (params: any) => {
-            console.log(params);
             if (!params || params.percent === undefined) return false;
             return params.percent > 30;
           },
-          formatter: '{b}\n{d}%',
+          formatter: (params: any) => {
+            const percent = params.percent || 0;
+            return `{name|${params.name}}\n{percent|${percent.toFixed(2)}%}`;
+          },
           position: 'outside',
-          fontSize: 12,
-          fontWeight: 'normal'
+          rich: {
+            name: {
+              fontSize: 16,
+              fontWeight: 500,
+              color: '#484C56',
+              fontFamily: 'Heebo, sans-serif',
+              lineHeight: 20
+            },
+            percent: {
+              fontSize: 14,
+              fontWeight: 400,
+              color: '#484C56',
+              fontFamily: 'Heebo, sans-serif',
+              lineHeight: 18
+            }
+          }
         },
         labelLine: {
           show: true,
@@ -404,16 +461,38 @@ export default function EnergyMixPieChart({
           disabled: true, // Disable click interactions
           label: {
             show: (params: any) => {
-              console.log(params);
               if (!params || params.percent === undefined) return false;
               return params.percent > 30;
             },
-            formatter: '{b}\n{d}%'
+            formatter: (params: any) => {
+              const percent = params.percent || 0;
+              return `{name|${params.name}}\n{percent|${percent.toFixed(2)}%}`;
+            },
+            rich: {
+              name: {
+                fontSize: 16,
+                fontWeight: 500,
+                color: '#484C56',
+                fontFamily: 'Heebo, sans-serif',
+                lineHeight: 20
+              },
+              percent: {
+                fontSize: 14,
+                fontWeight: 400,
+                color: '#484C56',
+                fontFamily: 'Heebo, sans-serif',
+                lineHeight: 18
+              }
+            }
           }
         },
         tooltip: {
           show: true,
-          formatter: '{b}: {c} MW ({d}%)'
+          formatter: (params: any) => {
+            const value = typeof params.value === 'number' ? params.value : 0;
+            const percent = params.percent || 0;
+            return `${params.name}: ${value.toFixed(2)} MW (${percent.toFixed(2)}%)`;
+          }
         },
         data: level1Data.map(item => ({
           value: item.value,
@@ -430,7 +509,9 @@ export default function EnergyMixPieChart({
       tooltip: {
         trigger: 'item',
         formatter: (params: any) => {
-          return `${params.name}: ${params.value.toLocaleString('he-IL')} MW (${params.percent}%)`;
+          const value = typeof params.value === 'number' ? params.value : 0;
+          const percent = params.percent || 0;
+          return `${params.name}: ${value.toFixed(2)} MW (${percent.toFixed(2)}%)`;
         }
       },
       legend: {
@@ -438,7 +519,7 @@ export default function EnergyMixPieChart({
       },
       series
     };
-  }, [level1Data, level2Data, showLevel2, isMobile, hoveredItem]);
+  }, [level1Data, level2Data, showLevel2, isMobile, isMdPlus, hoveredItem]);
 
   // Group level2 items by their parent category
   const groupedLevel2Data = useMemo(() => {
@@ -490,12 +571,15 @@ export default function EnergyMixPieChart({
     );
   }
 
+  // Calculate responsive height - slightly larger for md+ screens
+  const chartHeight = isMdPlus ? Math.max(height * 1.2, 550) : height;
+
   return (
     <div className="w-full overflow-visible relative" style={{ padding: '20px' }}>
       <ReactECharts
         option={option}
         style={{
-          height: `${height}px`,
+          height: `${chartHeight}px`,
           width: '100%'
         }}
         opts={{
@@ -525,8 +609,12 @@ export default function EnergyMixPieChart({
       {/* Center text */}
       {(() => {
         const total = (energyMixData as EnergyMixResponse)?.total;
+        const centerY = chartHeight / 2;
         return total !== undefined ? (
-          <div className="absolute top-[170px] left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+          <div
+            className="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"
+            style={{ top: `${centerY}px` }}
+          >
             <div className="text-center">
               <div className="text-sm text-slate-600 text-center">סה&quot;כ</div>
               <div className="md:text-base text-sm font-bold text-center">MW {total.toFixed()}</div>

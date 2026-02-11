@@ -98,7 +98,7 @@ export default function RenewableChart() {
     return (
         <div className="w-full">
             {/* Title */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row items-center justify-between">
                 <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
                     יעדי אנרגיות מתחדשות מול ייצור בפועל
                 </h2>
@@ -109,7 +109,7 @@ export default function RenewableChart() {
             </div>
 
             {/* Legend */}
-            <div className="flex justify-start gap-6 mb-4">
+            <div className="flex flex-col md:flex-row mt-3 justify-start gap-6 mb-4">
                 {/* Actual - Always visible */}
                 <div
                     className="flex items-center gap-2 cursor-default"

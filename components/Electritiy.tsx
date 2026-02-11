@@ -39,7 +39,7 @@ const Electricity = () => {
             <Card className="bg-white border border-[#E9C863] rounded-2xl">
                 <CardHeader>
                     <div className="flex flex-col gap-1">
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-2">
                             <CardTitle className="md:text-lg text-base md:text-right flex flex-row-reverse items-center gap-2 text-[#484C56] font-extrabold p-0 text-left">
                                 <div className="relative "
                                     onMouseEnter={() => setShowTooltip(true)}

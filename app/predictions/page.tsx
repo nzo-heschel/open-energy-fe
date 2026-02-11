@@ -1,10 +1,6 @@
-import { Button } from '@/components/ui/button';
-import InterestPage from '@/components/InterestPage';
-import Electricity from '@/components/Electritiy';
-import RenewableTargetsSection from '@/components/Sections/RenewableTargetsSection';
-import RenewableEnergySection from '@/components/Sections/RenewableEnergySection';
 import RenewableChart from '@/components/Charts/RenewableChart';
 import RenewableChart2 from '@/components/Charts/RenewableChart2';
+import InterestPage from '@/components/InterestPage';
 
 const page = () => {
     return (

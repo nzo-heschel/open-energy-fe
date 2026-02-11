@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import Image from 'next/image';
 import topleft from '@/public/images/Ellipse 89 (1).png';
 import mark from '@/public/images/mark.png';
+import Image from 'next/image';
+import { useState } from 'react';
 
 export default function ContactSection() {
   const [formData, setFormData] = useState({
@@ -134,7 +134,7 @@ export default function ContactSection() {
               </h2>
               <div className="w-[46px] h-1 bg-[#276E4E] md:my-5 my-3 mr-0"></div>
               <p className="text-[#484C56] md:text-lg text-base">
-                מוזמנים לכתוב לנו ונעשה להשיב במקרום
+                אתם מוזמנים ליצור איתנו קשר ונענה בהקדם
               </p>
             </div>
 

@@ -1,31 +1,31 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import EnergyMixPieChart from '@/components/Charts/EnergyMixPieChart';
 import NewsletterPopup from '@/components/NewsletterPopup';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import DateRangePicker from '@/components/ui/DateRangePicker';
+import { exportEnergyMix, exportEnergyOverview, useEnergyMix, useEnergyOverview } from '@/lib/api';
+import { LEVEL2_HEBREW_COLORS } from '@/lib/colors';
+import image2 from '@/public/Frame 427319913.png';
+import image3 from '@/public/Frame 427319914.png';
+import image1 from '@/public/Frame 427319915.png';
+import api from '@/public/images/API.png';
+import download from '@/public/images/download_2.png';
+import topleft from '@/public/images/Ellipse 89.png';
+import { endOfYear, format, startOfYear } from 'date-fns';
 import { ChevronLeft } from 'lucide-react';
 import Image from 'next/image';
-import topleft from '@/public/images/Ellipse 89.png'
-import image1 from '@/public/Frame 427319915.png'
-import image2 from '@/public/Frame 427319913.png'
-import image3 from '@/public/Frame 427319914.png'
-import download from '@/public/images/download_2.png'
-import api from '@/public/images/API.png'
-import InterestPage from '../InterestPage';
 import Link from 'next/link';
-import SMP from '../SMP';
-import Electritiy from '../Electritiy';
-import Market from '../Market';
-import DashChart from '../DashChart';
-import RejectionChart from '../RejectionChart';
-import { useEnergyMix, useEnergyOverview, exportEnergyMix, exportEnergyOverview } from '@/lib/api';
+import { useMemo, useState } from 'react';
 import Chart2 from '../Charts/Chart2';
-import DateRangePicker from '@/components/ui/DateRangePicker';
-import { startOfYear, endOfYear, format } from 'date-fns';
+import DashChart from '../DashChart';
+import Electritiy from '../Electritiy';
+import InterestPage from '../InterestPage';
+import Market from '../Market';
+import RejectionChart from '../RejectionChart';
+import SMP from '../SMP';
 import TooltipInfo from '../TooltipInfo';
-import { LEVEL2_HEBREW_COLORS, LEVEL1_COLORS } from '@/lib/colors';
 
 
 export default function HomePage() {
@@ -286,10 +286,7 @@ export default function HomePage() {
               <div className="w-[46px] h-1 bg-[#276E4E] md:my-[18px] my-3 mr-0"></div>
 
               <p className="md:text-xl text-base text-slate-700 leading-relaxed mb-12 max-w-lg mr-0">
-                מצב החשמל העולמי בזמן אמת. קבלו
-                נתונים עדכניים ותובנות חמות על הדרך
-                שלנו לעולם ירוק יותר.
-              </p>
+                מצב החשמל הלאומי בזמן אמת. קבלו נתונים עדכניים ותובנות חדשות בדרכנו לעולם ירוק יותר.              </p>
 
               <div className="md:mt-20 mt-10">
                 <h3 className="md:text-2xl text-lg font-bold text-[#276E4E] md:mb-4 mb-2">מה מעניין אותך?</h3>
@@ -467,7 +464,7 @@ export default function HomePage() {
 
                       תמהיל יצור אנרגיה
                     </CardTitle>
-                    <div className="flex items-start md:gap-4 gap-2">
+                    <div className="flex flex-col md:flex-row items-start md:gap-4 gap-2">
                       <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
                       <button
                         onClick={handleMixExport}
@@ -486,7 +483,7 @@ export default function HomePage() {
               <CardContent>
                 <div className="-mt-4 flex items-center gap-4 flex-wrap mb-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-600">מיון לפי:</span>
+                    <span className="text-sm text-slate-600 whitespace-nowrap">מיון לפי:</span>
                     <DateRangePicker
                       onDateRangeChange={handleMixDateRangeChange}
                       defaultPreset="thisYear"
@@ -547,9 +544,9 @@ export default function HomePage() {
                           </div>
                         )}
                       </div>
-                      משק החשמל בישראל - נתב על
+                      סקירה כללית של משק החשמל בישראל - נטע על
                     </CardTitle>
-                    <div className="flex items-start md:gap-4 gap-2">
+                    <div className="flex flex-col md:flex-row items-start md:gap-4 gap-2">
                       <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
                       <button
                         onClick={handleOverviewExport}
@@ -568,7 +565,7 @@ export default function HomePage() {
               <CardContent>
                 <div className="-mt-4 flex items-center gap-4 flex-wrap mb-4">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-600">מיון לפי:</span>
+                    <span className="text-sm text-slate-600 whitespace-nowrap">מיון לפי:</span>
                     <DateRangePicker
                       onDateRangeChange={handleOverviewDateRangeChange}
                       onPresetChange={setOverviewSelectedPreset}
@@ -618,7 +615,7 @@ export default function HomePage() {
         <div className="bg-[#FDFBF6] border border-[#DEDEDE]/70 md:rounded-[40px] rounded-[20px] pb-5 md:px-[60px] px-5 space-y-[30px]">
           <div className="flex flex-col gap-2 my-[30px]">
             <h3 className="md:text-lg text-base font-extrabold text-[#276E4E]">לנתונים נוספים</h3>
-            <div className="flex items-center md:gap-6 gap-3">
+            <div className="flex flex-col md:flex-row items-center md:gap-6 gap-3">
               <button
                 onClick={handleMarket}
                 className={`text-[#59687D] font-bold border py-[6px] px-6 rounded-full md:text-base text-sm transition-all ${activeTab === 'market'
@@ -630,7 +627,7 @@ export default function HomePage() {
 
               <button
                 onClick={handleSMP}
-                className={`text-[#59687D] font-bold border py-[6px] px-6 rounded-full md:text-base text-sm transition-all ${activeTab === 'smp'
+                className={`text-[#59687D] w-full md:w-auto font-bold border py-[6px] px-6 rounded-full md:text-base text-sm transition-all ${activeTab === 'smp'
                   ? 'bg-[#1E8025] border-[#1E8025] text-white'
                   : 'bg-white border-[#DEDEDE] hover:bg-gray-50'
                   }`}

@@ -1,20 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
-import download from '@/public/images/download_2.png'
-import api from '@/public/images/API.png'
+import api from '@/public/images/API.png';
+import download from '@/public/images/download_2.png';
+import Image from "next/image";
+import { useState } from "react";
 import {
-    ResponsiveContainer,
+    Bar,
+    CartesianGrid,
     ComposedChart,
+    ResponsiveContainer,
+    Tooltip,
     XAxis,
     YAxis,
-    CartesianGrid,
-    Tooltip,
-    Bar,
 } from "recharts";
-import { ChevronDown } from "lucide-react";
-import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
-import Image from "next/image";
 import TooltipInfo from "../TooltipInfo";
 
 // Data extracted from the image (approximate values of % renewable per year/month)
@@ -101,7 +99,7 @@ export default function RenewableProduction2() {
 
     return (
         <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[20px] p-6">
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col md:flex-row items-start justify-between">
                 <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
                     המעבר לאנרגיות מתחדשות בישראל - נתוני ייצור
                     <div
@@ -222,7 +220,7 @@ export default function RenewableProduction2() {
 
 
             {/* Tabs */}
-            <div className="flex gap-1 md:p-[6px] p-1 rounded-full bg-[#F8F8F8] mb-4 w-fit ml-auto -mt-10" style={{ boxShadow: "inset 0px 4px 10px 0px #0000001A" }}>
+            <div className="flex  gap-1 md:p-[6px] p-1 rounded-full bg-[#F8F8F8] mb-4 w-fit ml-auto mt-4 md:-mt-10" style={{ boxShadow: "inset 0px 4px 10px 0px #0000001A" }}>
                 <button
                     className={`rounded-full md:px-5 px-2 md:py-[6px] py-[2px] font-black md:text-base text-xs ${tab === 1 ? "bg-[#59687D] text-white hover:bg-[#59687D] hover:text-white" : "bbg-transparent text-[#59687D] hover:bg-[#59687D] hover:text-white"
                         }`}

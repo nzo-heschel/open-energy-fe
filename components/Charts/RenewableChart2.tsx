@@ -70,7 +70,7 @@ export default function RenewableChart2() {
 
     return (
         <div className="w-full bg-white">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row items-center justify-between">
                 <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
                     <span className="flex flex-col gap-1">
                         אנרגיות מתחדשות - יעדים מול ייצור בפועל

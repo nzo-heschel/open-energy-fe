@@ -1,17 +1,17 @@
 'use client'
-import { Button } from '@/components/ui/button';
-import InterestPage from '@/components/InterestPage';
-import CommunityDisplay from '@/components/CommunityDisplay';
-import { useState } from 'react';
-import ProductionFacility from '@/components/ProductionFacility';
 import RenewableProduction from '@/components/Charts/RenewableProduction';
 import RenewableProduction2 from '@/components/Charts/RenewableProduction2';
+import CommunityDisplay from '@/components/CommunityDisplay';
 import ConnectionRequests from '@/components/ConnectionRequests';
+import InterestPage from '@/components/InterestPage';
+import ProductionFacility from '@/components/ProductionFacility';
+import { Button } from '@/components/ui/button';
+import topleft from '@/public/images/Ellipse 89.png';
+import image2 from '@/public/images/Frame 427319913.png';
+import image3 from '@/public/images/Frame 427319914 (4).png';
+import image1 from '@/public/images/Frame 427319915.png';
 import Image from 'next/image';
-import topleft from '@/public/images/Ellipse 89.png'
-import image1 from '@/public/images/Frame 427319915.png'
-import image2 from '@/public/images/Frame 427319913.png'
-import image3 from '@/public/images/Frame 427319914 (4).png'
+import { useState } from 'react';
 
 
 const Page = () => {

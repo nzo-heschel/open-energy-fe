@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import ReactECharts from 'echarts-for-react';
-import { differenceInDays, differenceInMonths, differenceInYears, format, parseISO } from 'date-fns';
 import { LEVEL1_COLORS } from '@/lib/colors';
+import { differenceInDays, differenceInMonths, differenceInYears, format, parseISO } from 'date-fns';
+import ReactECharts from 'echarts-for-react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface LineChartProps {
   data: {
@@ -148,6 +148,40 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
           label: {
             backgroundColor: '#6a7985'
           }
+        },
+        formatter: (params: any) => {
+          if (!params || !Array.isArray(params)) return '';
+
+          // Calculate total generation at this point (sum of all visible series values)
+          const total = params.reduce((sum: number, param: any) => {
+            const value = param.value || 0;
+            return sum + (typeof value === 'number' ? value : 0);
+          }, 0);
+
+          // Build tooltip content - each item in a single line, items in a column
+          let content = '<div style="padding: 8px; direction: rtl;">';
+
+          params.forEach((param: any) => {
+            const value = param.value || 0;
+            const numValue = typeof value === 'number' ? value : 0;
+            const percentage = total > 0 ? ((numValue / total) * 100).toFixed(0) : '0';
+            const color = param.color || '#5470c6';
+
+            content += `
+              <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 8px; white-space: nowrap;">
+                <span style="display: inline-block; width: 8px; height: 8px; background-color: ${color}; border-radius: 50%; margin-left: 8px; flex-shrink: 0;"></span>
+                <span style="color: #59687D; font-family: 'Heebo', sans-serif; font-weight: 400; font-size: 14px;">
+                  ${param.seriesName} | ${percentage}%
+                </span>
+                <span style="color: #484C56; font-family: 'Heebo', sans-serif; font-weight: 500; font-size: 14px; margin-right: 8px;">
+                  ${numValue.toLocaleString('he-IL')}MW
+                </span>
+              </div>
+            `;
+          });
+
+          content += '</div>';
+          return content;
         }
       },
       legend: {
@@ -203,11 +237,11 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
         },
       }))
     };
-  }, [data, title, visibleSeries, formatXAxisLabels, dateRangeInfo, xAxisInterval, shouldRotateLabels]);
+  }, [data, title, visibleSeries, formatXAxisLabels, xAxisInterval, shouldRotateLabels]);
 
   if (!isClient) {
     return (
-      <div className="w-full flex items-center justify-center" style={{ height: `300px` }}>
+      <div className="w-full flex items-center justify-center" style={{ height: `450px` }}>
         <div className="text-slate-500">טוען גרף...</div>
       </div>
     );
@@ -217,7 +251,7 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
     <div className="w-full">
       <ReactECharts
         option={option}
-        style={{ height: `300px` }}
+        style={{ height: `450px` }}
         opts={{ renderer: 'canvas' }}
       />
 

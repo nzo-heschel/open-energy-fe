@@ -1,9 +1,6 @@
-import { Button } from '@/components/ui/button';
+import cofounded from '@/public/images/cofounded.png';
+import omnis from '@/public/images/omnis_logo1.png';
 import Image from 'next/image';
-import cofounded from '@/public/images/cofounded.png'
-import logoicon from '@/public/images/logoicon.png'
-import logo from '@/public/images/logo.png'
-import omnis from '@/public/images/omnis_logo1.png'
 
 const footerLinks = [
   { label: 'מקורות נתונים', href: '#data-sources' },
@@ -37,9 +34,9 @@ export default function Footer() {
 
             <div className="flex flex-col items-start text-right md:gap-5 gap-3 max-w-[676px] w-full">
               <div className="flex items-center w-full justify-end gap-6">
-                <Image src={logo} width={75} height={30} className='md:w-[75px] ' alt='logo' />
-                <Image src={logoicon} width={47} height={40} className='md:w-[47px] ' alt='logoicon' />
-                <Image src={cofounded} width={120} height={26} className='md:w-[120px] ' alt='cofounded' />
+                {/* <Image src={logo} width={75} height={30} className='md:w-[75px] ' alt='logo' /> */}
+                {/* {/* <Image src={logoicon} width={47} height={40} className='md:w-[47px] ' alt='logoicon' /> */}
+                <Image src={cofounded} width={120} height={26} className='md:w-[250px] w-[120px]' alt='cofounded' />
               </div>
               <h3 className='text-[#59687D] md:text-sm text-sm font-medium text-right'>This website was co-funded by the European Union. Its content is the sole responsibility of The Heschel Center for Sustainability, and does not necessarily reflect the views of the European Union</h3>
               <div className="flex justify-end w-full items-end gap-0 ml-0 md:text-base text-sm">

@@ -8,25 +8,25 @@
 export const ENERGY_COLORS = {
   // Main Categories
   OTHER_PRIMARY: '#1665B3',
-  RENEWABLE: '#2F7A4F',
-  FOSSIL: '#CEA073',
+  RENEWABLE: '#648AA3', // Light green for renewables
+  FOSSIL: '#2F7A4F', // Dark brown for fossil energy
   CO2_EMISSIONS: '#5D6FFF',
 
   // Other Category Sub-items
   PUMPED_STORAGE: '#A4DBE4',
   OTHER: '#A4DBE4',
 
-  // Renewable Energy Sub-items
-  PHOTOVOLTAIC: '#C4C95C',
-  BIOGAS: '#8A9A2C',
-  WIND: '#60A261',
-  SOLAR_THERMAL: '#60A261',
-  PV_STORAGE: '#357A5B',
+  // Renewable Energy Sub-items (light colors)
+  PHOTOVOLTAIC: '#C8E6C9', // Light green
+  BIOGAS: '#AED581', // Light green-yellow
+  WIND: '#81C784', // Light green
+  SOLAR_THERMAL: '#81C784', // Light green
+  PV_STORAGE: '#66BB6A', // Medium-light green
 
-  // Fossil Energy Sub-items
-  COAL: '#6B707C',
-  DIESEL: '#1C1A17',
-  NATURAL_GAS: '#957669', // Note: This color might need to be verified from the actual design
+  // Fossil Energy Sub-items (dark colors)
+  COAL: '#424242', // Dark gray
+  DIESEL: '#1C1A17', // Very dark brown/black
+  NATURAL_GAS: '#6D4C41', // Dark brown
 } as const;
 
 /**

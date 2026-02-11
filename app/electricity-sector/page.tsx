@@ -1,26 +1,20 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import LineChart from '@/components/Charts/LineChart';
 import PieChart from '@/components/Charts/PieChart';
-import NewsletterPopup from '@/components/NewsletterPopup';
-import { Download, Info, BarChart3, ChevronLeft, ChevronRight, ExternalLink, ChevronDown } from 'lucide-react';
-import Image from 'next/image';
-import topleft from '@/public/images/Ellipse 89.png'
-import image1 from '@/public/Frame 427319915.png'
-import image2 from '@/public/Frame 427319913.png'
-import image3 from '@/public/Frame 427319914.png'
-import download from '@/public/images/download_2.png'
-import api from '@/public/images/API.png'
-import InterestPage from '@/components/InterestPage';
-import RejectionChart from '@/components/RejectionChart';
 import DashChart from '@/components/DashChart';
-import Market from '@/components/Market';
-import SMP from '@/components/SMP';
 import Electritiy from '@/components/Electritiy';
+import InterestPage from '@/components/InterestPage';
+import Market from '@/components/Market';
+import RejectionChart from '@/components/RejectionChart';
+import SMP from '@/components/SMP';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import api from '@/public/images/API.png';
+import download from '@/public/images/download_2.png';
+import { ChevronDown, ChevronLeft } from 'lucide-react';
+import Image from 'next/image';
+import { useState } from 'react';
 
 
 
@@ -39,7 +33,6 @@ export default function ElectricitySector() {
         setActiveTab('market');
     })
 
-    // Data for electricity consumption line chart - matching Figma design
     const electricityData = {
         dates: ['0', '2', '4', '6', '8', '10', '12', '14', '16', '18', '20', '22', '24'],
         series: [
@@ -61,7 +54,6 @@ export default function ElectricitySector() {
         ]
     };
 
-    // Data for energy sources pie chart - matching Figma design
     const energySourcesData = [
         { name: 'אנרגיות פוסיליות', value: 48, color: '#CEA073' },
         { name: 'אנרגיות מתחדשות', value: 98, color: '#2F7A4F' },
@@ -72,7 +64,6 @@ export default function ElectricitySector() {
     return (
         <div className="">
             <div className="container mx-auto px-5 md:py-[52px] py-5 md:space-y-[52px] space-y-5 relative w-full overflow-hidden" >
-                {/* Main Content */}
                 <div className="md:space-y-[52px] space-y-8 bg-[#FDFBF6] border border-[#DEDEDE]/70 md:px-[30px] px-6 md:py-[50px] py-6 md:rounded-[40px] rounded-[20px]">
                     <div className="">
                         <h2 className="md:text-3xl text-2xl font-bold text-[#276E4E]">משק החשמל בישראל</h2>
@@ -87,9 +78,7 @@ export default function ElectricitySector() {
                         </Button>
                     </div>
 
-                    {/* Charts Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Energy Sources Pie Chart */}
                         <Card className="bg-white border border-orange-200 rounded-2xl shadow-sm">
                             <CardHeader>
                                 <div className="flex flex-col gap-1">
@@ -138,14 +127,12 @@ export default function ElectricitySector() {
                                         innerRadius="40%"
                                         showLabels={false}
                                     />
-                                    {/* Center text */}
                                     <div className="absolute -top-[25%] inset-0 flex items-center justify-center">
                                         <div className="text-center">
                                             <div className="text-sm text-slate-600 text-center">סה"כ</div>
                                             <div className="md:text-base text-sm font-bold">MW 5,734</div>
                                         </div>
                                     </div>
-                                    {/* Label with percentage */}
                                     {/* <div className="absolute top-16 right-16 bg-orange-100 px-2 py-1 rounded text-xs">
                     38% | אנרגיות פוסיליות
                   </div> */}
@@ -159,7 +146,6 @@ export default function ElectricitySector() {
                             </CardContent>
                         </Card>
 
-                        {/* Electricity Consumption Line Chart */}
                         <Card className="bg-white border border-orange-200 rounded-2xl shadow-sm">
                             <CardHeader>
                                 <div className="flex flex-col gap-1">

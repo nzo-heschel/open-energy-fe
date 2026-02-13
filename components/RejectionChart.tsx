@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react'
-import { ChevronDown } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import Image from 'next/image'
-import download from '@/public/images/download_2.png'
+import { exportSwitchingRequests, useSwitchingRequests } from '@/lib/api'
 import api from '@/public/images/API.png'
+import download from '@/public/images/download_2.png'
+import { ChevronDown } from 'lucide-react'
+import Image from 'next/image'
+import { useEffect, useState } from 'react'
 import RejectionReasonsCharts from './Charts/RejectionReasonsCharts'
 import TooltipInfo from './TooltipInfo'
-import { useSwitchingRequests, exportSwitchingRequests } from '@/lib/api'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 
 const RejectionChart = () => {
     //tooltips
@@ -22,7 +22,7 @@ const RejectionChart = () => {
     // All available rejection reasons
     const allRejectionReasons = [
         { value: 'missing_power_of_attorney', label: 'ייפוי כח חסר' },
-        { value: 'meter_issues', label: 'בעיות בתמונה' },
+        { value: 'meter_issues', label: 'סוגיית מונה' },
         { value: 'request_form_issues', label: 'בעיות במילוי הבקשה' },
         { value: 'other', label: 'אחר' },
     ];

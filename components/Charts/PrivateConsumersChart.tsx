@@ -259,9 +259,10 @@ const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
                     <XAxis dataKey="month" />
                     <YAxis
                         label={{
-                            value: "צרכנים פרטיים",
+                            value: "צרכנים המחוברים לספקי חשמל פרטיים",
                             angle: -90,
                             position: "insideLeft",
+                            dx: -15,
                             style: { textAnchor: 'middle' }
                         }}
                     />

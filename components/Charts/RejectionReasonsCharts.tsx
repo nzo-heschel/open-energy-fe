@@ -1,20 +1,20 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import {
-    ComposedChart,
-    Bar,
-    XAxis,
-    YAxis,
-    Tooltip,
-    Legend,
-    ResponsiveContainer,
-    PieChart,
-    Pie,
-    Cell,
-} from "recharts";
 import { useSwitchingRequests } from "@/lib/api";
 import type { SwitchingRequestsResponse } from "@/types/dto";
+import React, { useMemo, useState } from "react";
+import {
+    Bar,
+    Cell,
+    ComposedChart,
+    Legend,
+    Pie,
+    PieChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+} from "recharts";
 
 // -------------------------
 // Data Interfaces
@@ -58,7 +58,7 @@ const rejectionReasonColorMap: Record<string, string> = {
 };
 
 // -------------------------
-// Custom Tooltip
+// Custom Tooltip for Bar Chart
 // -------------------------
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -69,22 +69,52 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             <div className="bg-white shadow-lg rounded-lg px-3 py-2 border border-gray-200 text-sm" style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}>
                 <p className="mr-3 font-normal text-gray-800">{label}</p>
                 {label ? (
-                    <p className="mr-3 text-[#59687D] font-semibold text-base border-b border-[#59687D]">סה&quot;כ {Math.round(total).toLocaleString()}</p>
+                    <p className="mr-3 text-[#59687D] font-semibold text-base border-b border-[#59687D]">סה&quot;כ {Math.round(total).toLocaleString()} דחיות</p>
                 ) : (
                     ""
                 )
                 }
-                {payload.map((entry: any, index: number) => (
-                    <div key={index} className="flex items-start gap-2 text-gray-700">
-                        <span
-                            className="w-2 h-2 rounded-full mr-3 mt-2"
-                            style={{ backgroundColor: entry.color }}
-                        ></span>
-                        <div className="flex flex-col space-y-2">
-                            {entry.name} <span className="ml-1 font-semibold">{Math.round(entry.value).toLocaleString()}</span>
+                {payload.map((entry: any, index: number) => {
+                    const percentage = total > 0 ? ((entry.value / total) * 100).toFixed(1) : 0;
+                    return (
+                        <div key={index} className="flex items-start gap-2 text-gray-700">
+                            <span
+                                className="w-2 h-2 rounded-full mr-3 mt-2"
+                                style={{ backgroundColor: entry.color }}
+                            ></span>
+                            <div className="flex flex-col space-y-2">
+                                {entry.name} <span className="ml-1 font-semibold">{Math.round(entry.value).toLocaleString()} דחיות {percentage}%</span>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
+            </div>
+        );
+    }
+    return null;
+};
+
+// -------------------------
+// Custom Tooltip for Pie Chart with percentage
+// -------------------------
+const PieChartTooltip = ({ active, payload, totalValue }: any) => {
+    if (active && payload && payload.length) {
+        const entry = payload[0];
+        const percentage = totalValue > 0 ? ((entry.value / totalValue) * 100).toFixed(1) : 0;
+        return (
+            <div className="bg-white shadow-lg rounded-lg px-3 py-2 border border-gray-200" style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}>
+                <div className="flex items-center gap-2">
+                    <div
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: entry.payload.color }}
+                    ></div>
+                    <span className="text-[#59687D] font-medium text-sm">{entry.name}</span>
+                </div>
+                <div className="text-[#59687D] mt-1">
+                    <span className="font-semibold text-base">{entry.value.toLocaleString()}</span>
+                    <span className="text-sm ml-1">דחיות</span>
+                    <span className="text-sm font-semibold mr-2">{percentage}%</span>
+                </div>
             </div>
         );
     }
@@ -266,7 +296,7 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
             <div className="relative h-[500px] md:w-[400px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                        <Tooltip content={<CustomTooltip />} />
+                        <Tooltip content={<PieChartTooltip totalValue={pieData.reduce((sum, entry) => sum + entry.value, 0)} />} />
                         <Legend
                             content={
                                 <CustomLegend
@@ -320,6 +350,7 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                                 value: "מספר דחיות",
                                 angle: -90,
                                 position: "insideLeft",
+                                dx: -15,
                                 style: { textAnchor: 'middle' }
                             }}
                             tickFormatter={(value) => value.toLocaleString()}

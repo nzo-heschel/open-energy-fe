@@ -16,12 +16,6 @@ import {
 import { useSwitchingRequests } from "@/lib/api";
 import type { SwitchingRequestsResponse } from '@/types/dto';
 
-interface DataItem {
-    month: string;
-    approved: number;
-    rejected: number;
-}
-
 interface DashboardChartsProps {
     customerType?: 'residential' | 'non_residential';
     data?: SwitchingRequestsResponse | null;
@@ -38,33 +32,44 @@ const statusColorMap: Record<string, string> = {
     "ממתין": "#957669",
 };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+// Custom tooltip for pie chart with percentage
+const PieChartTooltip = ({ active, payload, totalValue }: any) => {
     if (active && payload && payload.length) {
-        const total = payload.reduce((acc: number, cur: any) => acc + cur.value, 0);
+        const entry = payload[0];
+        const percentage = totalValue > 0 ? ((entry.value / totalValue) * 100).toFixed(1) : 0;
         return (
-            <div className="bg-white shadow-lg rounded-lg px-2 py-1 border border-gray-200 md:w-[150px] w-max" style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}>
-                <p className="font-semibold text-gray-800">{label}</p>
-                {label ? (
-                    <p className="text-[#59687D] font-medium text-base border-b border-[#59687D]">סה&quot;כ {total.toLocaleString()}</p>
-                ) : (
-                    ""
-                )
-                }
-                {payload.map((entry: any, index: number) => (
+            <div className="bg-white shadow-lg rounded-lg px-3 py-2 border border-gray-200" style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}>
+                <div className="flex items-center gap-2">
                     <div
-                        key={`item-${index}`}
-                        className="text-base font-medium flex space-y-2"
-                        style={{ color: entry.color }}
-                    >
-                        <div
-                            className="w-2 h-2 rounded-full ml-2 mt-3"
-                            style={{ backgroundColor: entry.color }}
-                        ></div>
-                        <span className="flex flex-col text-[#59687D] text-sm leading-4 font-normal">
-                            {entry.name} <span className="font-semibold text-sm">{entry.value}</span>
-                        </span>
-                    </div>
-                ))}
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: entry.payload.color }}
+                    ></div>
+                    <span className="text-[#59687D] font-medium text-sm">{entry.name}</span>
+                </div>
+                <div className="text-[#59687D] mt-1">
+                    <span className="font-semibold text-base">{entry.value.toLocaleString()}</span>
+                    <span className="text-sm ml-1">בקשות</span>
+                    <span className="text-sm font-semibold mr-2">{percentage}%</span>
+                </div>
+            </div>
+        );
+    }
+    return null;
+};
+
+// Custom tooltip for bar chart with units and percentage
+const BarChartTooltip = ({ active, payload, label, totalRequests }: any) => {
+    if (active && payload && payload.length) {
+        const value = payload[0].value;
+        const percentage = totalRequests > 0 ? ((value / totalRequests) * 100).toFixed(1) : 0;
+        return (
+            <div className="bg-white shadow-lg rounded-lg px-3 py-2 border border-gray-200" style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}>
+                <p className="font-semibold text-gray-800 text-sm">{label}</p>
+                <div className="text-[#59687D] mt-1">
+                    <span className="font-semibold text-base">{value.toLocaleString()}</span>
+                    <span className="text-sm ml-1">בקשות</span>
+                    <span className="text-sm font-semibold mr-2">{percentage}%</span>
+                </div>
             </div>
         );
     }
@@ -174,6 +179,11 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
         return visiblePieData.reduce((sum, entry) => sum + entry.value, 0);
     }, [visiblePieData]);
 
+    // Calculate total requests for bar chart percentage
+    const totalBarRequests = useMemo(() => {
+        return barData.reduce((sum, item) => sum + item.requests, 0);
+    }, [barData]);
+
     const handleLegendClick = (key: string) => {
         setHiddenKeys((prev) =>
             prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
@@ -258,7 +268,7 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
             <div className="relative md:h-[500px] h-[300px] md:w-[400px] w-[100%]">
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                        <Tooltip content={<CustomTooltip />} />
+                        <Tooltip content={<PieChartTooltip totalValue={pieData.reduce((sum, entry) => sum + entry.value, 0)} />} />
                         <Legend
                             content={
                                 <CustomLegend
@@ -306,10 +316,11 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
                                 value: "מספר בקשות",
                                 angle: -90,
                                 position: "insideLeft",
+                                dx: -15,
                                 style: { textAnchor: 'middle' }
                             }}
                         />
-                        <Tooltip content={<CustomTooltip />} />
+                        <Tooltip content={<BarChartTooltip totalRequests={totalBarRequests} />} />
                         <Bar
                             barSize={28}
                             radius={[4, 4, 0, 0]}

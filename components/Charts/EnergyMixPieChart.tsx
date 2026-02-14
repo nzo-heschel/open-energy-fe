@@ -282,11 +282,11 @@ export default function EnergyMixPieChart({
 
     const series: any[] = [];
 
-    // Radius values with larger gap between inner and outer rings to prevent label overlap
-    const innerRingInner = isMdPlus ? '28%' : '25%'; // Smaller inner ring
-    const innerRingOuter = isMdPlus ? '38%' : '35%'; // Smaller outer radius to create larger gap
-    const outerRingInner = isMdPlus ? '50%' : '45%'; // Larger gap between rings (12% gap)
-    const outerRingOuter = isMdPlus ? (isMobile ? '95%' : '85%') : (isMobile ? '95%' : '80%');
+    // Radius values - inner ring moved inward, outer ring moved outward and made thinner
+    const innerRingInner = isMdPlus ? '20%' : '18%'; // Moved inner ring inward
+    const innerRingOuter = isMdPlus ? '30%' : '28%'; // Inner ring width (10% width)
+    const outerRingInner = isMdPlus ? '75%' : '73%'; // Outer ring moved further outward
+    const outerRingOuter = isMdPlus ? (isMobile ? '90%' : '85%') : (isMobile ? '90%' : '83%'); // Outer ring moved further outward but thinner (only 8-10% width, similar to inner ring)
     const singleRingInner = isMdPlus ? '45%' : '40%';
     const singleRingOuter = isMdPlus ? (isMobile ? '95%' : '85%') : (isMobile ? '95%' : '80%');
 
@@ -301,26 +301,69 @@ export default function EnergyMixPieChart({
         center: ['50%', '50%'],
         avoidLabelOverlap: false,
         label: {
-          show: false // Hide inner ring labels
+          show: (params: any) => {
+            if (!params || params.percent === undefined) return false;
+            return params.percent > 20; // Show labels for segments > 20%
+          },
+          formatter: (params: any) => {
+            const percent = params.percent || 0;
+            return `{name|${params.name}}\n{percent|${percent.toFixed(2)}%}`;
+          },
+          position: 'outside',
+          rich: {
+            name: {
+              fontSize: 14,
+              fontWeight: 500,
+              color: '#484C56',
+              fontFamily: 'Heebo, sans-serif',
+              lineHeight: 18
+            },
+            percent: {
+              fontSize: 12,
+              fontWeight: 400,
+              color: '#484C56',
+              fontFamily: 'Heebo, sans-serif',
+              lineHeight: 16
+            }
+          }
         },
         labelLine: {
-          show: false, // Hide label lines for inner ring since labels are inside
-          length: 10,
-          length2: 5
+          show: true,
+          length: 20, // Increased length to move text further from inner ring
+          length2: 15 // Increased second segment length
         },
         emphasis: {
           disabled: true, // Disable click interactions
           label: {
-            show: false // Hide inner ring labels on hover
+            show: (params: any) => {
+              if (!params || params.percent === undefined) return false;
+              return params.percent > 20;
+            },
+            formatter: (params: any) => {
+              const percent = params.percent || 0;
+              return `{name|${params.name}}\n{percent|${percent.toFixed(2)}%}`;
+            },
+            rich: {
+              name: {
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#484C56',
+                fontFamily: 'Heebo, sans-serif',
+                lineHeight: 18
+              },
+              percent: {
+                fontSize: 12,
+                fontWeight: 400,
+                color: '#484C56',
+                fontFamily: 'Heebo, sans-serif',
+                lineHeight: 16
+              }
+            }
           }
         },
         tooltip: {
           show: true,
-          formatter: (params: any) => {
-            const value = typeof params.value === 'number' ? params.value : 0;
-            const percent = params.percent || 0;
-            return `${params.name}: ${value.toFixed(2)} MW (${percent.toFixed(2)}%)`;
-          }
+          // Use the main tooltip formatter instead of series-level formatter
         },
         data: level1Data.map(item => ({
           value: item.value,
@@ -368,8 +411,8 @@ export default function EnergyMixPieChart({
         },
         labelLine: {
           show: true,
-          length: 10,
-          length2: 5
+          length: 25, // Increased length to move text further from outer ring
+          length2: 20 // Increased second segment length
         },
         emphasis: {
           disabled: true, // Disable click interactions
@@ -402,11 +445,7 @@ export default function EnergyMixPieChart({
         },
         tooltip: {
           show: true,
-          formatter: (params: any) => {
-            const value = typeof params.value === 'number' ? params.value : 0;
-            const percent = params.percent || 0;
-            return `${params.name}: ${value.toFixed(2)} MW (${percent.toFixed(2)}%)`;
-          }
+          // Use the main tooltip formatter instead of series-level formatter
         },
         data: level2Data.map(item => ({
           value: item.value,
@@ -454,8 +493,8 @@ export default function EnergyMixPieChart({
         },
         labelLine: {
           show: true,
-          length: 10,
-          length2: 5
+          length: 25, // Increased length to move text further from outer ring
+          length2: 20 // Increased second segment length
         },
         emphasis: {
           disabled: true, // Disable click interactions
@@ -488,11 +527,7 @@ export default function EnergyMixPieChart({
         },
         tooltip: {
           show: true,
-          formatter: (params: any) => {
-            const value = typeof params.value === 'number' ? params.value : 0;
-            const percent = params.percent || 0;
-            return `${params.name}: ${value.toFixed(2)} MW (${percent.toFixed(2)}%)`;
-          }
+          // Use the main tooltip formatter instead of series-level formatter
         },
         data: level1Data.map(item => ({
           value: item.value,
@@ -505,13 +540,49 @@ export default function EnergyMixPieChart({
       });
     }
 
+    // Calculate total for percentage calculation (not used in formatter but kept for consistency)
+    const totalValue = showLevel2 && level2Data && level2Data.length > 0
+      ? level2Data.reduce((sum, item) => sum + item.value, 0)
+      : level1Data.reduce((sum, item) => sum + item.value, 0);
+
     return {
       tooltip: {
         trigger: 'item',
+        backgroundColor: 'white',
+        borderColor: '#e5e7eb',
+        borderWidth: 1,
+        padding: [8, 12],
+        textStyle: {
+          color: '#59687D',
+          fontSize: 14,
+          fontFamily: 'Heebo, sans-serif'
+        },
+        extraCssText: 'box-shadow: 0px 2px 30px 2px #99BF4129; border-radius: 8px;',
         formatter: (params: any) => {
           const value = typeof params.value === 'number' ? params.value : 0;
           const percent = params.percent || 0;
-          return `${params.name}: ${value.toFixed(2)} MW (${percent.toFixed(2)}%)`;
+
+          // Get the color from the data - ECharts provides color in params.color or params.data.itemStyle.color
+          let itemColor = params.color || params.data?.itemStyle?.color || '#5470c6';
+
+          // Fallback: try to find color from our data arrays
+          if (itemColor === '#5470c6') {
+            const dataIndex = params.dataIndex;
+            const seriesIndex = params.seriesIndex;
+            if (seriesIndex === 0 && level1Data[dataIndex]) {
+              itemColor = level1Data[dataIndex].color || '#5470c6';
+            } else if (seriesIndex === 1 && level2Data[dataIndex]) {
+              itemColor = level2Data[dataIndex].color || '#5470c6';
+            }
+          }
+
+          // Format value with locale string (matching DashboardChart style)
+          const formattedValue = value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const formattedPercent = percent.toFixed(1);
+
+          // Return HTML string - ECharts will render this
+          // Using compact format to ensure proper rendering
+          return `<div style="background: white; padding: 0; margin: 0;"><div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;"><span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${itemColor}; flex-shrink: 0;"></span><span style="color: #59687D; font-weight: 500; font-size: 14px;">${params.name}</span></div><div style="color: #59687D; display: flex; align-items: baseline; gap: 4px;"><span style="font-weight: 600; font-size: 16px;">${formattedValue}</span><span style="font-size: 14px;">MW</span><span style="font-size: 14px; font-weight: 600; margin-right: 8px;">${formattedPercent}%</span></div></div>`;
         }
       },
       legend: {

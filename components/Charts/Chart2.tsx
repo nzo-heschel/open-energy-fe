@@ -149,8 +149,21 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
             backgroundColor: '#6a7985'
           }
         },
+        backgroundColor: 'white',
+        borderColor: 'transparent',
+        borderWidth: 0,
+        padding: [8, 8],
+        textStyle: {
+          color: '#59687D',
+          fontSize: 14,
+          fontFamily: 'Heebo, sans-serif'
+        },
+        extraCssText: 'box-shadow: 0px 2px 30px 2px #99BF4129; border-radius: 10px;',
         formatter: (params: any) => {
           if (!params || !Array.isArray(params)) return '';
+
+          // Get the label (date/time) from the first param
+          const label = params[0]?.axisValue || '';
 
           // Calculate total generation at this point (sum of all visible series values)
           const total = params.reduce((sum: number, param: any) => {
@@ -158,23 +171,28 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
             return sum + (typeof value === 'number' ? value : 0);
           }, 0);
 
-          // Build tooltip content - each item in a single line, items in a column
-          let content = '<div style="padding: 8px; direction: rtl;">';
+          // Build tooltip content matching PrivateConsumersChart style
+          let content = '<div style="background: white; padding: 8px; direction: rtl;">';
 
+          // Label (date/time) at top
+          content += `<p style="color: #59687D; font-weight: 400; font-size: 14px; margin: 0 0 4px 0; font-family: 'Heebo', sans-serif;">${label}</p>`;
+
+          // Total with border bottom
+          content += `<p style="color: #59687D; font-weight: 500; font-size: 16px; margin: 0 0 4px 0; padding-bottom: 4px; border-bottom: 1px solid #59687D; font-family: 'Heebo', sans-serif;">סה"כ ${total.toLocaleString('he-IL')}</p>`;
+
+          // Each series item
           params.forEach((param: any) => {
             const value = param.value || 0;
             const numValue = typeof value === 'number' ? value : 0;
-            const percentage = total > 0 ? ((numValue / total) * 100).toFixed(0) : '0';
+            const percentage = total > 0 ? ((numValue / total) * 100).toFixed(1) : '0';
             const color = param.color || '#5470c6';
 
             content += `
-              <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 8px; white-space: nowrap;">
-                <span style="display: inline-block; width: 8px; height: 8px; background-color: ${color}; border-radius: 50%; margin-left: 8px; flex-shrink: 0;"></span>
-                <span style="color: #59687D; font-family: 'Heebo', sans-serif; font-weight: 400; font-size: 14px;">
-                  ${param.seriesName} | ${percentage}%
-                </span>
-                <span style="color: #484C56; font-family: 'Heebo', sans-serif; font-weight: 500; font-size: 14px; margin-right: 8px;">
-                  ${numValue.toLocaleString('he-IL')}MW
+              <div style="display: flex; align-items: flex-start; gap: 4px; padding-top: 4px;">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background-color: ${color}; margin-left: 8px; margin-top: 4px; flex-shrink: 0;"></div>
+                <span style="display: flex; flex-direction: column; color: #59687D; font-size: 14px; line-height: 1.4; font-family: 'Heebo', sans-serif;">
+                  <span style="font-weight: 400;">${param.seriesName} | ${percentage}%</span>
+                  <span style="font-weight: 600;">${numValue.toLocaleString('he-IL')} MW</span>
                 </span>
               </div>
             `;

@@ -15,10 +15,11 @@ import {
 } from 'date-fns';
 import dayjs, { Dayjs } from 'dayjs';
 import { ChevronDown } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import './styles.css';
+
 // Configure dayjs to use Hebrew locale at module level
-if (typeof window !== 'undefined') {
+if (typeof globalThis.window !== 'undefined') {
   import('dayjs/locale/he').then(() => {
     dayjs.locale('he');
   });
@@ -184,26 +185,54 @@ export default function DateRangePicker({
   }, [value]);
 
   // Convert Date range to Dayjs range for Ant Design
-  const dayjsDateRange: [Dayjs, Dayjs] = [
+  const dayjsDateRange: [Dayjs, Dayjs] = useMemo(() => [
     dateToDayjs(dateRange[0]),
     dateToDayjs(dateRange[1])
-  ];
+  ], [dateRange]);
 
-  // Determine if we should show preset label or dates
-  const isPresetSelected = selectedPreset && selectedPreset !== 'טווח מותאם אישית';
+  // Track which panel is being navigated to prevent synchronization
+  const panelRef = useRef<HTMLDivElement>(null);
+  const activeNavigationRef = useRef<'left' | 'right' | null>(null);
+  const savedDatesRef = useRef<{ left: Dayjs; right: Dayjs }>({
+    left: dayjsDateRange[0],
+    right: dayjsDateRange[1],
+  });
 
-  // Custom format function for the picker
-  const formatValue = (value: Dayjs | null): string => {
-    if (!value) return '';
+  // Intercept navigation to maintain independent panel states
+  useEffect(() => {
+    if (!panelRef.current) return;
 
-    // If preset is selected, return empty to avoid duplication with placeholder
-    if (isPresetSelected) {
-      return '';
-    }
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const navBtn = target.closest(
+        '.ant-picker-header-super-prev-btn, .ant-picker-header-super-next-btn, .ant-picker-header-prev-btn, .ant-picker-header-next-btn'
+      );
 
-    // For custom range, show formatted date
-    return value.format(format);
-  };
+      if (navBtn) {
+        const panel = navBtn.closest('.ant-picker-panel');
+        if (panel) {
+          const panels = panelRef.current?.querySelectorAll('.ant-picker-panel');
+          if (panels && panels.length === 2) {
+            // Determine which panel was clicked
+            if (panel === panels[0]) {
+              activeNavigationRef.current = 'left';
+              savedDatesRef.current.left = dayjsDateRange[0];
+            } else if (panel === panels[1]) {
+              activeNavigationRef.current = 'right';
+              savedDatesRef.current.right = dayjsDateRange[1];
+            }
+          }
+        }
+      }
+    };
+
+    const container = panelRef.current;
+    container.addEventListener('click', handleClick, true);
+
+    return () => {
+      container.removeEventListener('click', handleClick, true);
+    };
+  }, [dayjsDateRange]);
 
   return (
     <div className="relative date-range-picker-wrapper">
@@ -211,13 +240,23 @@ export default function DateRangePicker({
         value={dayjsDateRange}
         onChange={handleDateRangeChange}
         presets={presetsForPicker}
-        format={formatValue}
-        placeholder={isPresetSelected ? [selectedPreset || '', ''] : placeholder}
+        format={format}
+        placeholder={placeholder}
         locale={heILocale.DatePicker}
-        inputReadOnly={!!isPresetSelected}
-        separator=""
+        separator=" - "
         suffixIcon={<ChevronDown className="w-4 h-4 stroke-[#59687D]" />}
         className="date-range-picker-select"
+        allowClear={false}
+        picker="date"
+        showNow={false}
+        panelRender={(panelNode) => (
+          <div
+            ref={panelRef}
+            className="date-range-picker-panel"
+          >
+            {panelNode}
+          </div>
+        )}
       />
     </div>
   );

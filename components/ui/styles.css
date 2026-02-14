@@ -1,17 +1,86 @@
+/* Fix day header display - ensure proper Hebrew text rendering */
+.ant-picker-range-wrapper .ant-picker-weekday {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 500;
+  text-align: center;
+  direction: rtl;
+  unicode-bidi: embed;
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Fix garbled day names by ensuring proper character rendering */
+.ant-picker-range-wrapper .ant-picker-weekday-list {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  padding: 0;
+  margin: 0;
+}
+
+.ant-picker-range-wrapper .ant-picker-weekday-list .ant-picker-weekday {
+  flex: 1;
+  min-width: 0;
+  padding: 0 4px;
+}
+
 .ant-picker-range-wrapper .ant-picker-cell-inner {
   text-align: center;
 }
+
+/* Fix navigation buttons - make them independent per panel */
 .ant-picker-range-wrapper .ant-picker-header-prev-btn {
   rotate: 90deg;
 }
+
 .ant-picker-range-wrapper .ant-picker-header-super-prev-btn {
   rotate: 90deg;
 }
+
 .ant-picker-range-wrapper .ant-picker-header-next-btn {
   rotate: 90deg;
 }
+
 .ant-picker-range-wrapper .ant-picker-header-super-next-btn {
   rotate: 90deg;
+}
+
+/* Panel container styling */
+.ant-picker-range-wrapper .ant-picker-panel-container {
+  display: flex;
+}
+
+.ant-picker-range-wrapper .ant-picker-panel {
+  border: none;
+}
+
+/* Prevent synchronized navigation - isolate each panel's navigation */
+.ant-picker-range-wrapper .ant-picker-panel:first-child {
+  isolation: isolate;
+}
+
+.ant-picker-range-wrapper .ant-picker-panel:last-child {
+  isolation: isolate;
+}
+
+/* Make navigation buttons independent per panel */
+.ant-picker-range-wrapper .ant-picker-panel:first-child .ant-picker-header-super-prev-btn,
+.ant-picker-range-wrapper .ant-picker-panel:first-child .ant-picker-header-super-next-btn,
+.ant-picker-range-wrapper .ant-picker-panel:first-child .ant-picker-header-prev-btn,
+.ant-picker-range-wrapper .ant-picker-panel:first-child .ant-picker-header-next-btn {
+  pointer-events: auto;
+}
+
+.ant-picker-range-wrapper .ant-picker-panel:last-child .ant-picker-header-super-prev-btn,
+.ant-picker-range-wrapper .ant-picker-panel:last-child .ant-picker-header-super-next-btn,
+.ant-picker-range-wrapper .ant-picker-panel:last-child .ant-picker-header-prev-btn,
+.ant-picker-range-wrapper .ant-picker-panel:last-child .ant-picker-header-next-btn {
+  pointer-events: auto;
 }
 .ant-picker {
   border-radius: 32px;
@@ -20,30 +89,164 @@
   display: none !important;
 }
 
-/* Hide range separator */
+/* Style the range separator to be clear and visible */
 .date-range-picker-wrapper .ant-picker-range-separator {
-  display: none !important;
-  width: 0 !important;
-  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center;
+  padding: 0 8px;
+  color: #59687D;
+  font-weight: 500;
 }
 
-/* Style to look like select field */
+/* Style inputs for better readability */
 .date-range-picker-select .ant-picker-input {
   cursor: pointer;
+  min-width: 100px;
 }
 
 .date-range-picker-select .ant-picker-input input {
   cursor: pointer;
+  text-align: center;
+  font-weight: 500;
 }
 
-/* Hide the second input to make it look like a single select */
-.date-range-picker-select.ant-picker-range .ant-picker-input:last-child {
-  display: none !important;
+/* Show both inputs clearly for date range */
+.date-range-picker-select.ant-picker-range .ant-picker-input {
+  flex: 1;
+  min-width: 110px;
 }
+
+.date-range-picker-select.ant-picker-range .ant-picker-input:first-child input {
+  text-align: left;
+}
+
+.date-range-picker-select.ant-picker-range .ant-picker-input:last-child input {
+  text-align: right;
+}
+
+/* Improve panel layout for better multi-year selection */
 .ant-picker-range-wrapper .ant-picker-panel-layout {
   flex-direction: row-reverse !important;
 }
+
 .ant-picker-panel-container .ant-picker-presets {
   border-inline-end: none !important;
   border-inline-start: 1px solid #dedede !important;
+  min-width: 140px;
+}
+
+/* Make year navigation more prominent for multi-year selection */
+.date-range-picker-panel .ant-picker-header {
+  padding: 8px 12px;
+}
+
+/* Enable year and month selection modes - make headers clickable */
+.date-range-picker-panel .ant-picker-header-view {
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+  padding: 4px 8px;
+  border-radius: 4px;
+  position: relative;
+}
+
+.date-range-picker-panel .ant-picker-header-view:hover {
+  color: #1890ff;
+  background-color: #f0f7ff;
+}
+
+/* Make year header more prominent for year selection */
+.date-range-picker-panel .ant-picker-header-view {
+  font-weight: 700;
+}
+
+/* Add visual indicator that year is clickable */
+.date-range-picker-panel .ant-picker-header-view::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background-color: #1890ff;
+  transition: width 0.2s;
+}
+
+.date-range-picker-panel .ant-picker-header-view:hover::after {
+  width: 80%;
+}
+
+.date-range-picker-panel .ant-picker-header-super-prev-btn,
+.date-range-picker-panel .ant-picker-header-super-next-btn {
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Enable year and month selection modes */
+.date-range-picker-panel .ant-picker-year-panel,
+.date-range-picker-panel .ant-picker-month-panel {
+  display: block;
+}
+
+/* Fix text rendering in year/month panels */
+.date-range-picker-panel .ant-picker-year-panel .ant-picker-cell-inner,
+.date-range-picker-panel .ant-picker-month-panel .ant-picker-cell-inner {
+  text-align: center;
+  direction: rtl;
+}
+
+/* Improve year/month panel layout for better selection */
+.date-range-picker-panel .ant-picker-year-panel .ant-picker-cell,
+.date-range-picker-panel .ant-picker-month-panel .ant-picker-cell {
+  padding: 4px;
+}
+
+.date-range-picker-panel .ant-picker-year-panel .ant-picker-cell-inner,
+.date-range-picker-panel .ant-picker-month-panel .ant-picker-cell-inner {
+  width: 100%;
+  height: 32px;
+  line-height: 32px;
+  border-radius: 4px;
+}
+
+/* Important: To select dates across different years:
+   1. Click on the YEAR header (e.g., "2026") on the left panel to enter year picker mode
+   2. Select your desired start year
+   3. Click on the YEAR header on the right panel
+   4. Select your desired end year
+   5. Then select the specific dates within those years
+   
+   Note: Ant Design's RangePicker synchronizes month navigation, but year selection
+   can be done independently using the year picker mode. */
+
+/* Improve preset buttons visibility */
+.ant-picker-presets li {
+  padding: 8px 12px;
+  margin: 4px 0;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.ant-picker-presets li:hover {
+  background-color: #f5f5f5;
+}
+
+/* Better visual feedback for selected dates */
+.ant-picker-range-wrapper .ant-picker-cell-in-range {
+  background-color: #e6f7ff;
+}
+
+.ant-picker-range-wrapper .ant-picker-cell-in-range-start,
+.ant-picker-range-wrapper .ant-picker-cell-in-range-end {
+  background-color: #1890ff;
+  color: white;
+}
+
+.ant-picker-range-wrapper .ant-picker-cell-range-start:not(.ant-picker-cell-range-end) .ant-picker-cell-inner,
+.ant-picker-range-wrapper .ant-picker-cell-range-end:not(.ant-picker-cell-range-start) .ant-picker-cell-inner {
+  border-radius: 6px;
 }

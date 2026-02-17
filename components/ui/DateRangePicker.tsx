@@ -11,6 +11,8 @@ import {
   startOfMonth,
   startOfToday,
   startOfYear,
+  subDays,
+  subMonths,
   subYears,
 } from 'date-fns';
 import dayjs, { Dayjs } from 'dayjs';
@@ -30,7 +32,7 @@ interface DateRangePickerProps {
   onChange?: (dates: [Date | null, Date | null] | null) => void;
   onDateRangeChange?: (startDate: string, endDate: string) => void;
   onPresetChange?: (presetLabel: string) => void;
-  defaultPreset?: 'today' | 'thisMonth' | 'thisYear' | 'thisDecade';
+  defaultPreset?: 'today' | 'thisMonth' | 'thisYear' | 'thisDecade' | 'lastYear' | 'last7Days';
   placeholder?: [string, string];
   format?: string;
 }
@@ -49,7 +51,7 @@ export default function DateRangePicker({
   onChange,
   onDateRangeChange,
   onPresetChange,
-  defaultPreset = 'thisYear',
+  defaultPreset = 'last7Days',
   placeholder = ['תאריך התחלה', 'תאריך סיום'],
   format = 'DD/MM/YYYY',
 }: DateRangePickerProps) {
@@ -66,14 +68,20 @@ export default function DateRangePicker({
     switch (preset) {
       case 'today':
         return [startOfToday(), startOfToday()];
+      case 'last7Days':
+        // Last 7 days: from 7 days ago to today
+        return [subDays(today, 6), today];
       case 'thisMonth':
         return [startOfMonth(today), endOfMonth(today)];
       case 'thisYear':
         return [startOfYear(today), endOfYear(today)];
       case 'thisDecade':
         return [startOfYear(subYears(today, 9)), endOfYear(today)];
+      case 'lastYear':
+        // Last 12 months: from 12 months ago to today
+        return [startOfMonth(subMonths(today, 11)), endOfMonth(today)];
       default:
-        return [startOfYear(today), endOfYear(today)];
+        return [subDays(today, 6), today];
     }
   };
 
@@ -89,12 +97,20 @@ export default function DateRangePicker({
       value: [startOfToday(), startOfToday()],
     },
     {
+      label: '7 ימים אחרונים',
+      value: [subDays(new Date(), 6), new Date()],
+    },
+    {
       label: 'חודש זה',
       value: [startOfMonth(new Date()), endOfMonth(new Date())],
     },
     {
       label: 'שנה זו',
       value: [startOfYear(new Date()), endOfYear(new Date())],
+    },
+    {
+      label: '12 חודשים אחרונים',
+      value: [startOfMonth(subMonths(new Date(), 11)), endOfMonth(new Date())],
     },
     {
       label: 'עשור זה',
@@ -107,14 +123,18 @@ export default function DateRangePicker({
     switch (preset) {
       case 'today':
         return 'היום';
+      case 'last7Days':
+        return '7 ימים אחרונים';
       case 'thisMonth':
         return 'חודש זה';
       case 'thisYear':
         return 'שנה זו';
+      case 'lastYear':
+        return '12 חודשים אחרונים';
       case 'thisDecade':
         return 'עשור זה';
       default:
-        return 'שנה זו';
+        return '7 ימים אחרונים';
     }
   };
 

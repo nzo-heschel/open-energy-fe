@@ -486,7 +486,7 @@ export default function HomePage() {
                     <span className="text-sm text-slate-600 whitespace-nowrap">מיון לפי:</span>
                     <DateRangePicker
                       onDateRangeChange={handleMixDateRangeChange}
-                      defaultPreset="thisYear"
+                      defaultPreset="last7Days"
                     />
                   </div>
                 </div>
@@ -569,7 +569,7 @@ export default function HomePage() {
                     <DateRangePicker
                       onDateRangeChange={handleOverviewDateRangeChange}
                       onPresetChange={setOverviewSelectedPreset}
-                      defaultPreset="thisYear"
+                      defaultPreset="last7Days"
                     />
                   </div>
                 </div>

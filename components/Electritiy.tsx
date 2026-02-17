@@ -1,15 +1,15 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import Image from 'next/image'
-import download from '@/public/images/download_2.png'
-import api from '@/public/images/API.png'
-import ElectricityGraphWithTabs from './Graph/ElectricityGraph'
-import DateRangePicker from './ui/DateRangePicker'
-import { startOfYear, endOfYear, format } from 'date-fns'
-import TooltipInfo from './TooltipInfo'
 import { useSMPProductionVsMarginalPrice } from '@/lib/api'
+import api from '@/public/images/API.png'
+import download from '@/public/images/download_2.png'
+import { endOfYear, format, startOfYear } from 'date-fns'
+import Image from 'next/image'
+import { useState } from 'react'
+import ElectricityGraphWithTabs from './Graph/ElectricityGraph'
+import TooltipInfo from './TooltipInfo'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import DateRangePicker from './ui/DateRangePicker'
 
 const Electricity = () => {
     //tooltips
@@ -79,7 +79,7 @@ const Electricity = () => {
                             <DateRangePicker
                                 onDateRangeChange={handleDateRangeChange}
                                 onPresetChange={setSelectedPreset}
-                                defaultPreset="thisYear"
+                                defaultPreset="last7Days"
                             />
                         </div>
                     </div>

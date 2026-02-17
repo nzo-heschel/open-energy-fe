@@ -1,15 +1,15 @@
 'use client'
 
-import React, { useState } from 'react'
-import SMPGraph from './Graph/SMPGraph'
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import Image from 'next/image'
-import download from '@/public/images/download_2.png'
-import api from '@/public/images/API.png'
 import { useSMP } from '@/lib/api'
-import DateRangePicker from './ui/DateRangePicker'
-import { startOfYear, endOfYear, format } from 'date-fns'
+import api from '@/public/images/API.png'
+import download from '@/public/images/download_2.png'
+import { endOfYear, format, startOfYear } from 'date-fns'
+import Image from 'next/image'
+import { useState } from 'react'
+import SMPGraph from './Graph/SMPGraph'
 import TooltipInfo from './TooltipInfo'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import DateRangePicker from './ui/DateRangePicker'
 
 const SMP = () => {
     const [selectedPreset, setSelectedPreset] = useState<string>('שנה זו');
@@ -90,7 +90,7 @@ const SMP = () => {
                             <DateRangePicker
                                 onDateRangeChange={handleDateRangeChange}
                                 onPresetChange={setSelectedPreset}
-                                defaultPreset="thisYear"
+                                defaultPreset="last7Days"
                             />
                         </div>
                     </div>

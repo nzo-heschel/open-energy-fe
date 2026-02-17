@@ -44,7 +44,7 @@ interface RejectionReasonsChartsProps {
 // Label mapping from API to Hebrew
 const rejectionReasonLabelMap: Record<string, string> = {
     "missing_power_of_attorney": "ייפוי כח חסר",
-    "meter_issues": "בעיות בתמונה",
+    "meter_issues": "בעיות במונה",
     "request_form_issues": "בעיות במילוי הבקשה",
     "other": "אחר",
 };
@@ -143,7 +143,7 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
         if (!switchingData?.charts?.requests_by_rejection_reason?.data) {
             return [
                 { name: "ייפוי כח חסר", value: 0, color: "#3D843F" },
-                { name: "בעיות בתמונה", value: 0, color: "#E0B441" },
+                { name: "בעיות במונה", value: 0, color: "#E0B441" },
                 { name: "בעיות במילוי הבקשה", value: 0, color: "#9AC348" },
                 { name: "אחר", value: 0, color: "#7DB2CE" },
             ];
@@ -367,15 +367,15 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                                     opacity={getOpacity("ייפוי כח חסר")}
                                 />
                             )}
-                        {!hiddenKeys.includes("בעיות בתמונה") &&
+                        {!hiddenKeys.includes("בעיות במונה") &&
                             (!rejectionReasons || rejectionReasons.length === 4 || rejectionReasons.includes('meter_issues')) && (
                                 <Bar
                                     barSize={28}
                                     dataKey="photoIssues"
-                                    name="בעיות בתמונה"
+                                    name="בעיות במונה"
                                     fill="#E0B441"
                                     stackId="a"
-                                    opacity={getOpacity("בעיות בתמונה")}
+                                    opacity={getOpacity("בעיות במונה")}
                                 />
                             )}
                         {!hiddenKeys.includes("בעיות במילוי הבקשה") &&

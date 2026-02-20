@@ -8,6 +8,7 @@ import {
     Cell,
     ComposedChart,
     Legend,
+    LabelList,
     Pie,
     PieChart,
     ResponsiveContainer,
@@ -25,6 +26,7 @@ interface DataItem {
     photoIssues: number;
     formErrors: number;
     other: number;
+    total: number;
 }
 
 interface PieDataItem {
@@ -217,12 +219,14 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
             }
 
             // Keep original values (no rounding, no conversion to thousands)
+            const total = missingDocs + photoIssues + formErrors + other;
             return {
                 month: formattedMonth,
                 missingDocs: missingDocs,
                 photoIssues: photoIssues,
                 formErrors: formErrors,
                 other: other,
+                total: total,
             };
         });
     }, [switchingData, regulationType, rejectionReasons]);
@@ -347,13 +351,13 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                         <XAxis dataKey="month" />
                         <YAxis
                             label={{
-                                value: "מספר דחיות",
+                                value: "מספר דחיות\n[באלפים]",
                                 angle: -90,
                                 position: "insideLeft",
                                 dx: -15,
                                 style: { textAnchor: 'middle' }
                             }}
-                            tickFormatter={(value) => value.toLocaleString()}
+                            tickFormatter={(value) => Math.round(value / 1000).toString()}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         {!hiddenKeys.includes("ייפוי כח חסר") &&
@@ -393,12 +397,24 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                             (!rejectionReasons || rejectionReasons.length === 4 || rejectionReasons.includes('other')) && (
                                 <Bar
                                     barSize={28}
+                                    radius={[4, 4, 0, 0]}
                                     dataKey="other"
                                     name="אחר"
                                     fill="#7DB2CE"
                                     stackId="a"
                                     opacity={getOpacity("אחר")}
-                                />
+                                >
+                                    <LabelList
+                                        dataKey="total"
+                                        position="top"
+                                        formatter={(value: number | undefined) => {
+                                            if (value == null || value === 0) return '';
+                                            const rounded = Math.round(value / 1000);
+                                            return rounded > 0 ? rounded : '';
+                                        }}
+                                        style={{ fill: '#59687D', fontSize: '11px', fontWeight: 500 }}
+                                    />
+                                </Bar>
                             )}
                     </ComposedChart>
                 </ResponsiveContainer>

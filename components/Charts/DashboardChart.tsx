@@ -12,6 +12,7 @@ import {
     PieChart,
     Pie,
     Cell,
+    LabelList,
 } from "recharts";
 import { useSwitchingRequests } from "@/lib/api";
 import type { SwitchingRequestsResponse } from '@/types/dto';
@@ -57,18 +58,29 @@ const PieChartTooltip = ({ active, payload, totalValue }: any) => {
     return null;
 };
 
-// Custom tooltip for bar chart with units and percentage
-const BarChartTooltip = ({ active, payload, label, totalRequests }: any) => {
+// Custom tooltip for bar chart with stacked breakdown
+const BarChartTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-        const value = payload[0].value;
-        const percentage = totalRequests > 0 ? ((value / totalRequests) * 100).toFixed(1) : 0;
+        // Calculate total from all stacked values
+        const approved = payload.find((p: any) => p.dataKey === 'approved')?.value || 0;
+        const rejected = payload.find((p: any) => p.dataKey === 'rejected')?.value || 0;
+        const total = approved + rejected;
+
         return (
-            <div className="bg-white shadow-lg rounded-lg px-3 py-2 border border-gray-200" style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}>
-                <p className="font-semibold text-gray-800 text-sm">{label}</p>
-                <div className="text-[#59687D] mt-1">
-                    <span className="font-semibold text-base">{value.toLocaleString()}</span>
-                    <span className="text-sm ml-1">בקשות</span>
-                    <span className="text-sm font-semibold mr-2">{percentage}%</span>
+            <div className="bg-white shadow-lg rounded-lg px-4 py-3 border border-gray-200" style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}>
+                <p className="font-semibold text-gray-800 text-sm mb-2">{label}</p>
+                <p className="text-[#59687D] font-bold text-lg mb-2">סה"כ {total.toLocaleString()}</p>
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "#648AA3" }}></div>
+                        <span className="text-[#59687D] text-sm">אושרו</span>
+                        <span className="text-[#59687D] font-semibold text-sm mr-auto">{approved.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "#DACF61" }}></div>
+                        <span className="text-[#59687D] text-sm">נדחו</span>
+                        <span className="text-[#59687D] font-semibold text-sm mr-auto">{rejected.toLocaleString()}</span>
+                    </div>
                 </div>
             </div>
         );
@@ -84,34 +96,28 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
     const { data: fetchedData, isLoading, error } = useSwitchingRequests(customerType);
     const switchingData = propData || fetchedData;
 
-    // Transform pie chart data from API response with client-side filtering
+    // Transform pie chart data from API response - always show status breakdown (approved/rejected)
     const pieData = useMemo(() => {
-        // If regulation type is selected, show regulation type breakdown instead of status
-        if (regulationType && regulationType !== 'all') {
-            if (switchingData?.charts?.requests_by_regulation_type?.data) {
-                const labelMap: Record<string, string> = {
-                    "virtual_suppliers": "מספקים וירטואליים",
-                    "suppliers_with_generation": "מספקים עם אמצעי ייצור",
-                };
-
-                // Show regulation type breakdown (both types) when a regulation type filter is active
-                return switchingData.charts.requests_by_regulation_type.data.map((item) => {
-                    const hebrewLabel = labelMap[item.label] || item.label;
-                    return {
-                        name: hebrewLabel,
-                        value: item.count,
-                        color: item.label === 'virtual_suppliers' ? '#F4D150' : '#3A7C2F',
-                    };
-                });
-            }
-        }
-
-        // Default: show status breakdown (approved/rejected)
         if (!switchingData?.charts?.requests_by_status?.data) {
             return [
                 { name: "אושרו", value: 0, color: "#648AA3" },
                 { name: "נדחו", value: 0, color: "#DACF61" },
             ];
+        }
+
+        // Calculate regulation type ratio for filtering pie data
+        let regulationTypeRatio = 1;
+        if (regulationType && regulationType !== 'all' && switchingData?.charts?.requests_by_regulation_type?.data) {
+            const selectedRegulation = switchingData.charts.requests_by_regulation_type.data.find(
+                item => item.label === regulationType
+            );
+            const totalRegulation = switchingData.charts.requests_by_regulation_type.data.reduce(
+                (sum, item) => sum + item.count, 0
+            );
+
+            if (selectedRegulation && totalRegulation > 0) {
+                regulationTypeRatio = selectedRegulation.count / totalRegulation;
+            }
         }
 
         return switchingData.charts.requests_by_status.data.map((item) => {
@@ -123,13 +129,37 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
             };
 
             const hebrewLabel = labelMap[item.label] || item.label;
+            // Apply regulation type filter by scaling proportionally
+            const filteredCount = Math.round(item.count * regulationTypeRatio);
+
             return {
                 name: hebrewLabel,
-                value: item.count,
+                value: filteredCount,
                 color: statusColorMap[item.label] || statusColorMap[hebrewLabel] || "#648AA3",
             };
         });
     }, [switchingData, regulationType]);
+
+    // Calculate approved/rejected ratio from status data
+    const statusRatios = useMemo(() => {
+        if (!switchingData?.charts?.requests_by_status?.data) {
+            return { approvedRatio: 0.5, rejectedRatio: 0.5 };
+        }
+
+        const statusData = switchingData.charts.requests_by_status.data;
+        const approved = statusData.find(item => item.label === 'approved')?.count || 0;
+        const rejected = statusData.find(item => item.label === 'rejected')?.count || 0;
+        const total = approved + rejected;
+
+        if (total === 0) {
+            return { approvedRatio: 0.5, rejectedRatio: 0.5 };
+        }
+
+        return {
+            approvedRatio: approved / total,
+            rejectedRatio: rejected / total,
+        };
+    }, [switchingData]);
 
     // Transform bar chart data from monthly_requests with client-side filtering
     const barData = useMemo(() => {
@@ -162,12 +192,18 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
             // Apply regulation type filter by scaling the requests proportionally
             const filteredRequests = Math.round(item.requests * regulationTypeRatio);
 
+            // Calculate approved and rejected based on overall ratio
+            const approved = Math.round(filteredRequests * statusRatios.approvedRatio);
+            const rejected = filteredRequests - approved; // Use remainder to ensure total matches
+
             return {
                 month: formattedMonth,
                 requests: filteredRequests,
+                approved,
+                rejected,
             };
         });
-    }, [switchingData, regulationType]);
+    }, [switchingData, regulationType, statusRatios]);
 
     // Filter pie data to exclude hidden segments
     const visiblePieData = useMemo(() => {
@@ -309,26 +345,49 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
             {/* Bar Chart */}
             <div className="w-full md:h-[500px] h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={barData} barCategoryGap="100%" margin={{ top: 20, right: 10, left: 20, bottom: 20 }}>
+                    <ComposedChart data={barData} barCategoryGap="20%" margin={{ top: 30, right: 10, left: 20, bottom: 20 }}>
                         <XAxis dataKey="month" />
                         <YAxis
+                            tickFormatter={(value) => Math.round(value / 1000).toString()}
                             label={{
-                                value: "מספר בקשות",
+                                value: "מספר בקשות\n[באלפים]",
                                 angle: -90,
                                 position: "insideLeft",
                                 dx: -15,
-                                style: { textAnchor: 'middle' }
+                                style: { textAnchor: 'middle', whiteSpace: 'pre-line' }
                             }}
                         />
-                        <Tooltip content={<BarChartTooltip totalRequests={totalBarRequests} />} />
+                        <Tooltip content={<BarChartTooltip />} cursor={{ fill: 'transparent' }} />
+                        {/* Approved bar (bottom of stack) */}
+                        <Bar
+                            barSize={28}
+                            dataKey="approved"
+                            name="אושרו"
+                            fill="#648AA3"
+                            stackId="status"
+                            opacity={getOpacity("אושרו")}
+                        />
+                        {/* Rejected bar (top of stack) */}
                         <Bar
                             barSize={28}
                             radius={[4, 4, 0, 0]}
-                            dataKey="requests"
-                            name="בקשות"
-                            fill="#648AA3"
-                            opacity={1}
-                        />
+                            dataKey="rejected"
+                            name="נדחו"
+                            fill="#DACF61"
+                            stackId="status"
+                            opacity={getOpacity("נדחו")}
+                        >
+                            <LabelList
+                                dataKey="requests"
+                                position="top"
+                                formatter={(value: number | undefined) => {
+                                    if (value == null || value === 0) return '';
+                                    const rounded = Math.round(value / 1000);
+                                    return rounded > 0 ? rounded : '';
+                                }}
+                                style={{ fill: '#59687D', fontSize: '11px', fontWeight: 500 }}
+                            />
+                        </Bar>
                     </ComposedChart>
                 </ResponsiveContainer>
             </div>

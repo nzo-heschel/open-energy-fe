@@ -4,29 +4,29 @@
  * Colors are defined in styles/theme.css as CSS variables
  */
 
-// Main Category Colors
+// Main Category Colors - matching Figma design
 export const ENERGY_COLORS = {
-  // Main Categories
-  OTHER_PRIMARY: '#1665B3',
-  RENEWABLE: '#648AA3', // Light green for renewables
-  FOSSIL: '#2F7A4F', // Dark brown for fossil energy
+  // Main Categories (Level 1 - Inner ring)
+  OTHER_PRIMARY: '#1665B3', // Blue
+  RENEWABLE: '#2F7A4F', // Green
+  FOSSIL: '#CEA073', // Golden/tan brown
   CO2_EMISSIONS: '#5D6FFF',
 
   // Other Category Sub-items
-  PUMPED_STORAGE: '#A4DBE4',
-  OTHER: '#A4DBE4',
+  PUMPED_STORAGE: '#1665B3', // Blue
+  OTHER: '#A4DBE4', // Light blue
 
-  // Renewable Energy Sub-items (light colors)
-  PHOTOVOLTAIC: '#C8E6C9', // Light green
-  BIOGAS: '#AED581', // Light green-yellow
-  WIND: '#81C784', // Light green
-  SOLAR_THERMAL: '#81C784', // Light green
-  PV_STORAGE: '#66BB6A', // Medium-light green
+  // Renewable Energy Sub-items (Level 2 - greens and teals)
+  PHOTOVOLTAIC: '#E8D84C', // Yellow/lime
+  BIOGAS: '#A8C256', // Light green
+  WIND: '#6B9B4D', // Green
+  SOLAR_THERMAL: '#4A8B8C', // Teal
+  PV_STORAGE: '#2D6A6A', // Dark teal
 
-  // Fossil Energy Sub-items (dark colors)
-  COAL: '#424242', // Dark gray
-  DIESEL: '#1C1A17', // Very dark brown/black
-  NATURAL_GAS: '#6D4C41', // Dark brown
+  // Fossil Energy Sub-items (Level 2 - browns and blacks)
+  COAL: '#3D3D3D', // Dark gray/charcoal
+  DIESEL: '#1C1A17', // Black
+  NATURAL_GAS: '#8B7355', // Brown/tan
 } as const;
 
 /**

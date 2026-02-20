@@ -1,7 +1,7 @@
 "use client";
 
 import DateRangePicker from '@/components/ui/DateRangePicker';
-import { useCO2EmissionsOverTime } from '@/lib/api';
+import { useCO2EmissionsOverTime, exportCO2EmissionsOverTime } from '@/lib/api';
 import api from '@/public/images/API.png';
 import download from '@/public/images/download_2.png';
 import { format, subDays } from 'date-fns';
@@ -45,6 +45,15 @@ const CO2LineChart = () => {
     const handleDateRangeChange = (newStartDate: string, newEndDate: string) => {
         setStartDate(newStartDate);
         setEndDate(newEndDate);
+    };
+
+    // Handle export to Excel
+    const handleExport = async () => {
+        try {
+            await exportCO2EmissionsOverTime(startDate, endDate);
+        } catch (error) {
+            console.error('Failed to export CO2 emissions over time data:', error);
+        }
     };
 
     // Transform API data to chart format
@@ -123,7 +132,13 @@ const CO2LineChart = () => {
 
                 <div className="flex items-start md:gap-4 gap-2">
                     <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='API' />
-                    <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='Download' />
+                    <button
+                        onClick={handleExport}
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        aria-label="Export to Excel"
+                    >
+                        <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='Download' />
+                    </button>
                 </div>
             </div>
             <div className="h-[300px]">

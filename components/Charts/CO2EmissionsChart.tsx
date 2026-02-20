@@ -1,8 +1,10 @@
 "use client";
 
 import DateRangePicker from '@/components/ui/DateRangePicker';
+import { exportCO2EmissionsMix } from '@/lib/api';
 import api from '@/public/images/API.png';
 import download from '@/public/images/download_2.png';
+import { format, subDays } from 'date-fns';
 import Image from "next/image";
 import { useState } from "react";
 import {
@@ -57,14 +59,29 @@ const CO2EmissionsChart = () => {
   const [hovered, setHovered] = useState<string | null>(null);
   const [active, setActive] = useState({ co2: true, savings: true });
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("monthly");
+  const [dateRange, setDateRange] = useState(() => {
+    const endDate = new Date();
+    const startDate = subDays(endDate, 7);
+    return {
+      startDate: format(startDate, 'yyyy-MM-dd'),
+      endDate: format(endDate, 'yyyy-MM-dd')
+    };
+  });
 
   const toggle = (key: keyof typeof active) =>
     setActive((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const handleDateRangeChange = (startDate: string, endDate: string) => {
-    // Handle date range change - can be used to fetch new data based on date range
-    console.log('Date range changed:', startDate, endDate);
-    // TODO: Implement API call to fetch data for the selected date range
+    setDateRange({ startDate, endDate });
+  };
+
+  // Handle export to Excel
+  const handleExport = async () => {
+    try {
+      await exportCO2EmissionsMix(dateRange.startDate, dateRange.endDate);
+    } catch (error) {
+      console.error('Failed to export CO2 emissions data:', error);
+    }
   };
 
   const opacity = (key: string) => {
@@ -123,7 +140,13 @@ const CO2EmissionsChart = () => {
 
         <div className="flex items-start md:gap-4 gap-2">
           <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='API' />
-          <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='Download' />
+          <button
+            onClick={handleExport}
+            className="cursor-pointer hover:opacity-80 transition-opacity"
+            aria-label="Export to Excel"
+          >
+            <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='Download' />
+          </button>
         </div>
       </div>
 

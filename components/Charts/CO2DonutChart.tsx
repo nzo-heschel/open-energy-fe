@@ -1,7 +1,7 @@
 "use client";
 
 import DateRangePicker from '@/components/ui/DateRangePicker';
-import { useCO2EmissionsMix, useCO2EmissionsSavings, useCO2EmissionsRatio, useCO2TotalProduction } from '@/lib/api';
+import { useCO2EmissionsMix, useCO2EmissionsSavings, useCO2EmissionsRatio, useCO2TotalProduction, exportCO2EmissionsMix } from '@/lib/api';
 import api from "@/public/images/API.png";
 import download from "@/public/images/download_2.png";
 import { format, subDays } from 'date-fns';
@@ -95,6 +95,15 @@ const CO2DonutChart = () => {
         return num.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
     };
 
+    // Handle export to Excel
+    const handleExport = async () => {
+        try {
+            await exportCO2EmissionsMix(dateRange.startDate, dateRange.endDate);
+        } catch (error) {
+            console.error('Failed to export CO2 emissions data:', error);
+        }
+    };
+
     // Calculate emissions savings percentage
     const emissionsSavingsPercentage = emissionsMixData?.infographics?.emissions_avoided_through_renewables
         ? ((emissionsMixData.infographics.emissions_avoided_through_renewables.value /
@@ -145,7 +154,13 @@ const CO2DonutChart = () => {
 
                 <div className="flex items-start gap-3">
                     <Image src={api} width={32} height={32} alt="API" />
-                    <Image src={download} width={32} height={32} alt="Download" />
+                    <button
+                        onClick={handleExport}
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        aria-label="Export to Excel"
+                    >
+                        <Image src={download} width={32} height={32} alt="Download" />
+                    </button>
                 </div>
             </div>
 

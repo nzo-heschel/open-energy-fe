@@ -505,6 +505,54 @@ export const useCO2EmissionsMix = (startDate: string, endDate: string, view?: 'd
   });
 };
 
+//++ Export CO2 Emissions Mix data
+export const exportCO2EmissionsMix = async (startDate: string, endDate: string) => {
+  const params = new URLSearchParams();
+  params.set('start_date', startDate);
+  params.set('end_date', endDate);
+
+  try {
+    const response = await fetch(`${API_BASE}api/v1/co2/emissions-mix/export?${params}`, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    // Get the filename from Content-Disposition header or use a default
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'co2-emissions-mix.xlsx'; // default filename
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+
+    // Get the blob from response
+    const blob = await response.blob();
+
+    // Create a temporary URL and trigger download
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
 //++ CO2 Emissions Savings data
 export const useCO2EmissionsSavings = (startDate: string, endDate: string) => {
   const params = new URLSearchParams();
@@ -594,6 +642,54 @@ export const useCO2EmissionsOverTime = (startDate: string, endDate: string, view
     staleTime: 5 * 60 * 1000,
     refetchInterval: 15 * 60 * 1000,
   });
+};
+
+//++ Export CO2 Emissions Over Time data
+export const exportCO2EmissionsOverTime = async (startDate: string, endDate: string) => {
+  const params = new URLSearchParams();
+  params.set('start_date', startDate);
+  params.set('end_date', endDate);
+
+  try {
+    const response = await fetch(`${API_BASE}api/v1/co2/emissions-over-time/export?${params}`, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    // Get the filename from Content-Disposition header or use a default
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'co2-emissions-over-time.xlsx'; // default filename
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+
+    // Get the blob from response
+    const blob = await response.blob();
+
+    // Create a temporary URL and trigger download
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
 };
 
 // Mock data generators for development

@@ -101,19 +101,55 @@
 /* Style inputs for better readability */
 .date-range-picker-select .ant-picker-input {
   cursor: pointer;
-  min-width: 100px;
+  min-width: 80px;
 }
 
 .date-range-picker-select .ant-picker-input input {
   cursor: pointer;
   text-align: center;
   font-weight: 500;
+  font-size: 12px;
 }
 
 /* Show both inputs clearly for date range */
 .date-range-picker-select.ant-picker-range .ant-picker-input {
   flex: 1;
-  min-width: 110px;
+  min-width: 80px;
+}
+
+/* Responsive styles for mobile */
+@media (max-width: 768px) {
+  .date-range-picker-wrapper {
+    max-width: 100%;
+  }
+
+  .date-range-picker-select {
+    max-width: 100%;
+    padding: 4px 8px !important;
+  }
+
+  .date-range-picker-select .ant-picker-input {
+    min-width: 70px;
+  }
+
+  .date-range-picker-select .ant-picker-input input {
+    font-size: 11px;
+  }
+
+  .date-range-picker-wrapper .ant-picker-range-separator {
+    padding: 0 4px;
+  }
+}
+
+/* Desktop styles */
+@media (min-width: 769px) {
+  .date-range-picker-select .ant-picker-input {
+    min-width: 100px;
+  }
+
+  .date-range-picker-select .ant-picker-input input {
+    font-size: 14px;
+  }
 }
 
 .date-range-picker-select.ant-picker-range .ant-picker-input:first-child input {

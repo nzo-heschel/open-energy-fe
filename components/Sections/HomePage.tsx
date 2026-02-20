@@ -429,9 +429,28 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Energy Sources Pie Chart */}
             <Card className="bg-white border border-orange-200 rounded-2xl shadow-sm">
-              <CardHeader>
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between">
+              <CardHeader className="pb-2">
+                <div className="flex flex-col gap-2">
+                  {/* Title row with buttons */}
+                  <div className="flex flex-row items-start justify-between gap-2">
+                    {/* Buttons - positioned on the right for RTL */}
+                    <div className="flex flex-row items-center gap-2 shrink-0">
+                      <a
+                        href="/api#energy-production-mix"
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        aria-label="View API Documentation"
+                      >
+                        <Image src={api} width={32} height={32} className='w-7 h-7 md:w-8 md:h-8' alt='API' />
+                      </a>
+                      <button
+                        onClick={handleMixExport}
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        aria-label="Download data"
+                      >
+                        <Image src={download} width={32} height={32} className='w-7 h-7 md:w-8 md:h-8' alt='download' />
+                      </button>
+                    </div>
+                    {/* Title with info icon */}
                     <CardTitle className="md:text-lg text-base text-right flex flex-row-reverse items-center gap-2 text-[#484C56] font-extrabold">
                       <div
                         className="relative"
@@ -464,31 +483,20 @@ export default function HomePage() {
 
                       תמהיל יצור אנרגיה
                     </CardTitle>
-                    <div className="flex flex-col md:flex-row items-start md:gap-4 gap-2">
-                      <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
-                      <button
-                        onClick={handleMixExport}
-                        className="cursor-pointer hover:opacity-80 transition-opacity"
-                        aria-label="Download data"
-                      >
-                        <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='download' />
-                      </button>
-                    </div>
                   </div>
-                  <div className="md:text-sm text-xs text-slate-600 mr-[90px]">
+                  {/* Date label */}
+                  <div className="text-xs md:text-sm text-slate-600 text-right">
                     פרק זמן:
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="-mt-4 flex items-center gap-4 flex-wrap mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-600 whitespace-nowrap">מיון לפי:</span>
-                    <DateRangePicker
-                      onDateRangeChange={handleMixDateRangeChange}
-                      defaultPreset="last7Days"
-                    />
-                  </div>
+                <div className="flex items-center justify-end gap-2 flex-wrap mb-4">
+                  <DateRangePicker
+                    onDateRangeChange={handleMixDateRangeChange}
+                    defaultPreset="last7Days"
+                  />
+                  <span className="text-xs md:text-sm text-slate-600 whitespace-nowrap">:מיון לפי</span>
                 </div>
                 {isLoadingEnergyMix ? (
                   <div className="flex justify-center items-center h-[300px]">
@@ -521,9 +529,28 @@ export default function HomePage() {
 
             {/* Electricity Consumption Line Chart */}
             <Card className="bg-white border border-orange-200 rounded-2xl shadow-sm">
-              <CardHeader>
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-5 justify-between">
+              <CardHeader className="pb-2">
+                <div className="flex flex-col gap-2">
+                  {/* Title row with buttons */}
+                  <div className="flex flex-row items-start justify-between gap-2">
+                    {/* Buttons - positioned on the right for RTL */}
+                    <div className="flex flex-row items-center gap-2 shrink-0">
+                      <a
+                        href="/api#energy-overview"
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        aria-label="View API Documentation"
+                      >
+                        <Image src={api} width={32} height={32} className='w-7 h-7 md:w-8 md:h-8' alt='API' />
+                      </a>
+                      <button
+                        onClick={handleOverviewExport}
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        aria-label="Download data"
+                      >
+                        <Image src={download} width={32} height={32} className='w-7 h-7 md:w-8 md:h-8' alt='download' />
+                      </button>
+                    </div>
+                    {/* Title with info icon */}
                     <CardTitle className="md:text-lg text-sm text-right flex flex-row-reverse items-center gap-2 text-[#484C56] font-extrabold">
                       <div
                         className="relative"
@@ -546,32 +573,21 @@ export default function HomePage() {
                       </div>
                       סקירה כללית של משק החשמל בישראל - נטע על
                     </CardTitle>
-                    <div className="flex flex-col md:flex-row items-start md:gap-4 gap-2">
-                      <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
-                      <button
-                        onClick={handleOverviewExport}
-                        className="cursor-pointer hover:opacity-80 transition-opacity"
-                        aria-label="Download data"
-                      >
-                        <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
-                      </button>
-                    </div>
                   </div>
-                  <div className="md:text-sm text-xs text-slate-600 mr-[90px]">
+                  {/* Date label */}
+                  <div className="text-xs md:text-sm text-slate-600 text-right">
                     פרק זמן:
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="-mt-4 flex items-center gap-4 flex-wrap mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-600 whitespace-nowrap">מיון לפי:</span>
-                    <DateRangePicker
-                      onDateRangeChange={handleOverviewDateRangeChange}
-                      onPresetChange={setOverviewSelectedPreset}
-                      defaultPreset="last7Days"
-                    />
-                  </div>
+                <div className="flex items-center justify-end gap-2 flex-wrap mb-4">
+                  <DateRangePicker
+                    onDateRangeChange={handleOverviewDateRangeChange}
+                    onPresetChange={setOverviewSelectedPreset}
+                    defaultPreset="last7Days"
+                  />
+                  <span className="text-xs md:text-sm text-slate-600 whitespace-nowrap">:מיון לפי</span>
                 </div>
                 {isLoadingEnergyOverview ? (
                   <div className="flex justify-center items-center h-[300px]">

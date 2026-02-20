@@ -124,7 +124,13 @@ const RejectionChart = () => {
                                 בקשות ניוד - סיבות דחיה
                             </CardTitle>
                             <div className="flex items-start md:gap-4 gap-2">
-                                <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
+                                <a
+                                    href="/api#switching-requests"
+                                    className="cursor-pointer hover:opacity-80 transition-opacity"
+                                    aria-label="View API Documentation"
+                                >
+                                    <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='API' />
+                                </a>
                                 <button
                                     onClick={handleExport}
                                     className="cursor-pointer hover:opacity-80 transition-opacity"

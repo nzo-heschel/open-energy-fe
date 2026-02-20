@@ -63,8 +63,14 @@ const Electricity = () => {
                                 ייצור חשמל אל מול המחיר השולי
                             </CardTitle>
                             <div className="flex items-start md:gap-4 gap-2">
-                                <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
-                                <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
+                                <a
+                                    href="/api#energy-smp-production-vs-marginal-price"
+                                    className="cursor-pointer hover:opacity-80 transition-opacity"
+                                    aria-label="View API Documentation"
+                                >
+                                    <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='API' />
+                                </a>
+                                <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='Download' />
                             </div>
                         </div>
                         <div className="md:text-sm text-xs text-slate-600 mr-[90px]">

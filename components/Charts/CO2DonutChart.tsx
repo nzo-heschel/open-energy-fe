@@ -1,69 +1,105 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-    PieChart,
-    Pie,
-    Cell,
-    Tooltip,
-    ResponsiveContainer,
-} from "recharts";
-import { ChevronDown } from "lucide-react";
-import Image from "next/image";
+import DateRangePicker from '@/components/ui/DateRangePicker';
+import { useCO2EmissionsMix, useCO2EmissionsSavings, useCO2EmissionsRatio, useCO2TotalProduction } from '@/lib/api';
 import api from "@/public/images/API.png";
 import download from "@/public/images/download_2.png";
-import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
+import { format, subDays } from 'date-fns';
+import Image from "next/image";
+import { useState } from "react";
+import {
+    Cell,
+    Pie,
+    PieChart,
+    ResponsiveContainer,
+    Tooltip,
+} from "recharts";
+import { TooltipContent, TooltipProvider, TooltipTrigger, Tooltip as UITooltip } from "../ui/tooltip";
 
 type EnergyData = {
     name: string;
     value: number;
     percent: number;
     color: string;
-};
-
-type Period = "monthly" | "quarterly" | "yearly";
-
-const dataByPeriod: Record<Period, { total: number; data: EnergyData[] }> = {
-    monthly: {
-        total: 5293,
-        data: [
-            { name: "פחם", value: 26.8, percent: 26.8, color: "#6B707C" },
-            { name: "סולר", value: 4.7, percent: 4.7, color: "#1C1A17" },
-            { name: "גז טבעי", value: 68.7, percent: 68.7, color: "#957669" },
-        ],
-    },
-    quarterly: {
-        total: 4932,
-        data: [
-            { name: "פחם", value: 32.4, percent: 32.4, color: "#6B707C" },
-            { name: "סולר", value: 5.8, percent: 5.8, color: "#1C1A17" },
-            { name: "גז טבעי", value: 61.8, percent: 61.8, color: "#957669" },
-        ],
-    },
-    yearly: {
-        total: 6214,
-        data: [
-            { name: "פחם", value: 28.6, percent: 28.6, color: "#6B707C" },
-            { name: "סולר", value: 5.3, percent: 5.3, color: "#1C1A17" },
-            { name: "גז טבעי", value: 66.1, percent: 66.1, color: "#957669" },
-        ],
-    },
+    rawValue: number;
 };
 
 const CO2DonutChart = () => {
-    const [selectedPeriod, setSelectedPeriod] = useState<Period>("monthly");
+    // Initialize with default date range (last 7 days)
+    const [dateRange, setDateRange] = useState(() => {
+        const endDate = new Date();
+        const startDate = subDays(endDate, 7);
+        return {
+            startDate: format(startDate, 'yyyy-MM-dd'),
+            endDate: format(endDate, 'yyyy-MM-dd')
+        };
+    });
     const [hovered, setHovered] = useState<string | null>(null);
 
-    const { total, data } = dataByPeriod[selectedPeriod];
+    // Fetch data from APIs
+    const { data: emissionsMixData, isLoading: isLoadingMix } = useCO2EmissionsMix(
+        dateRange.startDate,
+        dateRange.endDate
+    );
+    const { isLoading: isLoadingSavings } = useCO2EmissionsSavings(
+        dateRange.startDate,
+        dateRange.endDate
+    );
+    const { data: emissionsRatioData, isLoading: isLoadingRatio } = useCO2EmissionsRatio(
+        dateRange.startDate,
+        dateRange.endDate
+    );
+    const { data: totalProductionData, isLoading: isLoadingProduction } = useCO2TotalProduction(
+        dateRange.startDate,
+        dateRange.endDate
+    );
 
-    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedPeriod(e.target.value as Period);
+    // Transform API data to chart format
+    const chartData: EnergyData[] = emissionsMixData?.pie_chart ? [
+        {
+            name: "פחם",
+            value: emissionsMixData.pie_chart.coal.percentage,
+            percent: emissionsMixData.pie_chart.coal.percentage,
+            color: "#6B707C",
+            rawValue: emissionsMixData.pie_chart.coal.value
+        },
+        {
+            name: "סולר",
+            value: emissionsMixData.pie_chart.diesel.percentage,
+            percent: emissionsMixData.pie_chart.diesel.percentage,
+            color: "#1C1A17",
+            rawValue: emissionsMixData.pie_chart.diesel.value
+        },
+        {
+            name: "גז טבעי",
+            value: emissionsMixData.pie_chart.natural_gas.percentage,
+            percent: emissionsMixData.pie_chart.natural_gas.percentage,
+            color: "#957669",
+            rawValue: emissionsMixData.pie_chart.natural_gas.value
+        },
+    ] : [];
+
+    const totalEmissions = emissionsMixData?.total_emissions || 0;
+
+    const handleDateRangeChange = (startDate: string, endDate: string) => {
+        setDateRange({ startDate, endDate });
     };
 
     const getOpacity = (name: string) => {
         if (!hovered) return 1;
         return hovered === name ? 1 : 0.3;
     };
+
+    // Format large numbers with commas
+    const formatNumber = (num: number, decimals: number = 2) => {
+        return num.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    };
+
+    // Calculate emissions savings percentage
+    const emissionsSavingsPercentage = emissionsMixData?.infographics?.emissions_avoided_through_renewables
+        ? ((emissionsMixData.infographics.emissions_avoided_through_renewables.value /
+           (emissionsMixData.total_emissions + emissionsMixData.infographics.emissions_avoided_through_renewables.value)) * 100)
+        : 0;
 
     return (
         <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[16px] py-6">
@@ -97,23 +133,13 @@ const CO2DonutChart = () => {
                         </TooltipProvider>
                     </h2>
                     <p className="-mt-8">מאנרגיה פוסילית</p>
-                    <p className="mr-14">מאנרגיה פוסילית</p>
+                    <p className="mr-14">פרק זמן:</p>
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-600">פרק זמן:</span>
-                        <div className="relative w-[175px]">
-                            <select
-                                value={selectedPeriod}
-                                onChange={handleChange}
-                                className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
-                            >
-                                <option value="monthly">חודש</option>
-                                <option value="quarterly">רבעון</option>
-                                <option value="yearly">שנה</option>
-                            </select>
-                            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-black text-xs">
-                                <ChevronDown size={14} />
-                            </span>
-                        </div>
+                        <span className="text-sm text-slate-600 whitespace-nowrap">מיון לפי:</span>
+                        <DateRangePicker
+                            onDateRangeChange={handleDateRangeChange}
+                            defaultPreset="last7Days"
+                        />
                     </div>
                 </div>
 
@@ -123,58 +149,67 @@ const CO2DonutChart = () => {
                 </div>
             </div>
 
-            <div className="flex flex-col md:flex-row justify-between md:flex-row-reverse px-6">
+            <div className="flex flex-col justify-between md:flex-row-reverse px-6">
                 {/* Donut Chart */}
-                <div className="relative w-full md:h-[300px] flex justify-center items-center">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Pie
-                                data={data}
-                                dataKey="value"
-                                nameKey="name"
-                                innerRadius={70}
-                                outerRadius={130}
-                                paddingAngle={0}
-                                startAngle={90}
-                                endAngle={-270}
-                            >
-                                {data.map((entry, index) => (
-                                    <Cell
-                                        key={`cell-${index}`}
-                                        fill={entry.color}
-                                        opacity={getOpacity(entry.name)}
-                                        onMouseEnter={() => setHovered(entry.name)}
-                                        onMouseLeave={() => setHovered(null)}
+                <div className="relative w-full md:h-[350px] h-[300px] flex justify-center items-center">
+                    {isLoadingMix ? (
+                        <div className="flex items-center justify-center h-full">
+                            <div className="text-slate-500">Loading...</div>
+                        </div>
+                    ) : (
+                        <>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={chartData}
+                                        dataKey="value"
+                                        nameKey="name"
+                                        innerRadius={90}
+                                        outerRadius={155}
+                                        paddingAngle={0}
+                                        minAngle={5}
+                                        startAngle={90}
+                                        endAngle={-270}
+                                    >
+                                        {chartData.map((entry) => (
+                                            <Cell
+                                                key={`cell-${entry.name}`}
+                                                fill={entry.color}
+                                                opacity={getOpacity(entry.name)}
+                                                onMouseEnter={() => setHovered(entry.name)}
+                                                onMouseLeave={() => setHovered(null)}
+                                            />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        formatter={(value: number, name: string) => [
+                                            `${value.toFixed(1)}%`,
+                                            name,
+                                        ]}
+                                        contentStyle={{
+                                            backgroundColor: "white",
+                                            borderRadius: "8px",
+                                            border: "1px solid #e5e7eb",
+                                            fontSize: "12px",
+                                        }}
                                     />
-                                ))}
-                            </Pie>
-                            <Tooltip
-                                formatter={(value: number, name: string) => [
-                                    `${value.toFixed(1)}%`,
-                                    name,
-                                ]}
-                                contentStyle={{
-                                    backgroundColor: "white",
-                                    borderRadius: "8px",
-                                    border: "1px solid #e5e7eb",
-                                    fontSize: "12px",
-                                }}
-                            />
-                        </PieChart>
-                    </ResponsiveContainer>
+                                </PieChart>
+                            </ResponsiveContainer>
 
-                    {/* Center Text */}
-                    <div className="absolute text-center">
-                        <p className="text-center text-sm text-gray-500">סה״כ</p>
-                        <p className="text-center text-xl font-bold text-gray-800">
-                            mtco₂ {total.toLocaleString()}
-                        </p>
-                    </div>
+                            {/* Center Text */}
+                            <div className="absolute text-center">
+                                <p className="text-center text-sm text-gray-500">סה״כ</p>
+                                <p className="text-center text-xl font-bold text-gray-800">
+                                    {formatNumber(totalEmissions, 0)} {emissionsMixData?.total_emissions_unit || 'tons CO2'}
+                                </p>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 {/* Legend */}
                 <div className="flex flex-col gap-6 mt-6 w-[200px]">
-                    {data.map((item) => (
+                    {chartData.map((item) => (
                         <div
                             key={item.name}
                             className="flex items-center gap-2 cursor-pointer transition-opacity duration-200"
@@ -188,10 +223,10 @@ const CO2DonutChart = () => {
                             />
                             <div className="flex flex-col">
                                 <span className="text-sm text-gray-700">
-                                    {item.name} | ({item.percent}%)
+                                    {item.name} | ({item.percent.toFixed(1)}%)
                                 </span>
                                 <span className="text-sm text-gray-700 flex items-center gap-1">
-                                    5293<span>mTCO2</span>
+                                    {formatNumber(item.rawValue, 0)}<span>tons CO2</span>
                                 </span>
                             </div>
                         </div>
@@ -201,6 +236,7 @@ const CO2DonutChart = () => {
 
             {/* Bottom Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 text-center mt-8 border-t border-[#C3C3C3] pt-3">
+                {/* Emissions Savings */}
                 <div className="flex flex-col gap-3 items-center justify-between">
                     <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M8.12691 19.4933C8.45828 19.4933 8.72691 19.2246 8.72691 18.8933C8.72691 18.5619 8.45828 18.2933 8.12691 18.2933V19.4933ZM7.82176 8.96359C7.74988 8.64011 7.42937 8.43615 7.10589 8.50804L1.83448 9.67946C1.511 9.75135 1.30704 10.0719 1.37893 10.3953C1.45081 10.7188 1.77132 10.9228 2.0948 10.8509L6.7805 9.80962L7.82176 14.4953C7.89365 14.8188 8.21415 15.0228 8.53763 14.9509C8.86111 14.879 9.06507 14.5585 8.99319 14.235L7.82176 8.96359ZM8.12691 18.2933H3.73251V19.4933H8.12691V18.2933ZM2.97321 16.9101L7.74225 9.41588L6.72985 8.77162L1.96082 16.2658L2.97321 16.9101ZM3.73251 18.2933C3.02233 18.2933 2.59194 17.5092 2.97321 16.9101L1.96082 16.2658C1.07117 17.6638 2.07542 19.4933 3.73251 19.4933V18.2933Z" fill="#484C56" />
@@ -210,18 +246,26 @@ const CO2DonutChart = () => {
                     </svg>
                     <div>
                         <p className="text-center text-sm font-normal text-[#59687D]">חסכון בפליטות CO₂ בייצור אנרגיות מתחדשות</p>
-                        <p className="text-center text-lg font-normal text-[#484C56]">29.78%</p>
+                        <p className="text-center text-lg font-normal text-[#484C56]">
+                            {isLoadingSavings ? '...' : `${emissionsSavingsPercentage.toFixed(2)}%`}
+                        </p>
                     </div>
                 </div>
+
+                {/* Emissions Ratio */}
                 <div className="border-x border-[#C3C3C3] flex flex-col gap-3 items-center justify-between">
                     <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M14.6026 2.50033C12.5806 2.47405 10.6258 4.03857 10.6718 6.6045C10.3371 6.64809 10.0115 6.73188 9.69869 6.85868C8.13361 4.96809 5.53705 6.08379 5.53675 8.22331C3.97659 8.28269 3.26359 9.53136 3.54564 10.735C2.66584 10.9394 2.00046 11.6975 2 12.6285C1.99979 13.7177 2.88971 14.6079 3.97891 14.6081C4.42334 14.6144 4.42334 13.9445 3.97891 13.9508C3.24493 13.9507 2.65714 13.3625 2.65728 12.6285C2.65763 11.9249 3.20071 11.3498 3.90317 11.3095C4.11147 11.2978 4.25637 11.0976 4.20228 10.8961C3.87265 9.66587 4.65513 8.73669 5.80313 8.87931C6.01931 8.90953 6.20435 8.72449 6.17413 8.50831C6.06424 6.3903 8.41931 5.86521 9.29751 7.3863C9.38387 7.53578 9.57116 7.59298 9.72629 7.51725C10.12 7.32517 10.5477 7.21342 10.985 7.18861C11.1685 7.17799 11.3077 7.01889 11.2938 6.83557C11.2938 2.58113 16.12 1.99755 17.5867 5.14486C17.3791 5.21945 17.1775 5.30587 16.9898 5.41574C16.5981 5.63382 16.9406 6.21826 17.3223 5.98316C17.7546 5.73007 18.2563 5.58519 18.7947 5.58519C20.4111 5.58519 21.7127 6.88747 21.7127 8.50381C21.7127 10.1202 20.4111 11.4224 18.7947 11.4224C17.405 11.4224 16.2466 10.456 15.9487 9.1611C15.8624 8.71472 15.1899 8.87053 15.3087 9.30937C15.3544 9.50794 15.4163 9.70015 15.4936 9.88449H14.9685C14.0983 9.88449 13.3869 10.5933 13.3869 11.4635V16.026C12.1601 15.9103 11.0949 15.1176 10.6358 13.9604V13.0451C10.6358 12.8236 10.5868 12.6139 10.5042 12.4218C11.0673 11.9959 11.4343 11.3231 11.4343 10.5662C11.4343 10.1276 10.7764 10.1276 10.7764 10.5662C10.7764 11.4927 10.0315 12.2376 9.10495 12.2376C8.20524 12.2376 7.44724 11.5077 7.43607 10.5662C7.43827 10.3806 7.28653 10.2301 7.10101 10.2337C6.92051 10.2372 6.77665 10.3857 6.77878 10.5662C6.77878 10.8849 6.84301 11.1889 6.95979 11.4661H6.46555C5.59538 11.4661 4.88396 12.1749 4.88396 13.0451C4.87108 14.8118 4.88396 16.5503 4.88396 18.3047C4.88396 20.1956 4.26986 21.2647 3.56169 22.3562C3.41761 22.5746 3.57411 22.8656 3.83577 22.8658C9.43436 22.8428 14.9419 22.8658 20.5362 22.8658C20.8302 22.8657 20.9762 22.5092 20.7666 22.3029C19.6953 21.187 19.159 19.7136 19.1388 18.1814V12.0624C20.9493 11.8884 22.3707 10.3591 22.3707 8.50381C22.3707 6.53225 20.7663 4.92791 18.7947 4.92791C18.6016 4.92791 18.4132 4.94778 18.228 4.97733C17.4011 3.28092 15.9861 2.5183 14.6026 2.50033ZM14.9685 10.5418H15.8588C16.4495 11.39 17.396 11.9719 18.4815 12.0662C18.4798 12.3055 18.4823 12.5442 18.4815 12.7832H14.0442V11.4635C14.0442 10.9461 14.4511 10.5418 14.9685 10.5418ZM6.46555 12.1208H7.37894C8.23188 12.9656 8.97676 13.014 9.92656 12.7421C9.95939 12.8366 9.97855 12.9373 9.97855 13.0451C9.97883 13.3374 9.97847 13.6435 9.97791 13.9309H5.54124V13.0451C5.54124 12.469 5.94332 12.1208 6.46555 12.1208ZM14.0442 13.4405H18.4815C18.4813 15.0677 18.4924 16.6935 18.4924 18.3342H14.0429C14.0457 17.5732 14.0442 16.8049 14.0442 16.0414H17.5912C18.0394 16.0515 18.0394 15.374 17.5912 15.3841H14.0442V13.4405ZM5.54124 14.5856H10.0427V18.3342H5.53996C5.54288 17.7956 5.54124 17.2495 5.54124 16.7083H9.0857C9.53383 16.7184 9.53383 16.041 9.0857 16.051H5.54124V14.5856ZM10.6358 15.2429C11.3095 16.0677 12.2986 16.6012 13.3869 16.6871C13.3835 17.3511 13.4021 18.0741 13.3683 18.7071C13.2823 20.1814 12.7442 21.2881 12.1661 22.1957C11.1629 21.0904 10.6565 19.6617 10.6358 18.1814V15.2429ZM5.53418 18.9915H10.0883C10.2425 19.7961 10.5191 21.062 11.4048 22.2086H4.45904C4.97262 21.3482 5.40522 20.3214 5.53418 18.9915ZM14.0089 18.9915H18.563C18.7172 19.7961 18.9162 21.062 19.8019 22.2086H12.8798C13.3934 21.3482 13.8799 20.3214 14.0089 18.9915Z" fill="#484C56" stroke="#484C56" strokeWidth="0.3" />
                     </svg>
                     <div>
                         <p className="text-center text-sm font-normal text-[#59687D]">יחס פליטות CO₂</p>
-                        <p className="text-center text-lg font-normal text-[#484C56]">0.3mTCO₂/MWh</p>
+                        <p className="text-center text-lg font-normal text-[#484C56]">
+                            {isLoadingRatio ? '...' : `${formatNumber(emissionsRatioData?.total || 0, 4)}${emissionsRatioData?.unit || 'tons CO2/MWh'}`}
+                        </p>
                     </div>
                 </div>
+
+                {/* Total Production */}
                 <div className="flex flex-col gap-3 items-center justify-between">
                     <svg width="22" height="20" viewBox="0 0 22 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M9.44601 10.9268C8.06117 9.05928 6.76758 7.12793 6.76758 7.12793C6.76758 7.12793 9.47571 8.17888 11.3909 9.05379C13.3061 9.92869 10.8309 12.7944 9.44601 10.9268Z" fill="#59687D" />
@@ -232,7 +276,10 @@ const CO2DonutChart = () => {
                     </svg>
                     <div>
                         <p className="text-center text-sm font-normal text-[#59687D]">סך יצור חשמלי</p>
-                        <p className="text-center text-lg font-normal text-[#484C56] flex flex-row-reverse items-center">11,365<span>MWh/</span></p>
+                        <p className="text-center text-lg font-normal text-[#484C56] flex flex-row-reverse items-center">
+                            {isLoadingProduction ? '...' : formatNumber(totalProductionData?.total || 0, 0)}
+                            <span>{totalProductionData?.unit || 'MWh'}/</span>
+                        </p>
                     </div>
                 </div>
             </div>

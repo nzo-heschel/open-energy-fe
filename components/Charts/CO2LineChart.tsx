@@ -1,20 +1,21 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import DateRangePicker from '@/components/ui/DateRangePicker';
+import { useCO2EmissionsOverTime } from '@/lib/api';
+import api from '@/public/images/API.png';
+import download from '@/public/images/download_2.png';
+import { format, subDays } from 'date-fns';
 import Image from "next/image";
-import React, { useState } from "react";
-import download from '@/public/images/download_2.png'
-import api from '@/public/images/API.png'
+import { useMemo, useState } from "react";
 import {
-    LineChart,
+    CartesianGrid,
     Line,
+    LineChart,
+    ResponsiveContainer,
     XAxis,
     YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
 } from "recharts";
-import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
+import { TooltipContent, TooltipProvider, TooltipTrigger, Tooltip as UITooltip } from "../ui/tooltip";
 
 type DataPoint = {
     date: string;
@@ -22,53 +23,52 @@ type DataPoint = {
     saved: number;
 };
 
-// Sample data for different time periods
-const dataByPeriod = {
-    yearly: [
-        { date: "2021", co2: 8500, saved: 5800 },
-        { date: "2022", co2: 7200, saved: 5200 },
-        { date: "2023", co2: 6500, saved: 4500 },
-        { date: "2024", co2: 5800, saved: 3800 },
-    ],
-    monthly: [
-        { date: "1/24", co2: 9000, saved: 6200 },
-        { date: "2/24", co2: 7000, saved: 5000 },
-        { date: "3/24", co2: 8000, saved: 5600 },
-        { date: "4/24", co2: 6800, saved: 4900 },
-        { date: "5/24", co2: 7200, saved: 5100 },
-        { date: "6/24", co2: 7000, saved: 5000 },
-        { date: "7/24", co2: 5500, saved: 3200 },
-        { date: "8/24", co2: 5800, saved: 3500 },
-        { date: "9/24", co2: 5200, saved: 3000 },
-        { date: "10/24", co2: 5000, saved: 2800 },
-        { date: "11/24", co2: 5300, saved: 3100 },
-        { date: "12/24", co2: 5400, saved: 3400 },
-    ],
-    quarterly: [
-        { date: "Q1/24", co2: 8000, saved: 5600 },
-        { date: "Q2/24", co2: 7000, saved: 5000 },
-        { date: "Q3/24", co2: 5500, saved: 3233 },
-        { date: "Q4/24", co2: 5233, saved: 3100 },
-    ]
-};
-
-type TimePeriod = keyof typeof dataByPeriod;
-
 const CO2LineChart = () => {
     const [hoveredLegend, setHoveredLegend] = useState<string | null>(null);
     const [activeLines, setActiveLines] = useState({
         co2: true,
         saved: true,
     });
-    const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("yearly");
+    const [startDate, setStartDate] = useState<string>(() => {
+        return format(subDays(new Date(), 6), 'yyyy-MM-dd');
+    });
+    const [endDate, setEndDate] = useState<string>(() => {
+        return format(new Date(), 'yyyy-MM-dd');
+    });
+
+    const { data, isLoading, error } = useCO2EmissionsOverTime(startDate, endDate);
 
     const toggleLine = (key: keyof typeof activeLines) => {
         setActiveLines((prev) => ({ ...prev, [key]: !prev[key] }));
     };
 
-    const handlePeriodChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedPeriod(event.target.value as TimePeriod);
+    const handleDateRangeChange = (newStartDate: string, newEndDate: string) => {
+        setStartDate(newStartDate);
+        setEndDate(newEndDate);
     };
+
+    // Transform API data to chart format
+    const currentData = useMemo<DataPoint[]>(() => {
+        if (!data?.chart_data) {
+            return [];
+        }
+
+        const chartData = data.chart_data;
+        const totalEmissionsAvoided = data.infographics?.emissions_avoided_through_renewables?.value || 0;
+        const totalEmissions = chartData.reduce((sum, item) => sum + item.total_emissions, 0);
+
+        return chartData.map((item) => {
+            // Calculate saved proportionally based on this period's share of total emissions
+            const emissionsShare = totalEmissions > 0 ? item.total_emissions / totalEmissions : 0;
+            const saved = totalEmissionsAvoided * emissionsShare;
+
+            return {
+                date: item.label || item.period,
+                co2: item.total_emissions,
+                saved: saved,
+            };
+        });
+    }, [data]);
 
     const getOpacity = (key: string) => {
         if (!hoveredLegend) return 1;
@@ -79,9 +79,6 @@ const CO2LineChart = () => {
         if (!hoveredLegend) return 1;
         return hoveredLegend === key ? 1 : 0.5;
     };
-
-    // Get current data based on selected period
-    const currentData = dataByPeriod[selectedPeriod];
 
     return (
         <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[16px] p-6">
@@ -116,23 +113,11 @@ const CO2LineChart = () => {
                     </h2>
                     <p className="mr-14">פרק זמן:</p>
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-600">סינון לפי:</span>
-                        <div className="relative w-[202px]">
-                            <select
-                                value={selectedPeriod}
-                                onChange={handlePeriodChange}
-                                className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
-                            >
-                                <option value="yearly">השנה</option>
-                                <option value="monthly">חודש</option>
-                                <option value="quarterly">רבעון</option>
-                            </select>
-
-                            {/* Custom dropdown arrow */}
-                            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-black text-xs">
-                                <ChevronDown size={14} />
-                            </span>
-                        </div>
+                        <span className="text-sm text-slate-600 whitespace-nowrap">מיון לפי:</span>
+                        <DateRangePicker
+                            onDateRangeChange={handleDateRangeChange}
+                            defaultPreset="last7Days"
+                        />
                     </div>
                 </div>
 
@@ -142,19 +127,41 @@ const CO2LineChart = () => {
                 </div>
             </div>
             <div className="h-[300px]">
-                {/* <p className="text-right text-xs text-gray-500 ">[mTCO₂/h]</p> */}
-                <ResponsiveContainer width="100%" height="95%">
-                    <LineChart data={currentData} margin={{ top: 20, right: 0, left: 10, bottom: 10 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="date" tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
-                        <YAxis tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} label={{
-                            value: "[mTCO₂/h]",
-                            angle: -90,
-                            position: "insideLeft",
-                            style: { textAnchor: 'middle' }
-                        }}
-                        />
-                        {/* <Tooltip
+                {(() => {
+                    if (isLoading) {
+                        return (
+                            <div className="flex justify-center items-center h-full">
+                                <p className="text-slate-600">טוען נתונים...</p>
+                            </div>
+                        );
+                    }
+                    if (error) {
+                        return (
+                            <div className="flex justify-center items-center h-full">
+                                <p className="text-red-600">שגיאה בטעינת הנתונים</p>
+                            </div>
+                        );
+                    }
+                    if (currentData.length === 0) {
+                        return (
+                            <div className="flex justify-center items-center h-full">
+                                <p className="text-slate-600">אין נתונים זמינים</p>
+                            </div>
+                        );
+                    }
+                    return (
+                        <ResponsiveContainer width="100%" height="95%">
+                            <LineChart data={currentData} margin={{ top: 20, right: 0, left: 10, bottom: 10 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="date" tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
+                                <YAxis tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} label={{
+                                    value: "[mTCO₂/h]",
+                                    angle: -90,
+                                    position: "insideLeft",
+                                    style: { textAnchor: 'middle' }
+                                }}
+                                />
+                                {/* <Tooltip
                             cursor={{ strokeDasharray: "3 3" }}
                             contentStyle={{
                                 backgroundColor: "white",
@@ -162,28 +169,30 @@ const CO2LineChart = () => {
                                 border: "1px solid #e5e7eb",
                             }}
                         /> */}
-                        {activeLines.co2 && (
-                            <Line
-                                type="linear"
-                                dataKey="co2"
-                                stroke="#5D6FFF"
-                                strokeWidth={1.5}
-                                dot={false}
-                                opacity={getOpacity("co2")}
-                            />
-                        )}
-                        {activeLines.saved && (
-                            <Line
-                                type="linear"
-                                dataKey="saved"
-                                stroke="#1E8025"
-                                strokeWidth={1.5}
-                                dot={false}
-                                opacity={getOpacity("saved")}
-                            />
-                        )}
-                    </LineChart>
-                </ResponsiveContainer>
+                                {activeLines.co2 && (
+                                    <Line
+                                        type="linear"
+                                        dataKey="co2"
+                                        stroke="#5D6FFF"
+                                        strokeWidth={1.5}
+                                        dot={false}
+                                        opacity={getOpacity("co2")}
+                                    />
+                                )}
+                                {activeLines.saved && (
+                                    <Line
+                                        type="linear"
+                                        dataKey="saved"
+                                        stroke="#1E8025"
+                                        strokeWidth={1.5}
+                                        dot={false}
+                                        opacity={getOpacity("saved")}
+                                    />
+                                )}
+                            </LineChart>
+                        </ResponsiveContainer>
+                    );
+                })()}
             </div>
 
             {/* Legend */}

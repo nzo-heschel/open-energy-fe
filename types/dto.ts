@@ -335,6 +335,111 @@ export type SMPProductionVsMarginalPriceResponse = {
   }
 };
 
+// CO2 Emissions Mix API response
+export type CO2EmissionsMixResponse = {
+  view: string;
+  start_date: string;
+  end_date: string;
+  total_emissions: number;
+  total_emissions_unit: string;
+  emissions_per_kwh: number;
+  emissions_per_kwh_unit: string;
+  total_generation_mwh: number;
+  pie_chart: {
+    coal: {
+      value: number;
+      percentage: number;
+      unit: string;
+    };
+    natural_gas: {
+      value: number;
+      percentage: number;
+      unit: string;
+    };
+    diesel: {
+      value: number;
+      percentage: number;
+      unit: string;
+    };
+  };
+  infographics: {
+    total_emissions_excluding_renewables: {
+      value: number;
+      unit: string;
+      description: string;
+    };
+    emissions_avoided_through_renewables: {
+      value: number;
+      unit: string;
+      description: string;
+    };
+  };
+  time_series: Array<{
+    period: string;
+    label: string;
+    coal: number;
+    natural_gas: number;
+    diesel: number;
+    total_emissions: number;
+    generation_mwh: number;
+    emissions_per_kwh: number;
+    unit: string;
+  }>;
+};
+
+// CO2 Emissions Savings API response
+export type CO2EmissionsSavingsResponse = {
+  total: number;
+  unit: string;
+  start_date: string;
+  end_date: string;
+};
+
+// CO2 Emissions Over Time API response
+export type CO2EmissionsOverTimeResponse = {
+  view: 'month' | 'year' | 'custom';
+  start_date: string;
+  end_date: string;
+  infographics: {
+    total_emissions_excluding_renewables: {
+      value: number;
+      unit: string;
+      description: string;
+    };
+    emissions_avoided_through_renewables: {
+      value: number;
+      unit: string;
+      description: string;
+    };
+  };
+  chart_data: Array<{
+    period: string;
+    label: string;
+    coal: number;
+    natural_gas: number;
+    diesel: number;
+    total_emissions: number;
+    emissions_per_kwh: number;
+    unit: string;
+  }>;
+};
+
+// CO2 Emissions Ratio API response
+export type CO2EmissionsRatioResponse = {
+  total: number;
+  unit: string;
+  start_date: string;
+  end_date: string;
+};
+
+// CO2 Total Production API response
+export type CO2TotalProductionResponse = {
+  total: number;
+  unit: string;
+  start_date: string;
+  end_date: string;
+};
+
 // Switching requests API response
 export type SwitchingRequestsResponse = {
   filter: {

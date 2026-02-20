@@ -6,9 +6,8 @@ import { ECElementEvent, ECharts } from 'echarts';
 import ReactECharts from 'echarts-for-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-// Translation map for level 2 energy source names
+// Translation map for level 2 energy source names (all keys in lowercase)
 const level2NameTranslations: Record<string, string> = {
-  'photoVoltaic': 'פוטו וולטאי',
   'photovoltaic': 'פוטו וולטאי',
   'biogas': 'ביו גז',
   'wind': 'רוח',
@@ -20,6 +19,11 @@ const level2NameTranslations: Record<string, string> = {
   'diesel': 'סולר',
   'other': 'אחר',
   'pumped_storage': 'אגירה שאובה'
+};
+
+// Helper function to normalize keys for lookup (lowercase, replace spaces with underscores)
+const normalizeKey = (key: string): string => {
+  return key.toLowerCase().replace(/\s+/g, '_');
 };
 
 interface EnergyMixPieChartProps {
@@ -84,10 +88,11 @@ export default function EnergyMixPieChart({
         const fossilEnergy = energyMixData.level2.fossil_energy;
         Object.entries(fossilEnergy).forEach(([key, value]) => {
           if (value && value > 0) {
+            const normalizedKey = normalizeKey(key);
             level2DataArray.push({
-              name: level2NameTranslations[key] || key,
+              name: level2NameTranslations[normalizedKey] || key,
               value: value,
-              color: LEVEL2_COLORS[key] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
             });
           }
         });
@@ -98,10 +103,11 @@ export default function EnergyMixPieChart({
         const renewableEnergy = energyMixData.level2.renewable_energy;
         Object.entries(renewableEnergy).forEach(([key, value]) => {
           if (value && value > 0) {
+            const normalizedKey = normalizeKey(key);
             level2DataArray.push({
-              name: level2NameTranslations[key] || key,
+              name: level2NameTranslations[normalizedKey] || key,
               value: value,
-              color: LEVEL2_COLORS[key] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
             });
           }
         });
@@ -112,10 +118,11 @@ export default function EnergyMixPieChart({
         const other = energyMixData.level2.other;
         Object.entries(other).forEach(([key, value]) => {
           if (value && value > 0) {
+            const normalizedKey = normalizeKey(key);
             level2DataArray.push({
-              name: level2NameTranslations[key] || key,
+              name: level2NameTranslations[normalizedKey] || key,
               value: value,
-              color: LEVEL2_COLORS[key] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
             });
           }
         });
@@ -129,10 +136,11 @@ export default function EnergyMixPieChart({
         Object.entries(nonRenewables).forEach(([key, value]) => {
           const numValue = typeof value === 'number' ? value : 0;
           if (numValue > 0) {
+            const normalizedKey = normalizeKey(key);
             level2DataArray.push({
-              name: level2NameTranslations[key] || key,
+              name: level2NameTranslations[normalizedKey] || key,
               value: numValue,
-              color: LEVEL2_COLORS[key] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
             });
           }
         });
@@ -144,10 +152,11 @@ export default function EnergyMixPieChart({
         Object.entries(renewables).forEach(([key, value]) => {
           const numValue = typeof value === 'number' ? value : 0;
           if (numValue > 0) {
+            const normalizedKey = normalizeKey(key);
             level2DataArray.push({
-              name: level2NameTranslations[key] || key,
+              name: level2NameTranslations[normalizedKey] || key,
               value: numValue,
-              color: LEVEL2_COLORS[key] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
             });
           }
         });
@@ -159,10 +168,11 @@ export default function EnergyMixPieChart({
         Object.entries(other).forEach(([key, value]) => {
           const numValue = typeof value === 'number' ? value : 0;
           if (numValue > 0) {
+            const normalizedKey = normalizeKey(key);
             level2DataArray.push({
-              name: level2NameTranslations[key] || key,
+              name: level2NameTranslations[normalizedKey] || key,
               value: numValue,
-              color: LEVEL2_COLORS[key] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
             });
           }
         });
@@ -174,10 +184,11 @@ export default function EnergyMixPieChart({
         const nonRenewables = energyMixData.level2['Non-renewables'];
         Object.entries(nonRenewables).forEach(([key, value]) => {
           if (value && value > 0) {
+            const normalizedKey = normalizeKey(key);
             level2DataArray.push({
-              name: level2NameTranslations[key] || key,
+              name: level2NameTranslations[normalizedKey] || key,
               value: value,
-              color: LEVEL2_COLORS[key] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
             });
           }
         });
@@ -188,10 +199,11 @@ export default function EnergyMixPieChart({
         const renewables = energyMixData.level2.Renewables;
         Object.entries(renewables).forEach(([key, value]) => {
           if (value && value > 0) {
+            const normalizedKey = normalizeKey(key);
             level2DataArray.push({
-              name: level2NameTranslations[key] || key,
+              name: level2NameTranslations[normalizedKey] || key,
               value: value,
-              color: LEVEL2_COLORS[key] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
             });
           }
         });
@@ -202,10 +214,11 @@ export default function EnergyMixPieChart({
         const other = energyMixData.level2.Other;
         Object.entries(other).forEach(([key, value]) => {
           if (value && value > 0) {
+            const normalizedKey = normalizeKey(key);
             level2DataArray.push({
-              name: level2NameTranslations[key] || key,
+              name: level2NameTranslations[normalizedKey] || key,
               value: value,
-              color: LEVEL2_COLORS[key] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
             });
           }
         });
@@ -587,6 +600,15 @@ export default function EnergyMixPieChart({
       },
       legend: {
         show: false,
+        // Explicitly set all items as selected (visible) to ensure ECharts internal state is synced
+        selected: (() => {
+          const selection: Record<string, boolean> = {};
+          level1Data.forEach(item => { selection[item.name] = true; });
+          if (showLevel2 && level2Data) {
+            level2Data.forEach(item => { selection[item.name] = true; });
+          }
+          return selection;
+        })(),
       },
       series
     };

@@ -1,18 +1,23 @@
-import { useQuery } from '@tanstack/react-query';
-import { differenceInDays, differenceInMonths } from 'date-fns';
 import type {
+  CO2EmissionsMixResponse,
+  CO2EmissionsOverTimeResponse,
+  CO2EmissionsRatioResponse,
+  CO2EmissionsSavingsResponse,
+  CO2TotalProductionResponse,
+  EnergyMixResponse,
+  EnergyOverviewResponse,
+  FilterOptions,
   MarketOverviewResponse,
   MixResponse,
-  SmpLineResponse,
-  SmpScatterResponse,
-  FilterOptions,
-  EnergyMixResponse,
-  SMPResponse,
-  EnergyOverviewResponse,
   PrivateSupplierConnectedConsumersResponse,
+  SmpLineResponse,
   SMPProductionVsMarginalPriceResponse,
+  SMPResponse,
+  SmpScatterResponse,
   SwitchingRequestsResponse
 } from '@/types/dto';
+import { useQuery } from '@tanstack/react-query';
+import { differenceInDays, differenceInMonths } from 'date-fns';
 
 const API_BASE = 'https://api.open-energy.madebyomnis.com/';
 const INTERNAL_API_KEY = 'int_api_9f3c7e2a4b8d6c1f0a5e9d2b7c4a1e6f';
@@ -475,6 +480,120 @@ export const exportSwitchingRequests = async (year?: string, customerType?: 'res
     console.error('Export error:', error);
     throw error;
   }
+};
+
+//++ CO2 Emissions Mix data (pie chart + infographics + time series)
+export const useCO2EmissionsMix = (startDate: string, endDate: string, view?: 'day' | 'month' | 'year') => {
+  const params = new URLSearchParams();
+  params.set('start_date', startDate);
+  params.set('end_date', endDate);
+  if (view) params.set('view', view);
+
+  return useQuery<CO2EmissionsMixResponse>({
+    queryKey: ['co2-emissions-mix', startDate, endDate, view],
+    queryFn: async () => {
+      try {
+        const data = await fetcher(`${API_BASE}api/v1/co2/emissions-mix?${params}`);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+//++ CO2 Emissions Savings data
+export const useCO2EmissionsSavings = (startDate: string, endDate: string) => {
+  const params = new URLSearchParams();
+  params.set('start_date', startDate);
+  params.set('end_date', endDate);
+
+  return useQuery<CO2EmissionsSavingsResponse>({
+    queryKey: ['co2-emissions-savings', startDate, endDate],
+    queryFn: async () => {
+      try {
+        const data = await fetcher(`${API_BASE}api/v1/co2/emissions-savings?${params}`);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+//++ CO2 Emissions Ratio data
+export const useCO2EmissionsRatio = (startDate: string, endDate: string) => {
+  const params = new URLSearchParams();
+  params.set('start_date', startDate);
+  params.set('end_date', endDate);
+
+  return useQuery<CO2EmissionsRatioResponse>({
+    queryKey: ['co2-emissions-ratio', startDate, endDate],
+    queryFn: async () => {
+      try {
+        const data = await fetcher(`${API_BASE}api/v1/co2/emissions-ratio?${params}`);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+//++ CO2 Total Production data
+export const useCO2TotalProduction = (startDate: string, endDate: string) => {
+  const params = new URLSearchParams();
+  params.set('start_date', startDate);
+  params.set('end_date', endDate);
+
+  return useQuery<CO2TotalProductionResponse>({
+    queryKey: ['co2-total-production', startDate, endDate],
+    queryFn: async () => {
+      try {
+        const data = await fetcher(`${API_BASE}api/v1/co2/total-production?${params}`);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+//++ CO2 Emissions Over Time data
+export const useCO2EmissionsOverTime = (startDate: string, endDate: string, view?: 'month' | 'year' | 'custom') => {
+  const params = new URLSearchParams();
+  params.set('start_date', startDate);
+  params.set('end_date', endDate);
+  if (view) {
+    params.set('view', view);
+  }
+
+  return useQuery<CO2EmissionsOverTimeResponse>({
+    queryKey: ['co2-emissions-over-time', startDate, endDate, view],
+    queryFn: async () => {
+      try {
+        const data = await fetcher(`${API_BASE}api/v1/co2/emissions-over-time?${params}`);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
 };
 
 // Mock data generators for development

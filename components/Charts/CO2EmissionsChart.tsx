@@ -1,20 +1,19 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import DateRangePicker from '@/components/ui/DateRangePicker';
+import api from '@/public/images/API.png';
+import download from '@/public/images/download_2.png';
 import Image from "next/image";
-import React, { useState } from "react";
-import download from '@/public/images/download_2.png'
-import api from '@/public/images/API.png'
+import { useState } from "react";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
   CartesianGrid,
-  Tooltip,
+  Line,
+  LineChart,
   ResponsiveContainer,
+  XAxis,
+  YAxis
 } from "recharts";
-import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
+import { TooltipContent, TooltipProvider, TooltipTrigger, Tooltip as UITooltip } from "../ui/tooltip";
 
 type DataPoint = {
   date: string;
@@ -62,8 +61,10 @@ const CO2EmissionsChart = () => {
   const toggle = (key: keyof typeof active) =>
     setActive((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  const handlePeriodChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedPeriod(event.target.value as TimePeriod);
+  const handleDateRangeChange = (startDate: string, endDate: string) => {
+    // Handle date range change - can be used to fetch new data based on date range
+    console.log('Date range changed:', startDate, endDate);
+    // TODO: Implement API call to fetch data for the selected date range
   };
 
   const opacity = (key: string) => {
@@ -112,23 +113,11 @@ const CO2EmissionsChart = () => {
           </h2>
           <p className="mr-14">פרק זמן:</p>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600">סינון לפי:</span>
-            <div className="relative w-[202px]">
-              <select
-                value={selectedPeriod}
-                onChange={handlePeriodChange}
-                className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
-              >
-                <option value="monthly">חודש</option>
-                <option value="quarterly">רבעון</option>
-                <option value="yearly">שנה</option>
-              </select>
-
-              {/* Custom dropdown arrow */}
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-black text-xs">
-                <ChevronDown size={14} />
-              </span>
-            </div>
+            <span className="text-sm text-slate-600 whitespace-nowrap">מיון לפי:</span>
+            <DateRangePicker
+              onDateRangeChange={handleDateRangeChange}
+              defaultPreset="last7Days"
+            />
           </div>
         </div>
 

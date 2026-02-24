@@ -821,7 +821,7 @@ export const exportCO2TotalVsRatio = async (startDate: string, endDate: string) 
   params.set('end_date', endDate);
 
   try {
-    const response = await fetch(`${API_BASE}api/v1/co2/total-vs-ratio/export?${params}`, {
+    const response = await fetch(`${API_BASE}api/v1/co2/total-vs-ratio/export-csv?${params}`, {
       headers: {
         'x-api-key': INTERNAL_API_KEY,
       },

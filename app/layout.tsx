@@ -9,7 +9,7 @@ const heebo = Heebo({
   subsets: ['hebrew', 'latin'],
   variable: '--font-heebo',
   display: 'swap'
-}); // TODO: delete this comment (needed for redeployment on Vercel)
+});
 
 export const metadata: Metadata = {
   title: 'פלטפורמת נתוני אנרגיה פתוחה - NZO',

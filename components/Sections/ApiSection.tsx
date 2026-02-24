@@ -148,6 +148,15 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
 }`
     },
     {
+      id: 'energy-smp-export',
+      title: 'ייצוא נתוני SMP',
+      description: 'Export SMP data to Excel file',
+      endpoint: 'GET /api/v1/energy/smp/export',
+      method: 'GET',
+      parameters: ['start_date (optional, YYYY-MM-DD)', 'end_date (optional, YYYY-MM-DD)'],
+      responseExample: 'Streamed Excel file (smp-data.xlsx)'
+    },
+    {
       id: 'energy-smp-production-vs-marginal-price',
       title: 'יצור מול מחיר שולי',
       description: 'Correlate electricity production with marginal pricing for market analysis',
@@ -165,6 +174,15 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
   "daily_average": [...],
   "monthly_average": [...]
 }`
+    },
+    {
+      id: 'energy-smp-production-vs-marginal-price-export',
+      title: 'ייצוא יצור מול מחיר שולי',
+      description: 'Export SMP production vs marginal price data to Excel file',
+      endpoint: 'GET /api/v1/energy/smp-production-vs-marginal-price/export',
+      method: 'GET',
+      parameters: ['start_date (optional, YYYY-MM-DD)', 'end_date (optional, YYYY-MM-DD)'],
+      responseExample: 'Streamed Excel file (smp-production-vs-marginal-price.xlsx)'
     },
     // Private Suppliers Endpoints
     {
@@ -305,6 +323,15 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
 }`
     },
     {
+      id: 'co2-emissions-mix-export',
+      title: 'ייצוא תמהיל פליטות CO2',
+      description: 'Export CO2 emissions mix to Excel file',
+      endpoint: 'GET /api/v1/co2/emissions-mix/export',
+      method: 'GET',
+      parameters: ['start_date (optional, YYYY-MM-DD)', 'end_date (optional, YYYY-MM-DD)', 'view (optional, day | month | year)'],
+      responseExample: 'Streamed Excel file (co2_emissions_mix_STARTDATE_to_ENDDATE.xlsx)'
+    },
+    {
       id: 'co2-emissions-over-time',
       title: 'פליטות CO2 על פני זמן',
       description: 'CO2 emissions over time (chart + infographics)',
@@ -327,6 +354,15 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
     }
   ]
 }`
+    },
+    {
+      id: 'co2-emissions-over-time-export',
+      title: 'ייצוא פליטות CO2 על פני זמן',
+      description: 'Export CO2 emissions over time to Excel file',
+      endpoint: 'GET /api/v1/co2/emissions-over-time/export',
+      method: 'GET',
+      parameters: ['start_date (optional, YYYY-MM-DD)', 'end_date (optional, YYYY-MM-DD)', 'view (optional, month | year | custom)'],
+      responseExample: 'Streamed Excel file (co2_emissions_over_time_STARTDATE_to_ENDDATE.xlsx)'
     },
     {
       id: 'co2-total-vs-ratio',
@@ -416,7 +452,9 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
     { id: 'energy-production-mix-export', name: 'Export production mix to Excel', endpoint: 'api/v1/energy/production-mix/export', method: 'GET', category: 'Energy' },
     // SMP
     { id: 'energy-smp', name: 'System Marginal Price data', endpoint: 'api/v1/energy/smp', method: 'GET', category: 'SMP' },
+    { id: 'energy-smp-export', name: 'Export SMP data to Excel', endpoint: 'api/v1/energy/smp/export', method: 'GET', category: 'SMP' },
     { id: 'energy-smp-production-vs-marginal-price', name: 'Production vs Marginal Price', endpoint: 'api/v1/energy/smp-production-vs-marginal-price', method: 'GET', category: 'SMP' },
+    { id: 'energy-smp-production-vs-marginal-price-export', name: 'Export Production vs Marginal Price', endpoint: 'api/v1/energy/smp-production-vs-marginal-price/export', method: 'GET', category: 'SMP' },
     // Private Suppliers
     { id: 'private-supplier-connected-consumers', name: 'Private supplier connected consumers', endpoint: 'api/v1/private-supplier-connected-consumers', method: 'GET', category: 'Suppliers' },
     { id: 'private-supplier-export', name: 'Export private suppliers data', endpoint: 'api/v1/private-supplier-connected-consumers/export', method: 'GET', category: 'Suppliers' },
@@ -429,7 +467,9 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
     { id: 'co2-emissions-ratio', name: 'CO2 emissions ratio', endpoint: 'api/v1/co2/emissions-ratio', method: 'GET', category: 'CO2' },
     { id: 'co2-total-production', name: 'Total system generation', endpoint: 'api/v1/co2/total-production', method: 'GET', category: 'CO2' },
     { id: 'co2-emissions-mix', name: 'CO2 emissions mix', endpoint: 'api/v1/co2/emissions-mix', method: 'GET', category: 'CO2' },
+    { id: 'co2-emissions-mix-export', name: 'Export CO2 emissions mix', endpoint: 'api/v1/co2/emissions-mix/export', method: 'GET', category: 'CO2' },
     { id: 'co2-emissions-over-time', name: 'CO2 emissions over time', endpoint: 'api/v1/co2/emissions-over-time', method: 'GET', category: 'CO2' },
+    { id: 'co2-emissions-over-time-export', name: 'Export CO2 emissions over time', endpoint: 'api/v1/co2/emissions-over-time/export', method: 'GET', category: 'CO2' },
     { id: 'co2-total-vs-ratio', name: 'Total vs Ratio CO2 emissions', endpoint: 'api/v1/co2/total-vs-ratio', method: 'GET', category: 'CO2' },
     // Data Files
     { id: 'data-files-status', name: 'Data files freshness status', endpoint: 'api/v1/data-files/status', method: 'GET', category: 'Data' },

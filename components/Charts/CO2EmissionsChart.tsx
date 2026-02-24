@@ -99,69 +99,65 @@ const CO2EmissionsChart = () => {
 
   return (
     <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[20px] p-4 md:p-6 overflow-hidden">
-      <div className="flex flex-col gap-2">
-        {/* Header row with title and buttons */}
-        <div className="flex flex-row items-start justify-between gap-2">
-          {/* Buttons */}
-          <div className="flex flex-row items-center gap-2 shrink-0">
+      <div className="flex flex-col gap-1">
+        {/* Header row with title and buttons - same structure as SMP */}
+        <div className="flex items-center gap-2 justify-between">
+          {/* Title FIRST - goes to RIGHT in RTL */}
+          <h2 className="md:text-lg text-base md:text-right text-left flex flex-row-reverse items-center gap-2 text-[#484C56] font-extrabold">
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" className="inline-flex items-center shrink-0">
+                    <svg
+                      width="21"
+                      height="21"
+                      viewBox="0 0 21 21"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="cursor-help"
+                    >
+                      <g opacity="0.5">
+                        <path d="M10.5 0.545898C4.98 0.545898 0.5 5.0259 0.5 10.5459C0.5 16.0659 4.98 20.5459 10.5 20.5459C16.02 20.5459 20.5 16.0659 20.5 10.5459C20.5 5.0259 16.02 0.545898 10.5 0.545898ZM10.5 18.5459C6.09 18.5459 2.5 14.9559 2.5 10.5459C2.5 6.1359 6.09 2.5459 10.5 2.5459C14.91 2.5459 18.5 6.1359 18.5 10.5459C18.5 14.9559 14.91 18.5459 10.5 18.5459Z" fill="#A1A1A1" />
+                        <path d="M9.5 5.5459H11.5V7.5459H9.5V5.5459ZM9.5 9.5459H11.5V15.5459H9.5V9.5459Z" fill="#A1A1A1" />
+                      </g>
+                    </svg>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm">
+                  <p>נתונים על פליטות CO₂ ויחס הפליטות ביחס לייצור חשמל</p>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
+            סך פליטות CO₂ מול יחס פליטות CO₂
+          </h2>
+          {/* Buttons SECOND - goes to LEFT in RTL */}
+          <div className="flex items-start md:gap-4 gap-2">
             <a
               href="/api#co2-total-vs-ratio"
               className="cursor-pointer hover:opacity-80 transition-opacity"
               aria-label="View API Documentation"
             >
-              <Image src={api} width={32} height={32} className='w-7 h-7 md:w-8 md:h-8' alt='API' />
+              <Image src={api} width={32} height={32} className="w-[32px] h-[32px]" alt="API" />
             </a>
             <button
               onClick={handleExport}
               className="cursor-pointer hover:opacity-80 transition-opacity"
               aria-label="Export to Excel"
             >
-              <Image src={download} width={32} height={32} className='w-7 h-7 md:w-8 md:h-8' alt='Download' />
+              <Image src={download} width={32} height={32} className="w-[32px] h-[32px]" alt="Download" />
             </button>
           </div>
-
-          {/* Title */}
-          <div className="flex flex-col text-right flex-1 min-w-0">
-            <h2 className="text-sm md:text-lg font-bold text-gray-700 flex items-center justify-end gap-2">
-              <TooltipProvider>
-                <UITooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" className="inline-flex items-center shrink-0">
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 21 21"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="cursor-pointer md:w-[21px] md:h-[21px]"
-                      >
-                        <g opacity="0.5">
-                          <path d="M10.5 0.545898C4.98 0.545898 0.5 5.0259 0.5 10.5459C0.5 16.0659 4.98 20.5459 10.5 20.5459C16.02 20.5459 20.5 16.0659 20.5 10.5459C20.5 5.0259 16.02 0.545898 10.5 0.545898ZM10.5 18.5459C6.09 18.5459 2.5 14.9559 2.5 10.5459C2.5 6.1359 6.09 2.5459 10.5 2.5459C14.91 2.5459 18.5 6.1359 18.5 10.5459C18.5 14.9559 14.91 18.5459 10.5 18.5459Z" fill="#A1A1A1" />
-                          <path d="M9.5 5.5459H11.5V7.5459H9.5V5.5459ZM9.5 9.5459H11.5V15.5459H9.5V9.5459Z" fill="#A1A1A1" />
-                        </g>
-                      </svg>
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-sm">
-                    <p>נתונים על פליטות CO₂ ויחס הפליטות ביחס לייצור חשמל</p>
-                  </TooltipContent>
-                </UITooltip>
-              </TooltipProvider>
-              <span className="truncate">סך פליטות CO₂ מול יחס פליטות CO₂</span>
-            </h2>
-          </div>
         </div>
+        {/* Time period label */}
+        <div className="md:text-sm text-xs text-slate-600">פרק זמן:</div>
 
-        {/* Date controls row */}
-        <div className="flex flex-col items-end gap-1">
-          <p className="text-xs md:text-sm text-slate-600">פרק זמן:</p>
-          <div className="flex items-center gap-2 flex-wrap justify-end w-full">
-            <DateRangePicker
-              onDateRangeChange={handleDateRangeChange}
-              defaultPreset="last7Days"
-            />
-            <span className="text-xs md:text-sm text-slate-600 whitespace-nowrap">:מיון לפי</span>
-          </div>
+        {/* Date controls row - same as SMP */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-slate-600">מיון לפי:</span>
+          <DateRangePicker
+            onDateRangeChange={handleDateRangeChange}
+            defaultPreset="last7Days"
+          />
         </div>
       </div>
 

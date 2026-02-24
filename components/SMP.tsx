@@ -1,6 +1,6 @@
 'use client'
 
-import { useSMP } from '@/lib/api'
+import { useSMP, exportSMP } from '@/lib/api'
 import api from '@/public/images/API.png'
 import download from '@/public/images/download_2.png'
 import { endOfYear, format, startOfYear } from 'date-fns'
@@ -29,6 +29,15 @@ const SMP = () => {
             start: startDate,
             end: endDate
         });
+    };
+
+    // Handle export to Excel
+    const handleExport = async () => {
+        try {
+            await exportSMP(startEndDate.start, startEndDate.end);
+        } catch (error) {
+            console.error('Failed to export SMP data:', error);
+        }
     };
 
     return (
@@ -81,7 +90,13 @@ const SMP = () => {
                                 >
                                     <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='API' />
                                 </a>
-                                <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='Download' />
+                                <button
+                                    onClick={handleExport}
+                                    className="cursor-pointer hover:opacity-80 transition-opacity"
+                                    aria-label="Export to Excel"
+                                >
+                                    <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='Download' />
+                                </button>
                             </div>
                         </div>
                         <div className="md:text-sm text-xs text-slate-600 mr-[90px]">

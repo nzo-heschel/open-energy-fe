@@ -292,6 +292,54 @@ export const useSMP = (startDate: string, endDate: string) => {
   });
 };
 
+//++ Export SMP data
+export const exportSMP = async (startDate: string, endDate: string) => {
+  const params = new URLSearchParams();
+  params.set('start_date', startDate);
+  params.set('end_date', endDate);
+
+  try {
+    const response = await fetch(`${API_BASE}api/v1/energy/smp/export?${params}`, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    // Get the filename from Content-Disposition header or use a default
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'smp-data.xlsx'; // default filename
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+
+    // Get the blob from response
+    const blob = await response.blob();
+
+    // Create a temporary URL and trigger download
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
 //++ SMP production vs marginal price data
 export const useSMPProductionVsMarginalPrice = (startDate: string, endDate: string) => {
   const params = new URLSearchParams();
@@ -313,6 +361,54 @@ export const useSMPProductionVsMarginalPrice = (startDate: string, endDate: stri
     staleTime: 5 * 60 * 1000,
     refetchInterval: 15 * 60 * 1000,
   });
+};
+
+//++ Export SMP Production vs Marginal Price data
+export const exportSMPProductionVsMarginalPrice = async (startDate: string, endDate: string) => {
+  const params = new URLSearchParams();
+  params.set('start_date', startDate);
+  params.set('end_date', endDate);
+
+  try {
+    const response = await fetch(`${API_BASE}api/v1/energy/smp-production-vs-marginal-price/export?${params}`, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    // Get the filename from Content-Disposition header or use a default
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'smp-production-vs-marginal-price.xlsx'; // default filename
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+
+    // Get the blob from response
+    const blob = await response.blob();
+
+    // Create a temporary URL and trigger download
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
 };
 
 //++ Private supplier connected consumers data

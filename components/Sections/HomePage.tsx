@@ -431,27 +431,10 @@ export default function HomePage() {
             <Card className="bg-white border border-orange-200 rounded-2xl shadow-sm">
               <CardHeader className="pb-2">
                 <div className="flex flex-col gap-2">
-                  {/* Title row with buttons */}
-                  <div className="flex flex-row items-start justify-between gap-2">
-                    {/* Buttons - positioned on the right for RTL */}
-                    <div className="flex flex-row items-center gap-2 shrink-0">
-                      <a
-                        href="/api#energy-production-mix"
-                        className="cursor-pointer hover:opacity-80 transition-opacity"
-                        aria-label="View API Documentation"
-                      >
-                        <Image src={api} width={32} height={32} className='w-7 h-7 md:w-8 md:h-8' alt='API' />
-                      </a>
-                      <button
-                        onClick={handleMixExport}
-                        className="cursor-pointer hover:opacity-80 transition-opacity"
-                        aria-label="Download data"
-                      >
-                        <Image src={download} width={32} height={32} className='w-7 h-7 md:w-8 md:h-8' alt='download' />
-                      </button>
-                    </div>
-                    {/* Title with info icon */}
-                    <CardTitle className="md:text-lg text-base text-right flex flex-row-reverse items-center gap-2 text-[#484C56] font-extrabold">
+                  {/* Title row with buttons - same structure as SMP */}
+                  <div className="flex items-center gap-2 justify-between">
+                    {/* Title FIRST - goes to RIGHT in RTL */}
+                    <CardTitle className="md:text-lg text-base md:text-right text-left flex flex-row-reverse items-center gap-2 text-[#484C56] font-extrabold">
                       <div
                         className="relative"
                         onMouseEnter={() => setShowMixTooltip(true)}
@@ -483,20 +466,37 @@ export default function HomePage() {
 
                       תמהיל יצור אנרגיה
                     </CardTitle>
+                    {/* Buttons SECOND - goes to LEFT in RTL */}
+                    <div className="flex items-start md:gap-4 gap-2">
+                      <a
+                        href="/api#energy-production-mix"
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        aria-label="View API Documentation"
+                      >
+                        <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='API' />
+                      </a>
+                      <button
+                        onClick={handleMixExport}
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        aria-label="Download data"
+                      >
+                        <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='download' />
+                      </button>
+                    </div>
                   </div>
                   {/* Date label */}
-                  <div className="text-xs md:text-sm text-slate-600 text-right">
+                  <div className="md:text-sm text-xs text-slate-600">
                     פרק זמן:
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-end gap-2 flex-wrap mb-4">
+                <div className="flex items-center gap-2 flex-wrap mb-4">
+                  <span className="text-sm text-slate-600">מיון לפי:</span>
                   <DateRangePicker
                     onDateRangeChange={handleMixDateRangeChange}
                     defaultPreset="last7Days"
                   />
-                  <span className="text-xs md:text-sm text-slate-600 whitespace-nowrap">:מיון לפי</span>
                 </div>
                 {isLoadingEnergyMix ? (
                   <div className="flex justify-center items-center h-[300px]">
@@ -531,27 +531,10 @@ export default function HomePage() {
             <Card className="bg-white border border-orange-200 rounded-2xl shadow-sm">
               <CardHeader className="pb-2">
                 <div className="flex flex-col gap-2">
-                  {/* Title row with buttons */}
-                  <div className="flex flex-row items-start justify-between gap-2">
-                    {/* Buttons - positioned on the right for RTL */}
-                    <div className="flex flex-row items-center gap-2 shrink-0">
-                      <a
-                        href="/api#energy-overview"
-                        className="cursor-pointer hover:opacity-80 transition-opacity"
-                        aria-label="View API Documentation"
-                      >
-                        <Image src={api} width={32} height={32} className='w-7 h-7 md:w-8 md:h-8' alt='API' />
-                      </a>
-                      <button
-                        onClick={handleOverviewExport}
-                        className="cursor-pointer hover:opacity-80 transition-opacity"
-                        aria-label="Download data"
-                      >
-                        <Image src={download} width={32} height={32} className='w-7 h-7 md:w-8 md:h-8' alt='download' />
-                      </button>
-                    </div>
-                    {/* Title with info icon */}
-                    <CardTitle className="md:text-lg text-sm text-right flex flex-row-reverse items-center gap-2 text-[#484C56] font-extrabold">
+                  {/* Title row with buttons - same structure as SMP */}
+                  <div className="flex items-center gap-2 justify-between">
+                    {/* Title FIRST - goes to RIGHT in RTL */}
+                    <CardTitle className="md:text-lg text-sm md:text-right text-left flex flex-row-reverse items-center gap-2 text-[#484C56] font-extrabold">
                       <div
                         className="relative"
                         onMouseEnter={() => setShowOverviewTooltip(true)}
@@ -573,21 +556,38 @@ export default function HomePage() {
                       </div>
                       סקירה כללית של משק החשמל בישראל - נטע על
                     </CardTitle>
+                    {/* Buttons SECOND - goes to LEFT in RTL */}
+                    <div className="flex items-start md:gap-4 gap-2">
+                      <a
+                        href="/api#energy-overview"
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        aria-label="View API Documentation"
+                      >
+                        <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='API' />
+                      </a>
+                      <button
+                        onClick={handleOverviewExport}
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        aria-label="Download data"
+                      >
+                        <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='download' />
+                      </button>
+                    </div>
                   </div>
                   {/* Date label */}
-                  <div className="text-xs md:text-sm text-slate-600 text-right">
+                  <div className="md:text-sm text-xs text-slate-600">
                     פרק זמן:
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-end gap-2 flex-wrap mb-4">
+                <div className="flex items-center gap-2 flex-wrap mb-4">
+                  <span className="text-sm text-slate-600">מיון לפי:</span>
                   <DateRangePicker
                     onDateRangeChange={handleOverviewDateRangeChange}
                     onPresetChange={setOverviewSelectedPreset}
                     defaultPreset="last7Days"
                   />
-                  <span className="text-xs md:text-sm text-slate-600 whitespace-nowrap">:מיון לפי</span>
                 </div>
                 {isLoadingEnergyOverview ? (
                   <div className="flex justify-center items-center h-[300px]">

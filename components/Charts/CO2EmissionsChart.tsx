@@ -48,7 +48,7 @@ const CO2EmissionsChart = () => {
     setDateRange({ startDate, endDate });
   };
 
-  // Handle export to Excel
+
   const handleExport = async () => {
     try {
       await exportCO2TotalVsRatio(dateRange.startDate, dateRange.endDate);

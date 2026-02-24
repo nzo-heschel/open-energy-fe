@@ -440,6 +440,31 @@ export type CO2TotalProductionResponse = {
   end_date: string;
 };
 
+// CO2 Total vs Ratio API response
+export type CO2TotalVsRatioResponse = {
+  view: 'month' | 'year' | 'custom';
+  start_date: string;
+  end_date: string;
+  infographics: {
+    total_emissions_excluding_renewables: {
+      value: number;
+      unit: string;
+      description: string;
+    };
+    emissions_avoided_through_renewables: {
+      value: number;
+      unit: string;
+      description: string;
+    };
+  };
+  chart_data: Array<{
+    period: string;
+    total_emissions: number;
+    emissions_ratio: number;
+    generation_mwh: number;
+  }>;
+};
+
 // Switching requests API response
 export type SwitchingRequestsResponse = {
   filter: {

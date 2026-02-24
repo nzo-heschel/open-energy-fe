@@ -1,7 +1,7 @@
 "use client";
 
 import DateRangePicker from '@/components/ui/DateRangePicker';
-import { useCO2EmissionsMix, useCO2EmissionsSavings, useCO2EmissionsRatio, useCO2TotalProduction, exportCO2EmissionsMix } from '@/lib/api';
+import { exportCO2EmissionsMix, useCO2EmissionsMix, useCO2EmissionsRatio, useCO2EmissionsSavings, useCO2TotalProduction } from '@/lib/api';
 import api from "@/public/images/API.png";
 import download from "@/public/images/download_2.png";
 import { format, subDays } from 'date-fns';
@@ -107,7 +107,7 @@ const CO2DonutChart = () => {
     // Calculate emissions savings percentage
     const emissionsSavingsPercentage = emissionsMixData?.infographics?.emissions_avoided_through_renewables
         ? ((emissionsMixData.infographics.emissions_avoided_through_renewables.value /
-           (emissionsMixData.total_emissions + emissionsMixData.infographics.emissions_avoided_through_renewables.value)) * 100)
+            (emissionsMixData.total_emissions + emissionsMixData.infographics.emissions_avoided_through_renewables.value)) * 100)
         : 0;
 
     return (
@@ -164,7 +164,7 @@ const CO2DonutChart = () => {
                 {/* Subtitle */}
                 <div className="md:text-sm text-xs text-slate-600">מאנרגיה פוסילית</div>
                 {/* Time period label */}
-                <div className="md:text-sm text-xs text-slate-600">פרק זמן:</div>
+                <div className="md:text-sm text-xs text-slate-600 w-full mr-14">פרק זמן:</div>
 
                 {/* Date controls row - same as SMP */}
                 <div className="flex items-center gap-2">

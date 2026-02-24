@@ -1,7 +1,7 @@
 "use client";
 
 import DateRangePicker from '@/components/ui/DateRangePicker';
-import { exportCO2EmissionsMix } from '@/lib/api';
+import { exportCO2TotalVsRatio, useCO2TotalVsRatio } from '@/lib/api';
 import api from '@/public/images/API.png';
 import download from '@/public/images/download_2.png';
 import { format, subDays } from 'date-fns';
@@ -17,48 +17,15 @@ import {
 } from "recharts";
 import { TooltipContent, TooltipProvider, TooltipTrigger, Tooltip as UITooltip } from "../ui/tooltip";
 
-type DataPoint = {
-  date: string;
-  co2: number;
-  savings: number;
+type ChartDataPoint = {
+  period: string;
+  total_emissions: number;
+  emissions_ratio: number;
 };
-
-// Sample data for different time periods
-const dataByPeriod = {
-  monthly: [
-    { date: "1/24", co2: 9000, savings: 6200 },
-    { date: "2/24", co2: 7200, savings: 5000 },
-    { date: "3/24", co2: 8000, savings: 5800 },
-    { date: "4/24", co2: 7600, savings: 4900 },
-    { date: "5/24", co2: 7000, savings: 5100 },
-    { date: "6/24", co2: 6800, savings: 4800 },
-    { date: "7/24", co2: 5600, savings: 3100 },
-    { date: "8/24", co2: 6000, savings: 3300 },
-    { date: "9/24", co2: 5500, savings: 3000 },
-    { date: "10/24", co2: 5000, savings: 2800 },
-    { date: "11/24", co2: 5200, savings: 2500 },
-    { date: "12/24", co2: 5400, savings: 3000 },
-  ],
-  quarterly: [
-    { date: "Q1/24", co2: 8100, savings: 5667 },
-    { date: "Q2/24", co2: 7133, savings: 4933 },
-    { date: "Q3/24", co2: 5700, savings: 3133 },
-    { date: "Q4/24", co2: 5200, savings: 2767 },
-  ],
-  yearly: [
-    { date: "2021", co2: 8500, savings: 5800 },
-    { date: "2022", co2: 7200, savings: 5200 },
-    { date: "2023", co2: 6500, savings: 4500 },
-    { date: "2024", co2: 5800, savings: 3800 },
-  ]
-};
-
-type TimePeriod = keyof typeof dataByPeriod;
 
 const CO2EmissionsChart = () => {
   const [hovered, setHovered] = useState<string | null>(null);
   const [active, setActive] = useState({ co2: true, savings: true });
-  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("monthly");
   const [dateRange, setDateRange] = useState(() => {
     const endDate = new Date();
     const startDate = subDays(endDate, 7);
@@ -67,6 +34,12 @@ const CO2EmissionsChart = () => {
       endDate: format(endDate, 'yyyy-MM-dd')
     };
   });
+
+  // Fetch data from API
+  const { data: totalVsRatioData, isLoading } = useCO2TotalVsRatio(
+    dateRange.startDate,
+    dateRange.endDate
+  );
 
   const toggle = (key: keyof typeof active) =>
     setActive((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -78,9 +51,9 @@ const CO2EmissionsChart = () => {
   // Handle export to Excel
   const handleExport = async () => {
     try {
-      await exportCO2EmissionsMix(dateRange.startDate, dateRange.endDate);
+      await exportCO2TotalVsRatio(dateRange.startDate, dateRange.endDate);
     } catch (error) {
-      console.error('Failed to export CO2 emissions data:', error);
+      console.error('Failed to export CO2 total vs ratio data:', error);
     }
   };
 
@@ -94,8 +67,12 @@ const CO2EmissionsChart = () => {
     return hovered === key ? 1 : 0.5;
   };
 
-  // Get the current data based on selected period
-  const currentData = dataByPeriod[selectedPeriod];
+  // Transform API data to chart format
+  const chartData: ChartDataPoint[] = totalVsRatioData?.chart_data?.map(item => ({
+    period: item.period,
+    total_emissions: item.total_emissions,
+    emissions_ratio: item.emissions_ratio
+  })) || [];
 
   return (
     <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[20px] p-4 md:p-6 overflow-hidden">
@@ -149,7 +126,7 @@ const CO2EmissionsChart = () => {
           </div>
         </div>
         {/* Time period label */}
-        <div className="md:text-sm text-xs text-slate-600">פרק זמן:</div>
+        <div className="md:text-sm text-xs text-slate-600 w-full mr-14">פרק זמן:</div>
 
         {/* Date controls row - same as SMP */}
         <div className="flex items-center gap-2">
@@ -162,72 +139,66 @@ const CO2EmissionsChart = () => {
       </div>
 
       <div className="md:h-[500px] h-[300px]">
-        {/* <div className="flex justify-between items-end text-right">
-          <p className="text-right text-xs text-[#707585] font-normal">קצב פליטות <br />mTCO₂/<br />MWh</p>
-          <p className="text-right text-xs text-[#707585] font-normal">סך פליטות <br />[mTCO₂/h]</p>
-        </div> */}
-        <ResponsiveContainer width="100%" height="90%">
-          <LineChart data={currentData} margin={{ top: 20, right: 10, left: 10, bottom: 10 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis
-              dataKey="date"
-              tickLine={false}
-              axisLine={false}
-              tick={{ fill: "#6b7280", fontSize: 12 }}
-            />
-            <YAxis
-              yAxisId="left"
-              orientation="left"
-              tickLine={false}
-              axisLine={false}
-              tick={{ fill: "#6b7280", fontSize: 12 }}
-              label={{
-                value: ">סך פליטות [mTCO₂/h]",
-                angle: -90,
-                position: "insideLeft",
-                style: { textAnchor: 'middle' }
-              }}
-            />
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              tickLine={false}
-              axisLine={false}
-              tick={{ fill: "#6b7280", fontSize: 12 }}
-              style={{
-                transform: 'translateX(25px)'
-              }}
-              label={{
-                value: "קצב פליטות mTCO₂/MWh",
-                angle: 90,
-                position: "insideRight",
-                style: { textAnchor: 'middle' }
-              }}
-            />
-            {active.co2 && (
-              <Line
-                yAxisId="left"
-                type="linear"
-                dataKey="co2"
-                stroke="#1E8025"
-                strokeWidth={2}
-                dot={false}
-                opacity={opacity("co2")}
-              />
-            )}
-            {active.savings && (
-              <Line
-                yAxisId="right"
-                type="linear"
-                dataKey="savings"
-                stroke="#F4D150"
-                strokeWidth={2}
-                dot={false}
-                opacity={opacity("savings")}
-              />
-            )}
-          </LineChart>
-        </ResponsiveContainer>
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-slate-500">Loading...</div>
+          </div>
+        ) : (
+          <>
+            {/* Y-axis labels at top */}
+            <div className="flex justify-between items-end text-right px-2 mb-1">
+              <p className="text-right text-xs text-[#707585] font-normal">יחס פליטות<br />[mTCO₂/MWh]</p>
+              <p className="text-right text-xs text-[#707585] font-normal">סך פליטות<br />[mTCO₂/h]</p>
+            </div>
+            <ResponsiveContainer width="100%" height="85%">
+              <LineChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="period"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: "#6b7280", fontSize: 12 }}
+                />
+                <YAxis
+                  yAxisId="left"
+                  orientation="left"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: "#6b7280", fontSize: 12 }}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: "#6b7280", fontSize: 12 }}
+                />
+                {active.co2 && (
+                  <Line
+                    yAxisId="left"
+                    type="linear"
+                    dataKey="total_emissions"
+                    stroke="#1E8025"
+                    strokeWidth={2}
+                    dot={false}
+                    opacity={opacity("co2")}
+                  />
+                )}
+                {active.savings && (
+                  <Line
+                    yAxisId="right"
+                    type="linear"
+                    dataKey="emissions_ratio"
+                    stroke="#F4D150"
+                    strokeWidth={2}
+                    dot={false}
+                    opacity={opacity("savings")}
+                  />
+                )}
+              </LineChart>
+            </ResponsiveContainer>
+          </>
+        )}
       </div>
 
       {/* Custom Legend */}

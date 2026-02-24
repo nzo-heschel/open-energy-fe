@@ -485,7 +485,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   {/* Date label */}
-                  <div className="md:text-sm text-xs text-slate-600">
+                  <div className="md:text-sm text-xs text-slate-600 w-full mr-14">
                     פרק זמן:
                   </div>
                 </div>
@@ -575,7 +575,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   {/* Date label */}
-                  <div className="md:text-sm text-xs text-slate-600">
+                  <div className="md:text-sm text-xs text-slate-600 w-full mr-14">
                     פרק זמן:
                   </div>
                 </div>

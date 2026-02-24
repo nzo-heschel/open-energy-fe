@@ -90,7 +90,7 @@ const CO2LineChart = () => {
     };
 
     return (
-        <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[16px] p-4 md:p-6 pb-4 overflow-hidden">
+        <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[16px] p-4 md:p-6 pb-4 overflow-hidden h-full flex flex-col">
             <div className="flex flex-col gap-1">
                 {/* Header row with title and buttons - same structure as SMP */}
                 <div className="flex items-center gap-2 justify-between">
@@ -141,7 +141,7 @@ const CO2LineChart = () => {
                     </div>
                 </div>
                 {/* Time period label */}
-                <div className="md:text-sm text-xs text-slate-600">פרק זמן:</div>
+                <div className="md:text-sm text-xs text-slate-600 w-full mr-14">פרק זמן:</div>
 
                 {/* Date controls row - same as SMP */}
                 <div className="flex items-center gap-2">
@@ -152,49 +152,30 @@ const CO2LineChart = () => {
                     />
                 </div>
             </div>
-            <div className="h-[300px]">
-                {(() => {
-                    if (isLoading) {
-                        return (
-                            <div className="flex justify-center items-center h-full">
-                                <p className="text-slate-600">טוען נתונים...</p>
-                            </div>
-                        );
-                    }
-                    if (error) {
-                        return (
-                            <div className="flex justify-center items-center h-full">
-                                <p className="text-red-600">שגיאה בטעינת הנתונים</p>
-                            </div>
-                        );
-                    }
-                    if (currentData.length === 0) {
-                        return (
-                            <div className="flex justify-center items-center h-full">
-                                <p className="text-slate-600">אין נתונים זמינים</p>
-                            </div>
-                        );
-                    }
-                    return (
+            <div className="flex-grow min-h-[350px]">
+                {isLoading ? (
+                    <div className="flex justify-center items-center h-full">
+                        <p className="text-slate-600">טוען נתונים...</p>
+                    </div>
+                ) : error ? (
+                    <div className="flex justify-center items-center h-full">
+                        <p className="text-red-600">שגיאה בטעינת הנתונים</p>
+                    </div>
+                ) : currentData.length === 0 ? (
+                    <div className="flex justify-center items-center h-full">
+                        <p className="text-slate-600">אין נתונים זמינים</p>
+                    </div>
+                ) : (
+                    <>
+                        {/* Y-axis label at top */}
+                        <div className="flex justify-end px-2 mb-1">
+                            <p className="text-right text-xs text-[#707585] font-normal">[mTCO₂/h]</p>
+                        </div>
                         <ResponsiveContainer width="100%" height="95%">
-                            <LineChart data={currentData} margin={{ top: 20, right: 0, left: 10, bottom: 10 }}>
+                            <LineChart data={currentData} margin={{ top: 10, right: 0, left: 10, bottom: 10 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis dataKey="date" tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
-                                <YAxis tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} label={{
-                                    value: "[mTCO₂/h]",
-                                    angle: -90,
-                                    position: "insideLeft",
-                                    style: { textAnchor: 'middle' }
-                                }}
-                                />
-                                {/* <Tooltip
-                            cursor={{ strokeDasharray: "3 3" }}
-                            contentStyle={{
-                                backgroundColor: "white",
-                                borderRadius: "8px",
-                                border: "1px solid #e5e7eb",
-                            }}
-                        /> */}
+                                <YAxis tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
                                 {activeLines.co2 && (
                                     <Line
                                         type="linear"
@@ -217,12 +198,12 @@ const CO2LineChart = () => {
                                 )}
                             </LineChart>
                         </ResponsiveContainer>
-                    );
-                })()}
+                    </>
+                )}
             </div>
 
             {/* Legend */}
-            <div className="flex flex-col md:flex-row justify-start gap-6 mt-2">
+            <div className="flex flex-col md:flex-row justify-start gap-6 mt-1">
                 <div
                     className="flex items-center gap-2 cursor-pointer transition-opacity duration-200"
                     onClick={() => toggleLine("co2")}

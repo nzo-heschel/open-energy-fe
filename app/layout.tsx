@@ -10,7 +10,7 @@ const heebo = Heebo({
   variable: '--font-heebo',
   display: 'swap'
 });
-
+//TODO
 export const metadata: Metadata = {
   title: 'פלטפורמת נתוני אנרגיה פתוחה - NZO',
   description: 'פלטפורמה ציבורית לחקר וניתוח נתוני אנרגיה ופליטות בישראל',

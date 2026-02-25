@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import topleft from '@/public/images/Ellipse 89 (1).png';
 import Image from 'next/image';
-import topleft from '@/public/images/Ellipse 89 (1).png'
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import InterestPage from '../InterestPage';
 
 interface ApiEndpoint {
@@ -421,6 +421,41 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
   "message": "File uploaded. Re-run the target API to get the updated results."
 }`
     },
+    // Heat Load vs Generation Endpoints
+    {
+      id: 'heat-load-vs-generation',
+      title: 'עומס חום מול ייצור חשמל',
+      description: 'Heat load vs electricity generation based on meteorological CSV data and generation data',
+      endpoint: 'GET /api/v1/heat-load-vs-generation',
+      method: 'GET',
+      parameters: ['start_date (optional, YYYY-MM-DD)', 'end_date (optional, YYYY-MM-DD)', 'view (optional, month | year | custom)'],
+      responseExample: `{
+  "view": "year",
+  "start_date": "2026-02-01",
+  "end_date": "2026-02-18",
+  "units": {
+    "heat_load": "THI",
+    "electricity_generation": "MW"
+  },
+  "series": [
+    {
+      "period": "2026-02-16/2026-02-22",
+      "label": "16 Feb",
+      "heat_load": 11.96,
+      "electricity_generation_mw": 8620.43
+    }
+  ]
+}`
+    },
+    {
+      id: 'heat-load-vs-generation-export',
+      title: 'ייצוא עומס חום מול ייצור חשמל',
+      description: 'Export heat load vs electricity generation to Excel',
+      endpoint: 'GET /api/v1/heat-load-vs-generation/export',
+      method: 'GET',
+      parameters: ['start_date (optional, YYYY-MM-DD)', 'end_date (optional, YYYY-MM-DD)', 'view (optional, month | year | custom)'],
+      responseExample: 'Streamed Excel file (heat_load_vs_generation_STARTDATE_to_ENDDATE.xlsx)'
+    },
     // API Catalog Endpoint
     {
       id: 'api-catalog',
@@ -471,6 +506,9 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
     { id: 'co2-emissions-over-time', name: 'CO2 emissions over time', endpoint: 'api/v1/co2/emissions-over-time', method: 'GET', category: 'CO2' },
     { id: 'co2-emissions-over-time-export', name: 'Export CO2 emissions over time', endpoint: 'api/v1/co2/emissions-over-time/export', method: 'GET', category: 'CO2' },
     { id: 'co2-total-vs-ratio', name: 'Total vs Ratio CO2 emissions', endpoint: 'api/v1/co2/total-vs-ratio', method: 'GET', category: 'CO2' },
+    // Heat Load vs Generation
+    { id: 'heat-load-vs-generation', name: 'Heat load vs electricity generation', endpoint: 'api/v1/heat-load-vs-generation', method: 'GET', category: 'Climate' },
+    { id: 'heat-load-vs-generation-export', name: 'Export heat load vs generation', endpoint: 'api/v1/heat-load-vs-generation/export', method: 'GET', category: 'Climate' },
     // Data Files
     { id: 'data-files-status', name: 'Data files freshness status', endpoint: 'api/v1/data-files/status', method: 'GET', category: 'Data' },
     { id: 'data-files-upload', name: 'Upload data file', endpoint: 'api/v1/data-files/upload', method: 'POST', category: 'Data' },

@@ -526,3 +526,19 @@ export type SwitchingRequestsResponse = {
   total_requests: number;
   total_rejections: number;
 };
+
+export type HeatLoadVsGenerationResponse = {
+  view: 'month' | 'year' | 'custom';
+  start_date: string;
+  end_date: string;
+  units: {
+    heat_load: string; // 'THI'
+    electricity_generation: string; // 'MW'
+  };
+  series: Array<{
+    period: string;
+    label: string;
+    heat_load: number;
+    electricity_generation_mw: number;
+  }>;
+};

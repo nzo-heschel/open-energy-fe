@@ -7,8 +7,8 @@ import {
     Bar,
     Cell,
     ComposedChart,
-    Legend,
     LabelList,
+    Legend,
     Pie,
     PieChart,
     ResponsiveContainer,
@@ -68,7 +68,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         const total = payload.reduce((acc: number, cur: any) => acc + cur.value, 0);
 
         return (
-            <div className="bg-white shadow-lg rounded-lg px-3 py-2 border border-gray-200 text-sm" style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}>
+            <div className="bg-white z-100 shadow-lg rounded-lg px-3 py-2 border border-gray-200 text-sm" style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}>
                 <p className="mr-3 font-normal text-gray-800">{label}</p>
                 {label ? (
                     <p className="mr-3 text-[#59687D] font-semibold text-base border-b border-[#59687D]">סה&quot;כ {Math.round(total).toLocaleString()} דחיות</p>
@@ -300,7 +300,12 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
             <div className="relative h-[500px] md:w-[400px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                        <Tooltip content={<PieChartTooltip totalValue={pieData.reduce((sum, entry) => sum + entry.value, 0)} />} />
+                        <Tooltip
+                            content={<PieChartTooltip totalValue={pieData.reduce((sum, entry) => sum + entry.value, 0)} />}
+                            // Offset tooltip away from center to avoid overlapping with the total rejections label
+                            offset={20}
+                            wrapperStyle={{ zIndex: 50 }}
+                        />
                         <Legend
                             content={
                                 <CustomLegend
@@ -334,9 +339,9 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                         </Pie>
                     </PieChart>
                 </ResponsiveContainer>
-                <div className="absolute text-sm flex flex-col items-center top-1/2  right-1/2 -translate-y-[60%] translate-x-1/2 pb-14">
+                <div className="absolute text-sm flex flex-col items-center top-1/2 right-1/2 -translate-y-[60%] translate-x-1/2 pb-14 pointer-events-none">
                     <b className="text-xl">{totalRejections.toLocaleString()}</b>
-                    <span className="text-gray-500 text-sm font-normal">סה״כ פניות</span>
+                    <span className="text-gray-500 text-sm font-normal">סה״כ דחיות</span>
                 </div>
             </div>
 

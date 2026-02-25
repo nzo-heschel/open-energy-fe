@@ -542,7 +542,7 @@ const ElectricityLineGraph = ({ data, startDate, endDate, selectedPreset }: Elec
                         strokeWidth={2}
                         strokeOpacity={getLineOpacity("net_demand")}
                         dot={false}
-                        name="ביקוש נטו"
+                        name="דוֹר"
                     />
                 </LineChart>
             </ResponsiveContainer>

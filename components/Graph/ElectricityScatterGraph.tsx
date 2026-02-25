@@ -144,7 +144,7 @@ export function ElectricityScatterGraph({ data, isLoading, error, startDate, end
         return data.correlation.map((item, i) => ({
           price: item.smp || 0,
           demand: item.net_demand || 0,
-          type: i % 2 === 0 ? "ביקוש נטו" : "מחיר שוליי כולל אילוצים",
+          type: i % 2 === 0 ? "דוֹר" : "מחיר שוליי כולל אילוצים",
         }));
       }
       return [];
@@ -174,7 +174,7 @@ export function ElectricityScatterGraph({ data, isLoading, error, startDate, end
     return correlationData.map((item, i) => ({
       price: item.price_with_constraints || 0,
       demand: item.net_demand || 0,
-      type: i % 2 === 0 ? "ביקוש נטו" : "מחיר שוליי כולל אילוצים",
+      type: i % 2 === 0 ? "דוֹר" : "מחיר שוליי כולל אילוצים",
     }));
   }, [data, dateRangeType]);
 
@@ -250,8 +250,8 @@ export function ElectricityScatterGraph({ data, isLoading, error, startDate, end
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend content={<CustomLegend />} />
-          <Scatter name="ביקוש נטו" data={scatterData1.filter((d) => d.type === "ביקוש נטו")} fill="#166534" />
-          <Scatter name="מחיר שוליי כולל אילוצים" data={scatterData1.filter((d) => d.type !== "ביקוש נטו")} fill="#eab308" />
+          <Scatter name="דוֹר" data={scatterData1.filter((d) => d.type === "דוֹר")} fill="#166534" />
+          <Scatter name="מחיר שוליי כולל אילוצים" data={scatterData1.filter((d) => d.type !== "דוֹר")} fill="#eab308" />
         </ScatterChart>
       </ResponsiveContainer>
     </div>

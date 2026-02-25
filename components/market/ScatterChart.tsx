@@ -89,7 +89,7 @@ export default function ScatterChart({
     },
     xAxis: {
       type: 'value',
-      name: 'ביקוש נטו (MW)',
+      name: 'דוֹר (MW)',
       nameLocation: 'middle',
       nameGap: 30,
       nameTextStyle: {

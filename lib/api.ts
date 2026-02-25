@@ -17,7 +17,7 @@ import type {
   SmpScatterResponse,
   SwitchingRequestsResponse
 } from '@/types/dto';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { differenceInDays, differenceInMonths } from 'date-fns';
 
 const API_BASE = 'https://api.open-energy.madebyomnis.com/';
@@ -515,6 +515,8 @@ export const useSwitchingRequests = (customerType?: 'residential' | 'non_residen
         throw error;
       }
     },
+    // Keep showing previous data while refetching with new filters to prevent flashing empty state
+    placeholderData: keepPreviousData,
     staleTime: 5 * 60 * 1000,
     refetchInterval: 15 * 60 * 1000,
   });

@@ -1,67 +1,91 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import Image from "next/image";
-import { ChevronDown } from "lucide-react";
-import {
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    ReferenceLine,
-} from "recharts";
+import { exportHeatLoadVsGeneration, useHeatLoadVsGeneration } from "@/lib/api";
 import apiIcon from "@/public/images/API.png";
 import downloadIcon from "@/public/images/download_2.png";
-import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"; // keep your existing TooltipInfo component
+import { format, subDays } from "date-fns";
+import Image from "next/image";
+import React, { useMemo, useState } from "react";
+import {
+    CartesianGrid,
+    Line,
+    LineChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+} from "recharts";
 import TooltipInfo from "../TooltipInfo";
+import DateRangePicker from "../ui/DateRangePicker";
 
 type DataPoint = {
     date: string;
-    heatLoad: number; // °C (left axis)
+    heatLoad: number; // THI (left axis)
     production: number; // MW (right axis)
 };
 
-const dataByPeriod = {
-    monthly: [
-        { date: "1/24", heatLoad: 26, production: 6300 },
-        { date: "2/24", heatLoad: 18, production: 4800 },
-        { date: "3/24", heatLoad: -8, production: 1200 },
-        { date: "4/24", heatLoad: 27, production: 7000 },
-        { date: "5/24", heatLoad: 12, production: 6500 },
-        { date: "6/24", heatLoad: 10, production: 6300 },
-        { date: "7/24", heatLoad: 15, production: 4300 },
-        { date: "8/24", heatLoad: 14, production: 4700 },
-        { date: "9/24", heatLoad: 16, production: 5200 },
-        { date: "10/24", heatLoad: -6, production: 900 },
-        { date: "11/24", heatLoad: 10, production: 4200 },
-        { date: "12/24", heatLoad: 12, production: 4500 },
-    ] as DataPoint[],
-    quarterly: [
-        { date: "Q1/24", heatLoad: 12, production: 4100 },
-        { date: "Q2/24", heatLoad: 16, production: 6600 },
-        { date: "Q3/24", heatLoad: 15, production: 4733 },
-        { date: "Q4/24", heatLoad: 5, production: 3200 },
-    ] as DataPoint[],
-    yearly: [
-        { date: "2021", heatLoad: 18, production: 5800 },
-        { date: "2022", heatLoad: 14, production: 5200 },
-        { date: "2023", heatLoad: 12, production: 4500 },
-        { date: "2024", heatLoad: 13, production: 4700 },
-    ] as DataPoint[],
-};
-
-type TimePeriod = keyof typeof dataByPeriod;
-
 const HeatVsProductionChart: React.FC = () => {
-    const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("monthly");
     const [active, setActive] = useState({ heatLoad: true, production: true });
     const [hovered, setHovered] = useState<string | null>(null);
     const [showInfo, setShowInfo] = useState(false);
+    const [dateRange, setDateRange] = useState(() => {
+        const endDate = new Date();
+        const startDate = subDays(endDate, 365); // Default to last year
+        return {
+            startDate: format(startDate, 'yyyy-MM-dd'),
+            endDate: format(endDate, 'yyyy-MM-dd')
+        };
+    });
 
-    const currentData = useMemo(() => dataByPeriod[selectedPeriod], [selectedPeriod]);
+    // Determine view based on date range
+    const view = useMemo<'month' | 'year' | 'custom'>(() => {
+        const start = new Date(dateRange.startDate);
+        const end = new Date(dateRange.endDate);
+        const daysDiff = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (daysDiff <= 62) {
+            return 'month';
+        } else if (daysDiff <= 730) {
+            return 'year';
+        }
+        return 'custom';
+    }, [dateRange]);
+
+    // Fetch data from API
+    const { data, isLoading, isFetching } = useHeatLoadVsGeneration(
+        dateRange.startDate,
+        dateRange.endDate,
+        view
+    );
+
+    // Transform API data to chart format
+    const currentData = useMemo<DataPoint[]>(() => {
+        if (!data?.series) {
+            return [];
+        }
+
+        return data.series.map((item) => ({
+            date: item.label,
+            heatLoad: item.heat_load,
+            production: item.electricity_generation_mw,
+        }));
+    }, [data]);
+
+    // Show loading when initially loading or when fetching new data
+    // isFetching will be true when the query key changes and new data is being fetched
+    const showLoading = isLoading || isFetching;
+
+    const handleDateRangeChange = (startDate: string, endDate: string) => {
+        setDateRange({ startDate, endDate });
+    };
+
+    const handleExport = async () => {
+        try {
+            await exportHeatLoadVsGeneration(dateRange.startDate, dateRange.endDate, view);
+        } catch (error) {
+            console.error('Failed to export heat load vs generation data:', error);
+        }
+    };
 
     const toggle = (key: keyof typeof active) =>
         setActive((p) => ({ ...p, [key]: !p[key] }));
@@ -85,14 +109,14 @@ const HeatVsProductionChart: React.FC = () => {
         const prod = payload.find((p: any) => p.dataKey === "production");
 
         return (
-            <div className="bg-white shadow-lg rounded-lg p-3 text-right w-56">
+            <div className="bg-white shadow-lg rounded-lg p-3 text-right w-56 border border-gray-200" style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}>
                 <div className="text-xs text-gray-500 mb-2 border-b-2">{label}</div>
                 {heat && (
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 mb-2">
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#1E8025" }} />
                         <div className="text-sm">
-                            <div className="text-xs text-gray-500">מחיר שולי ללא אילוצים </div>
-                            <div className="font-medium text-sm">{heat.value} °C</div>
+                            <div className="text-xs text-gray-500">עומס חום</div>
+                            <div className="font-medium text-sm">{Number(heat.value).toFixed(2)} {data?.units?.heat_load || 'THI'}</div>
                         </div>
                     </div>
                 )}
@@ -100,8 +124,8 @@ const HeatVsProductionChart: React.FC = () => {
                     <div className="flex items-center gap-3 mb-2">
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#F4D150" }} />
                         <div className="text-sm">
-                            <div className="text-sm text-gray-500">מחיר שולי כולל אילוצים</div>
-                            <div className="font-medium text-sm">{Number(prod.value).toLocaleString()} MW</div>
+                            <div className="text-xs text-gray-500">ייצור חשמל</div>
+                            <div className="font-medium text-sm">{Number(prod.value).toLocaleString()} {data?.units?.electricity_generation || 'MW'}</div>
                         </div>
                     </div>
                 )}
@@ -115,10 +139,14 @@ const HeatVsProductionChart: React.FC = () => {
                 <div className="flex flex-col">
                     <h2 className="text-lg font-bold text-gray-700 mb-2 flex items-center gap-3">
                         עומס חום מול ייצור חשמל
-                        <div
-                            className="relative"
+                        <button
+                            type="button"
+                            className="relative bg-transparent border-none p-0 cursor-help"
                             onMouseEnter={() => setShowInfo(true)}
                             onMouseLeave={() => setShowInfo(false)}
+                            onFocus={() => setShowInfo(true)}
+                            onBlur={() => setShowInfo(false)}
+                            aria-label="מידע נוסף"
                         >
                             <svg
                                 width="21"
@@ -137,138 +165,139 @@ const HeatVsProductionChart: React.FC = () => {
                             {showInfo && (
                                 <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50">
                                     <TooltipInfo
-                                        content={`
-                        הגרף מציג את עומס החום (במעלות צלזיוס) לעומת כמות ייצור החשמל (ב-MW) לאורך תקופה נבחרת.
-                        הערכים כאן מקורם בהערכה ויזואלית מהתמונה — ניתן להחליף בנתוני אמת דרך ה-API.
-                      `}
+                                        content="הגרף מציג את עומס החום (THI) לעומת כמות ייצור החשמל (ב-MW) לאורך תקופה נבחרת."
                                     />
                                 </div>
                             )}
-                        </div>
+                        </button>
                     </h2>
 
                     <p className="text-sm text-gray-600 mb-2">פרק זמן:</p>
 
                     <div className="flex items-center gap-3">
                         <span className="text-sm text-slate-600">סינון לפי:</span>
-                        <div className="relative w-48">
-                            <select
-                                value={selectedPeriod}
-                                onChange={(e) => setSelectedPeriod(e.target.value as TimePeriod)}
-                                className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-8"
-                            >
-                                <option value="monthly">חודש</option>
-                                <option value="quarterly">רבעון</option>
-                                <option value="yearly">שנה</option>
-                            </select>
-                            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-                                <ChevronDown size={14} />
-                            </span>
-                        </div>
+                        <DateRangePicker
+                            onDateRangeChange={handleDateRangeChange}
+                            defaultPreset="lastYear"
+                        />
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <Image src={apiIcon} alt="API" width={32} height={32} className="w-8 h-8" />
-                    <Image src={downloadIcon} alt="Download" width={32} height={32} className="w-8 h-8" />
+                    <a
+                        href="/api#heat-load-vs-generation"
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        aria-label="View API Documentation"
+                    >
+                        <Image src={apiIcon} alt="API" width={32} height={32} className="w-8 h-8" />
+                    </a>
+                    <button
+                        onClick={handleExport}
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        aria-label="Export to Excel"
+                    >
+                        <Image src={downloadIcon} alt="Download" width={32} height={32} className="w-8 h-8" />
+                    </button>
                 </div>
             </div>
 
             <div className="md:h-[480px] h-[320px]">
-                {/* small axis labels row */}
-                {/* <div className="flex justify-between items-end mb-2 text-right">
-                    <p className="text-right text-xs text-[#707585]">ייצור חשמל <br />(MW)</p>
-                    <p className="text-right text-xs text-[#707585]">עומס חום <br />[מעלות C]</p>
-                </div> */}
+                {showLoading ? (
+                    <div className="flex justify-center items-center h-full">
+                        <p className="text-slate-600">טוען נתונים...</p>
+                    </div>
+                ) : currentData.length === 0 ? (
+                    <div className="flex justify-center items-center h-full">
+                        <p className="text-slate-600">אין נתונים זמינים</p>
+                    </div>
+                ) : (
+                    <>
+                        {/* Y-axis labels at top */}
+                        <div className="flex justify-between items-start px-2 mb-1">
+                            <p className="text-right text-xs text-[#707585] font-normal">עומס חום [מעלות C°]</p>
+                            <p className="text-right text-xs text-[#707585] font-normal">
+                                מגה-וואט<br />[MW]
+                            </p>
+                        </div>
+                        <ResponsiveContainer width="100%" height="90%">
+                            <LineChart data={currentData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E6E7EA" />
+                                <XAxis
+                                    dataKey="date"
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tick={{ fill: "#6b7280", fontSize: 12 }}
+                                />
 
-                <ResponsiveContainer width="100%" height="90%">
-                    <LineChart data={currentData} margin={{ top: 20, right: 10, left: 10, bottom: 10 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E6E7EA" />
-                        <XAxis
-                            dataKey="date"
-                            tickLine={false}
-                            axisLine={false}
-                            tick={{ fill: "#6b7280", fontSize: 12 }}
-                        />
+                                <YAxis
+                                    yAxisId="left"
+                                    orientation="left"
+                                    domain={["dataMin - 5", "dataMax + 5"]}
+                                    tickLine={false}
+                                    axisLine={true}
+                                    tick={{ fill: "#6b7280", fontSize: 12 }}
+                                />
 
-                        <YAxis
-                            yAxisId="left"
-                            orientation="left"
-                            domain={["dataMin - 5", "dataMax + 5"]}
-                            tickLine={false}
-                            axisLine={false}
-                            tick={{ fill: "#6b7280", fontSize: 12 }}
-                            label={{
-                                value: "עומס חום [מעלות C°]",
-                                angle: -90,
-                                position: "insideLeft",
-                                style: { textAnchor: 'middle' }
-                            }}
-                        />
+                                <YAxis
+                                    yAxisId="right"
+                                    orientation="right"
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tick={{ fill: "#6b7280", fontSize: 12 }}
+                                    domain={[0, (dataMax: number) => Math.ceil(dataMax / 1000) * 1000 + 1000]}
+                                    width={80}
+                                />
 
-                        <YAxis
-                            yAxisId="right"
-                            orientation="right"
-                            tickLine={false}
-                            axisLine={false}
-                            tick={{ fill: "#6b7280", fontSize: 12 }}
-                            domain={[0, (dataMax: number) => Math.ceil(dataMax / 1000) * 1000 + 1000]}
-                            width={80}
-                            label={{
-                                value: "מגה-וואט [MW]",
-                                angle: 90,
-                                position: "insideRight",
-                                style: { textAnchor: 'middle' }
-                            }}
-                        // push a little to the right visually
-                        />
+                                {/* Vertical mid-line near 6/24 - use x value that exists in dataset */}
+                                {/* <ReferenceLine x="6/24" stroke="#d1d5db" strokeWidth={1} strokeOpacity={0.9} /> */}
 
-                        {/* Vertical mid-line near 6/24 - use x value that exists in dataset */}
-                        {/* <ReferenceLine x="6/24" stroke="#d1d5db" strokeWidth={1} strokeOpacity={0.9} /> */}
+                                {/* custom tooltip */}
+                                <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#cbd5e1", strokeWidth: 1 }} />
 
-                        {/* custom tooltip */}
-                        <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#cbd5e1", strokeWidth: 1 }} />
+                                {/* Lines */}
+                                {active.production && (
+                                    <Line
+                                        yAxisId="right"
+                                        dataKey="production"
+                                        name="ייצור חשמל"
+                                        stroke="#F4D150"
+                                        strokeWidth={2}
+                                        dot={false}
+                                        activeDot={{ r: 4 }}
+                                        opacity={opacity("production")}
+                                        isAnimationActive={false}
+                                    />
+                                )}
 
-                        {/* Lines */}
-                        {active.production && (
-                            <Line
-                                yAxisId="right"
-                                dataKey="production"
-                                name="ייצור חשמל"
-                                stroke="#F4D150"
-                                strokeWidth={2}
-                                dot={false}
-                                activeDot={{ r: 4 }}
-                                opacity={opacity("production")}
-                                isAnimationActive={false}
-                            />
-                        )}
-
-                        {active.heatLoad && (
-                            <Line
-                                yAxisId="left"
-                                dataKey="heatLoad"
-                                name="עומס חום"
-                                stroke="#1E8025"
-                                strokeWidth={2}
-                                dot={false}
-                                activeDot={{ r: 4 }}
-                                opacity={opacity("heatLoad")}
-                                isAnimationActive={false}
-                            />
-                        )}
-                    </LineChart>
-                </ResponsiveContainer>
+                                {active.heatLoad && (
+                                    <Line
+                                        yAxisId="left"
+                                        dataKey="heatLoad"
+                                        name="עומס חום"
+                                        stroke="#1E8025"
+                                        strokeWidth={2}
+                                        dot={false}
+                                        activeDot={{ r: 4 }}
+                                        opacity={opacity("heatLoad")}
+                                        isAnimationActive={false}
+                                    />
+                                )}
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </>
+                )}
             </div>
 
             {/* Legend */}
             <div className="flex justify-start gap-6 mt-4 pr-4">
-                <div
-                    className="flex items-center gap-2 cursor-pointer transition-opacity duration-150"
+                <button
+                    type="button"
+                    className="flex items-center gap-2 cursor-pointer transition-opacity duration-150 bg-transparent border-none p-0"
                     onClick={() => toggle("production")}
                     onMouseEnter={() => setHovered("production")}
                     onMouseLeave={() => setHovered(null)}
                     style={{ opacity: legendOpacity("production") }}
+                    aria-label="Toggle ייצור חשמל"
                 >
                     <span
                         className="w-2 h-2 rounded-full"
@@ -277,14 +306,16 @@ const HeatVsProductionChart: React.FC = () => {
                     <span className={`md:text-sm text-xs ${active.production ? "text-gray-800" : "text-gray-400"}`}>
                         ייצור חשמל
                     </span>
-                </div>
+                </button>
 
-                <div
-                    className="flex items-center gap-2 cursor-pointer transition-opacity duration-150"
+                <button
+                    type="button"
+                    className="flex items-center gap-2 cursor-pointer transition-opacity duration-150 bg-transparent border-none p-0"
                     onClick={() => toggle("heatLoad")}
                     onMouseEnter={() => setHovered("heatLoad")}
                     onMouseLeave={() => setHovered(null)}
                     style={{ opacity: legendOpacity("heatLoad") }}
+                    aria-label="Toggle עומס חום"
                 >
                     <span
                         className="w-2 h-2 rounded-full"
@@ -293,7 +324,7 @@ const HeatVsProductionChart: React.FC = () => {
                     <span className={`md:text-sm text-xs ${active.heatLoad ? "text-gray-800" : "text-gray-400"}`}>
                         עומס חום
                     </span>
-                </div>
+                </button>
             </div>
         </div>
     );

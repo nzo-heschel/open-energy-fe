@@ -8,6 +8,7 @@ import type {
   EnergyMixResponse,
   EnergyOverviewResponse,
   FilterOptions,
+  HeatLoadVsGenerationResponse,
   MarketOverviewResponse,
   MixResponse,
   PrivateSupplierConnectedConsumersResponse,
@@ -858,6 +859,106 @@ export const exportCO2TotalVsRatio = async (startDate: string, endDate: string) 
     // Cleanup
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
+//++ Heat load vs generation data
+export const useHeatLoadVsGeneration = (startDate?: string, endDate?: string, view?: 'month' | 'year' | 'custom') => {
+  return useQuery<HeatLoadVsGenerationResponse>({
+    queryKey: ['heat-load-vs-generation', startDate, endDate, view],
+    queryFn: async () => {
+      try {
+        const params = new URLSearchParams();
+        if (startDate) {
+          params.set('start_date', startDate);
+        }
+        if (endDate) {
+          params.set('end_date', endDate);
+        }
+        if (view) {
+          params.set('view', view);
+        }
+
+        const url = params.toString()
+          ? `${API_BASE}api/v1/heat-load-vs-generation/?${params}`
+          : `${API_BASE}api/v1/heat-load-vs-generation/`;
+
+        const data = await fetcher(url);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    // Keep showing previous data while refetching with new filters to prevent flashing empty state
+    placeholderData: keepPreviousData,
+    // Refetch immediately when query key changes (when date range or view changes)
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+//++ Export heat load vs generation data
+export const exportHeatLoadVsGeneration = async (startDate?: string, endDate?: string, view?: 'month' | 'year' | 'custom') => {
+  const params = new URLSearchParams();
+  if (startDate) {
+    params.set('start_date', startDate);
+  }
+  if (endDate) {
+    params.set('end_date', endDate);
+  }
+  if (view) {
+    params.set('view', view);
+  }
+
+  try {
+    const url = params.toString()
+      ? `${API_BASE}api/v1/heat-load-vs-generation/export?${params}`
+      : `${API_BASE}api/v1/heat-load-vs-generation/export`;
+
+    const response = await fetch(url, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    // Get the filename from Content-Disposition header or use a default
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'heat_load_vs_generation.xlsx'; // default filename
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    } else if (startDate && endDate) {
+      // Fallback: use date range in filename if provided
+      filename = `heat_load_vs_generation_${startDate}_to_${endDate}.xlsx`;
+    }
+
+    // Get the blob from response
+    const blob = await response.blob();
+
+    // Create a temporary URL and trigger download
+    const urlObject = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = urlObject;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(urlObject);
   } catch (error) {
     console.error('Export error:', error);
     throw error;

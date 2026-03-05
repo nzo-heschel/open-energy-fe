@@ -212,7 +212,7 @@ export default function ContactSection() {
                       value={formData.phone}
                       onChange={handleChange}
                       className={`${getInputClassName('phone')} pr-4`}
-                      placeholder="אזור (אם יש)"
+                      placeholder="ארגון (אם יש)"
                     />
                     {errors.phone && (
                       <p className="text-right text-[#CEA073] text-sm mt-1 absolute bottom-[-20px] right-0">

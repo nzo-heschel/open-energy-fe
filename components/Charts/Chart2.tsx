@@ -230,7 +230,7 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
         type: 'value',
         name: "[MW]",
         nameLocation: 'middle',
-        nameGap: 40,
+        nameGap: 50,
         nameRotate: 90,
         nameTextStyle: {
           fontSize: 12,

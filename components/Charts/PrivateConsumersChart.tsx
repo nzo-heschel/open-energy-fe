@@ -10,35 +10,31 @@ import {
     ResponsiveContainer,
     Legend,
     CartesianGrid,
+    LabelList,
 } from "recharts";
 import type { PrivateSupplierConnectedConsumersResponse } from "@/types/dto";
 
 interface PrivateConsumersChartProps {
     data: PrivateSupplierConnectedConsumersResponse | null | undefined;
-    segmentType?: 'regulation_type' | 'sector' | 'meter_type' | 'status' | 'rejection_reason';
-    selectedSegment?: string;
+    selectedSector?: string;
 }
 
 // Hebrew labels mapping
-const segmentLabels: Record<string, Record<string, string>> = {
-    regulation_type: {
-        competitive_supply: 'אספקה תחרותית',
-        existing_regulation: 'רגולציה קיימת',
-    },
-    sector: {
-        residential: 'ביתי',
-        non_residential: 'לא ביתי',
-    },
-    meter_type: {
-        basic: 'בסיסי',
-        smart: 'חכם',
-    },
+const meterTypeLabels: Record<string, string> = {
+    basic: 'מונה בסיסי',
+    smart: 'מונה חכם',
+};
+
+// Colors for meter types - green for smart, yellow for basic
+const meterTypeColors: Record<string, string> = {
+    basic: '#F4D150', // Yellow
+    smart: '#3A7C2F', // Green
 };
 
 // Custom Tooltip
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-        const total = payload.reduce((acc: number, cur: any) => acc + cur.value, 0);
+        const total = payload.reduce((acc: number, cur: any) => acc + (cur.value || 0), 0);
         return (
             <div className="bg-white p-2 rounded-[10px] shadow-md border-none" style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}>
                 <p className="font-normal text-[#59687D] text-sm">{label}</p>
@@ -55,7 +51,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                         ></div>
                         <span className="flex flex-col text-[#59687D] text-sm leading-4">
                             <span className="font-normal">{entry.name}</span>
-                            <span className="font-semibold">{entry.value.toLocaleString()}</span>
+                            <span className="font-semibold">{(entry.value || 0).toLocaleString()}</span>
                         </span>
                     </div>
                 ))}
@@ -67,98 +63,54 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
     data,
-    segmentType = 'regulation_type',
-    selectedSegment
+    selectedSector
 }) => {
     const [hiddenBars, setHiddenBars] = useState<string[]>([]);
     const [hoveredBar, setHoveredBar] = useState<string | null>(null);
 
-    // Transform data for chart
+    // Transform data for chart - districts on X-axis, meter types as stacked bars
     const chartData = useMemo(() => {
-        if (!data) return [];
+        if (!data?.segments?.district) return [];
 
-        if (segmentType && selectedSegment) {
-            // Show filtered segment data - just show total_consumers for selected segment
-            const segmentData = data.segments[segmentType] || [];
-            const filtered = segmentData.filter(item => {
-                const key = segmentType === 'regulation_type' ? 'regulation_type' :
-                    segmentType === 'sector' ? 'sector' :
-                        segmentType === 'meter_type' ? 'meter_type' :
-                            segmentType === 'status' ? 'status' : 'rejection_reason';
-                return item[key as keyof typeof item] === selectedSegment;
-            });
+        const districtData = data.segments.district;
 
-            // Group by month
-            const grouped = filtered.reduce((acc, item) => {
-                const monthKey = item.month;
-                if (!acc[monthKey]) {
-                    acc[monthKey] = { month: monthKey, [selectedSegment]: 0 };
-                }
-                acc[monthKey][selectedSegment] += item.total_consumers;
-                return acc;
-            }, {} as Record<string, any>);
+        // Get meter type proportions from the overall data
+        const meterTypeData = data.segments.meter_type || [];
+        const totalMeterConsumers = meterTypeData.reduce((acc, item) => acc + item.total_consumers, 0);
 
-            return Object.values(grouped).map(item => ({
-                month: item.month.split('-').reverse().join('/').slice(0, 5), // Format: MM/YY
-                [selectedSegment]: item[selectedSegment],
-            }));
-        } else if (segmentType) {
-            // Show all segments of this type grouped by month
-            const segmentData = data.segments[segmentType] || [];
-            const grouped = segmentData.reduce((acc, item) => {
-                const monthKey = item.month;
-                const segmentKey = segmentType === 'regulation_type' ? (item as any).regulation_type :
-                    segmentType === 'sector' ? (item as any).sector :
-                        segmentType === 'meter_type' ? (item as any).meter_type :
-                            segmentType === 'status' ? (item as any).status : (item as any).rejection_reason;
-
-                if (!acc[monthKey]) {
-                    acc[monthKey] = { month: monthKey };
-                }
-                if (!acc[monthKey][segmentKey]) {
-                    acc[monthKey][segmentKey] = 0;
-                }
-                acc[monthKey][segmentKey] += item.total_consumers;
-                return acc;
-            }, {} as Record<string, any>);
-
-            return Object.values(grouped).map(item => {
-                const formatted: any = {
-                    month: item.month.split('-').reverse().join('/').slice(0, 5),
-                };
-                Object.keys(item).forEach(key => {
-                    if (key !== 'month') {
-                        formatted[key] = item[key];
-                    }
-                });
-                return formatted;
-            });
-        } else {
-            // Show main data
-            return data.data.map(item => ({
-                month: item.month.split('-').reverse().join('/').slice(0, 5),
-                total_consumers: item.total_consumers,
-                new_additions: item.new_additions,
-            }));
-        }
-    }, [data, segmentType, selectedSegment]);
-
-    // Get unique segment values for legend from chart data
-    const segmentKeys = useMemo(() => {
-        if (chartData.length === 0) return [];
-
-        // Extract all keys except 'month' from chart data
-        const keys = new Set<string>();
-        chartData.forEach(item => {
-            Object.keys(item).forEach(key => {
-                if (key !== 'month') {
-                    keys.add(key);
-                }
-            });
+        // Calculate proportions for each meter type
+        const meterProportions: Record<string, number> = {};
+        meterTypeData.forEach(item => {
+            meterProportions[item.meter_type] = totalMeterConsumers > 0
+                ? item.total_consumers / totalMeterConsumers
+                : 0;
         });
 
-        return Array.from(keys);
-    }, [chartData]);
+        // If sector filter is applied, adjust the totals based on sector proportions
+        let sectorMultiplier = 1;
+        if (selectedSector && data.segments.sector) {
+            const sectorData = data.segments.sector;
+            const totalSectorConsumers = sectorData.reduce((acc, item) => acc + item.total_consumers, 0);
+            const selectedSectorData = sectorData.find(item => item.sector === selectedSector);
+            if (selectedSectorData && totalSectorConsumers > 0) {
+                sectorMultiplier = selectedSectorData.total_consumers / totalSectorConsumers;
+            }
+        }
+
+        // Create chart data with districts on X-axis
+        return districtData.map(item => {
+            const adjustedTotal = item.total_consumers * sectorMultiplier;
+            const smart = Math.round(adjustedTotal * (meterProportions['smart'] || 0));
+            const basic = Math.round(adjustedTotal * (meterProportions['basic'] || 0));
+
+            return {
+                district: item.district.replaceAll('_', ' '), // Replace underscores with spaces for display
+                smart,
+                basic,
+                total: smart + basic,
+            };
+        }).sort((a, b) => b.total - a.total); // Sort by total consumers descending
+    }, [data, selectedSector]);
 
     const handleLegendClick = (payload: any) => {
         const { dataKey } = payload;
@@ -179,15 +131,9 @@ const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
 
     // Determine if a bar should be faded
     const getBarOpacity = (dataKey: string) => {
-        if (!hoveredBar) return 1; // No hover, full opacity
-        if (hoveredBar === dataKey) return 1; // Hovered bar, full opacity
-        return 0.3; // Other bars, faded
-    };
-
-    // Color mapping for segments
-    const getSegmentColor = (key: string, index: number): string => {
-        const colors = ['#F4D150', '#3A7C2F', '#648AA3', '#957669', '#CEA073', '#6B707C'];
-        return colors[index % colors.length];
+        if (!hoveredBar) return 1;
+        if (hoveredBar === dataKey) return 1;
+        return 0.3;
     };
 
     // Custom Legend component
@@ -195,11 +141,10 @@ const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
         if (!payload || payload.length === 0) return null;
 
         return (
-            <div className="flex gap-3 flex-wrap">
+            <div className="flex gap-3 flex-wrap justify-start">
                 {payload.map((entry: any, index: number) => {
                     const isHidden = hiddenBars.includes(entry.dataKey);
                     const isHovered = hoveredBar === entry.dataKey;
-                    const label = segmentLabels[segmentType]?.[entry.dataKey] || entry.dataKey;
 
                     return (
                         <div
@@ -221,7 +166,7 @@ const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
                                 className="md:text-sm text-[10px]"
                                 style={{ opacity: isHovered ? 1 : getBarOpacity(entry.dataKey) }}
                             >
-                                {label}
+                                {entry.value}
                             </span>
                         </div>
                     );
@@ -238,28 +183,24 @@ const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
         );
     }
 
-    // Get max value for Y-axis domain
-    const maxValue = Math.max(
-        ...chartData.flatMap(item =>
-            Object.keys(item)
-                .filter(key => key !== 'month')
-                .map(key => item[key as keyof typeof item] as number)
-        )
-    );
-
     return (
         <div className="w-full md:h-[500px] h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
                     data={chartData}
-                    margin={{ top: 20, right: 10, left: 20, bottom: 20 }}
+                    margin={{ top: 30, right: 10, left: 20, bottom: 20 }}
                     barCategoryGap="25%"
                 >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="month" />
+                    <XAxis
+                        dataKey="district"
+                        interval={0}
+                        tick={{ fontSize: 11, fontFamily: 'Heebo, sans-serif' }}
+                    />
                     <YAxis
+                        tickFormatter={(value) => value.toLocaleString()}
                         label={{
-                            value: "צרכנים המחוברים לספקי חשמל פרטיים",
+                            value: "[מספר צרכנים]",
                             angle: -90,
                             position: "insideLeft",
                             dx: -15,
@@ -276,22 +217,36 @@ const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
                             />
                         }
                     />
-                    {segmentKeys.map((key, index) => {
-                        const label = segmentLabels[segmentType]?.[key] || key;
-                        return (
-                            <Bar
-                                key={key}
-                                dataKey={key}
-                                name={label}
-                                stackId="a"
-                                fill={getSegmentColor(key, index)}
-                                barSize={28}
-                                radius={index === segmentKeys.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
-                                hide={hiddenBars.includes(key)}
-                                opacity={getBarOpacity(key)}
-                            />
-                        );
-                    })}
+                    <Bar
+                        dataKey="basic"
+                        name={meterTypeLabels.basic}
+                        stackId="a"
+                        fill={meterTypeColors.basic}
+                        barSize={40}
+                        radius={[0, 0, 0, 0]}
+                        hide={hiddenBars.includes('basic')}
+                        opacity={getBarOpacity('basic')}
+                    />
+                    <Bar
+                        dataKey="smart"
+                        name={meterTypeLabels.smart}
+                        stackId="a"
+                        fill={meterTypeColors.smart}
+                        barSize={40}
+                        radius={[4, 4, 0, 0]}
+                        hide={hiddenBars.includes('smart')}
+                        opacity={getBarOpacity('smart')}
+                    >
+                        <LabelList
+                            dataKey="total"
+                            position="top"
+                            formatter={(value: number) => {
+                                if (value == null || value === 0) return '';
+                                return value.toLocaleString();
+                            }}
+                            style={{ fill: '#59687D', fontSize: '10px', fontWeight: 500 }}
+                        />
+                    </Bar>
                 </ComposedChart>
             </ResponsiveContainer>
         </div>

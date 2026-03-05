@@ -70,11 +70,12 @@ const CustomYAxisLabel = (props: any) => {
             x={viewBox.x}
             y={centerY}
             textAnchor="middle"
-className="text-sm font-normal text-[#707585]"
-        style={{ fontFamily: 'Heebo, sans-serif' }}
-        transform={`rotate(-90 ${viewBox.x} ${centerY})`}
-    >
-        מחיר שולי [MWh/₪]
+            fill="#707585"
+            className="text-sm font-normal"
+            style={{ fontFamily: 'Heebo, sans-serif' }}
+            transform={`rotate(-90 ${viewBox.x} ${centerY})`}
+        >
+            מחיר שולי [MWh/₪]
         </text>
     );
 };

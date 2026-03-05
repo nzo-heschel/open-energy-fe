@@ -1,32 +1,31 @@
 /**
- * Energy Source Colors
- * These colors are fixed and used across the entire application
- * Colors are defined in styles/theme.css as CSS variables
+ * Energy Source Colors - תמהיל ייצור אנרגיה (Energy Mix)
+ * Only colors from the Figma "תמהיל ייצור אנרגיה" layer (13 segment colors).
  */
 
-// Main Category Colors - matching Figma design
+/** Fallback when a segment key is unknown – one of the 13 Figma ellipse colors */
+export const ENERGY_MIX_FIGMA_FALLBACK = '#648AA3';
+
 export const ENERGY_COLORS = {
-  // Main Categories (Level 1 - Inner ring)
-  OTHER_PRIMARY: '#1665B3', // Blue
-  RENEWABLE: '#2F7A4F', // Green
-  FOSSIL: '#CEA073', // Golden/tan brown
+  // Level 1 (inner ring) – from Figma
+  OTHER_PRIMARY: '#648AA3',
+  RENEWABLE: '#2F7A4F',
+  FOSSIL: '#CEA073',
+
+  // Used by other charts (e.g. CO2), not in energy mix Figma layer
   CO2_EMISSIONS: '#5D6FFF',
 
-  // Other Category Sub-items
-  PUMPED_STORAGE: '#1665B3', // Blue
-  OTHER: '#A4DBE4', // Light blue
-
-  // Renewable Energy Sub-items (Level 2 - greens and teals)
-  PHOTOVOLTAIC: '#E8D84C', // Yellow/lime
-  BIOGAS: '#A8C256', // Light green
-  WIND: '#6B9B4D', // Green
-  SOLAR_THERMAL: '#4A8B8C', // Teal
-  PV_STORAGE: '#2D6A6A', // Dark teal
-
-  // Fossil Energy Sub-items (Level 2 - browns and blacks)
-  COAL: '#3D3D3D', // Dark gray/charcoal
-  DIESEL: '#1C1A17', // Black
-  NATURAL_GAS: '#8B7355', // Brown/tan
+  // Level 2 – only from the 13 Figma colors
+  PUMPED_STORAGE: '#2F73A0',
+  OTHER: '#8BBFE1',
+  PHOTOVOLTAIC: '#C4C95C',
+  BIOGAS: '#8A9A2C',
+  WIND: '#98C74E',
+  SOLAR_THERMAL: '#60A261',
+  PV_STORAGE: '#F4D150',
+  COAL: '#6B707C',
+  DIESEL: '#1C1A17',
+  NATURAL_GAS: '#957669',
 } as const;
 
 /**
@@ -64,8 +63,8 @@ export const LEVEL2_COLORS: Record<string, string> = {
   'natural_gas': ENERGY_COLORS.NATURAL_GAS,
   'diesel': ENERGY_COLORS.DIESEL,
 
-  // Renewable Energy
-  'photoVoltaic': ENERGY_COLORS.PHOTOVOLTAIC,
+  // Renewable Energy (keys match normalizeKey output: lowercase, spaces to _)
+  'photovoltaic': ENERGY_COLORS.PHOTOVOLTAIC,
   'biogas': ENERGY_COLORS.BIOGAS,
   'wind': ENERGY_COLORS.WIND,
   'solar_thermal': ENERGY_COLORS.SOLAR_THERMAL,

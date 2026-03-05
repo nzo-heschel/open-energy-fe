@@ -155,7 +155,7 @@ export default function RenewableProduction2() {
                                     value: "אחוז מכלל הייצור [%]",
                                     angle: -90,
                                     position: "insideLeft",
-                                    style: { textAnchor: 'middle' }
+                                    style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
                                 }} />
                                 <Tooltip content={<CustomTooltip />} />
                                 {/* <div className="mx-1"> */}
@@ -192,7 +192,7 @@ export default function RenewableProduction2() {
                                     value: "אחוז מכלל הייצור [%]",
                                     angle: -90,
                                     position: "insideLeft",
-                                    style: { textAnchor: 'middle' }
+                                    style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
                                 }} />
                                 <Tooltip content={<CustomTooltip />} />
                                 {/* <div className="mx-1"> */}

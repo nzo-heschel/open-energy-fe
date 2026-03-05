@@ -414,7 +414,7 @@ const ElectricityLineGraph = ({ data, startDate, endDate, selectedPreset }: Elec
         );
     };
 
-    // Custom Y-axis label for left axis (price)
+    // Custom Y-axis label for left axis (price). SVG text uses fill for color.
     const CustomLeftYAxisLabel = (props: any) => {
         const { viewBox } = props;
         const centerY = (viewBox.y + viewBox.height) / 2;
@@ -423,7 +423,9 @@ const ElectricityLineGraph = ({ data, startDate, endDate, selectedPreset }: Elec
                 x={viewBox.x}
                 y={centerY}
                 textAnchor="middle"
-                className="text-sm font-normal text-[#707585]"
+                fill="#707585"
+                className="text-sm font-normal"
+                style={{ fontFamily: 'Heebo, sans-serif' }}
                 transform={`rotate(-90 ${viewBox.x} ${centerY})`}
             >
                 מחיר שולי [MWh/₪]
@@ -431,7 +433,7 @@ const ElectricityLineGraph = ({ data, startDate, endDate, selectedPreset }: Elec
         );
     };
 
-    // Custom Y-axis label for right axis (MW)
+    // Custom Y-axis label for right axis (MW). SVG text uses fill for color.
     const CustomRightYAxisLabel = (props: any) => {
         const { viewBox } = props;
         const centerY = (viewBox.y + viewBox.height) / 2;
@@ -441,7 +443,9 @@ const ElectricityLineGraph = ({ data, startDate, endDate, selectedPreset }: Elec
                 x={rightX}
                 y={centerY}
                 textAnchor="middle"
-                className="text-sm font-normal text-[#707585]"
+                fill="#707585"
+                className="text-sm font-normal"
+                style={{ fontFamily: 'Heebo, sans-serif' }}
                 transform={`rotate(-90 ${rightX} ${centerY})`}
             >
                 [MW]
@@ -601,7 +605,7 @@ const ElectricityGraphWithTabs = ({ data, isLoading, error, startDate, endDate, 
                                             : 'bg-transparent text-[#59687D] hover:bg-[#59687D] hover:text-white'
                                             }`}
                                     >
-                                        פיזור נתונים
+                                        תצוגת מתאם
                                     </Button>
                                 </div>
                             </div>

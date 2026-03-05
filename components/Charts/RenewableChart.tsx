@@ -173,7 +173,14 @@ export default function RenewableChart() {
                     <ComposedChart data={adjustedData}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="year" />
-                        <YAxis unit="%" />
+                        <YAxis
+                        label={{
+                            value: "[%]",
+                            angle: -90,
+                            position: "insideLeft",
+                            style: { textAnchor: "middle", fontFamily: "Heebo, sans-serif" }
+                        }}
+                    />
                         <Tooltip content={<CustomTooltip />} />
                         <Legend content={() => null} />
 

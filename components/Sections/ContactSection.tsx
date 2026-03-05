@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import topleft from '@/public/images/Ellipse 89 (1).png';
 import mark from '@/public/images/mark.png';
+import { X } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 
@@ -140,13 +141,21 @@ export default function ContactSection() {
 
             <div className="bg-white rounded-[20px] p-10 border border-[#E9C863] max-w-[516px] w-full">
               {isSubmitted ? (
-                <div className="flex flex-col md:gap-10 gap-5 items-center justify-center text-center md:h-[450px] h-[200px]">
+                <div className="relative flex flex-col md:gap-10 gap-5 items-center justify-center md:h-[450px] h-[200px] text-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsSubmitted(false)}
+                    className="absolute -top-6 -left-6 p-1 rounded-full text-[#484C56] hover:bg-[#FDFBF6] hover:text-[#1E8025] transition-colors focus:outline-none focus:ring-2 focus:ring-[#1E8025] focus:ring-offset-2"
+                    aria-label="סגור"
+                  >
+                    <X className="w-10 h-10 text-[#C3C3C3]" />
+                  </button>
                   <Image src={mark} width={80} height={80} className='w-[80px] h-[80px]' alt='' />
-                  <div className="flex flex-col items-center gap-[10px]">
-                    <h3 className="md:text-2xl text-lg font-bold text-center text-[#1E8025]">
+                  <div className="flex flex-col items-center gap-[10px] text-center w-full">
+                    <h3 className="md:text-2xl text-lg font-bold text-[#1E8025]">
                       ההודעה נשלחה בהצלחה!
                     </h3>
-                    <p className="text-center text-[#484C56] md:text-lg text-base">
+                    <p className="text-[#484C56] md:text-lg text-base">
                       מישהו מהצוות שלנו ייצור קשר איתך בקרוב.
                     </p>
                   </div>
@@ -160,7 +169,7 @@ export default function ContactSection() {
                         type="text"
                         value={formData.name}
                         onChange={handleChange}
-                        className={`${getInputClassName('name')} pr-4`}
+                        className={`${getInputClassName('name')}`}
                         placeholder="שם"
                       />
                       {!formData.name && (
@@ -181,7 +190,7 @@ export default function ContactSection() {
                         type="email"
                         value={formData.email}
                         onChange={handleChange}
-                        className={`${getInputClassName('email')} pr-4`}
+                        className={`${getInputClassName('email')}`}
                         placeholder="כתובת דוא״ל"
                       />
                       {!formData.email && (
@@ -202,8 +211,8 @@ export default function ContactSection() {
                       type="tel"
                       value={formData.phone}
                       onChange={handleChange}
-                      className={getInputClassName('phone')}
-                      placeholder="אזור (אם יש)"
+                      className={`${getInputClassName('phone')}`}
+                      placeholder="ארגון (אם יש)"
                     />
                     {errors.phone && (
                       <p className="text-right text-[#CEA073] text-sm mt-1 absolute bottom-[-20px] right-0">
@@ -217,7 +226,7 @@ export default function ContactSection() {
                       name="message"
                       value={formData.message}
                       onChange={handleChange}
-                      className={getTextareaClassName()}
+                      className={`${getTextareaClassName()}`}
                       placeholder="כתבו כאן את תוכן הפנייה"
                     ></textarea>
                     {errors.message && (

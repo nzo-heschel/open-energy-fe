@@ -116,7 +116,7 @@ const HeatVsProductionChart: React.FC = () => {
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#1E8025" }} />
                         <div className="text-sm">
                             <div className="text-xs text-gray-500">עומס חום</div>
-                            <div className="font-medium text-sm">{Number(heat.value).toFixed(2)} {data?.units?.heat_load || 'THI'}</div>
+                            <div className="font-medium text-sm">{Number(heat.value).toFixed(2)} [{data?.units?.heat_load || 'THI'}]</div>
                         </div>
                     </div>
                 )}
@@ -125,7 +125,7 @@ const HeatVsProductionChart: React.FC = () => {
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#F4D150" }} />
                         <div className="text-sm">
                             <div className="text-xs text-gray-500">ייצור חשמל</div>
-                            <div className="font-medium text-sm">{Number(prod.value).toLocaleString()} {data?.units?.electricity_generation || 'MW'}</div>
+                            <div className="font-medium text-sm">{Number(prod.value).toLocaleString()} [{data?.units?.electricity_generation || 'MW'}]</div>
                         </div>
                     </div>
                 )}
@@ -212,14 +212,7 @@ const HeatVsProductionChart: React.FC = () => {
                     </div>
                 ) : (
                     <>
-                        {/* Y-axis labels at top */}
-                        <div className="flex justify-between items-start px-2 mb-1">
-                            <p className="text-right text-xs text-[#707585] font-normal">עומס חום [מעלות C°]</p>
-                            <p className="text-right text-xs text-[#707585] font-normal">
-                                מגה-וואט<br />[MW]
-                            </p>
-                        </div>
-                        <ResponsiveContainer width="100%" height="90%">
+                        <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={currentData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E6E7EA" />
                                 <XAxis
@@ -236,6 +229,12 @@ const HeatVsProductionChart: React.FC = () => {
                                     tickLine={false}
                                     axisLine={true}
                                     tick={{ fill: "#6b7280", fontSize: 12 }}
+                                    label={{
+                                        value: "עומס חום [מעלות C°]",
+                                        angle: -90,
+                                        position: "insideLeft",
+                                        style: { textAnchor: "middle", fontFamily: "Heebo, sans-serif" }
+                                    }}
                                 />
 
                                 <YAxis
@@ -246,6 +245,12 @@ const HeatVsProductionChart: React.FC = () => {
                                     tick={{ fill: "#6b7280", fontSize: 12 }}
                                     domain={[0, (dataMax: number) => Math.ceil(dataMax / 1000) * 1000 + 1000]}
                                     width={80}
+                                    label={{
+                                        value: "מגה-וואט [MW]",
+                                        angle: -90,
+                                        position: "insideRight",
+                                        style: { textAnchor: "middle", fontFamily: "Heebo, sans-serif" }
+                                    }}
                                 />
 
                                 {/* Vertical mid-line near 6/24 - use x value that exists in dataset */}

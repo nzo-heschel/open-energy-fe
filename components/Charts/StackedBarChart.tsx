@@ -78,11 +78,13 @@ export default function StackedBarChart({
     yAxis: {
       type: horizontal ? 'category' : 'value',
       data: horizontal ? data.categories : undefined,
-      name: yAxisLabel,
+      name: yAxisLabel != null && yAxisLabel.length > 0 && !yAxisLabel.startsWith('[') ? `[${yAxisLabel}]` : (yAxisLabel ?? ''),
       nameLocation: 'middle',
       nameGap: 40,
+      nameRotate: 90,
       nameTextStyle: {
-        fontSize: 12
+        fontSize: 12,
+        fontFamily: 'Heebo, sans-serif'
       },
       axisLabel: {
         fontSize: 11,

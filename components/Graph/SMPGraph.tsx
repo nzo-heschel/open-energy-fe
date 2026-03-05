@@ -70,7 +70,9 @@ const CustomYAxisLabel = (props: any) => {
             x={viewBox.x}
             y={centerY}
             textAnchor="middle"
-            className="text-sm font-normal text-[#707585]"
+            fill="#707585"
+            className="text-sm font-normal"
+            style={{ fontFamily: 'Heebo, sans-serif' }}
             transform={`rotate(-90 ${viewBox.x} ${centerY})`}
         >
             מחיר שולי [MWh/₪]
@@ -344,7 +346,7 @@ export default function SMPGraph({ data, startDate, endDate }: SMPGraphProps) {
                         strokeWidth={2}
                         strokeOpacity={hoveredSeries ? (hoveredSeries === "withoutExc" ? 1 : 0.3) : 1}
                         dot={false}
-                        name="מחיר שוליי ללא אילוצים"
+                        name="מחיר שולים כולל אילוצים"
                     />
                     <Line
                         type="linear"
@@ -353,7 +355,7 @@ export default function SMPGraph({ data, startDate, endDate }: SMPGraphProps) {
                         strokeWidth={2}
                         strokeOpacity={hoveredSeries ? (hoveredSeries === "withExc" ? 1 : 0.3) : 1}
                         dot={false}
-                        name="מחיר שוליי כולל אילוצים"
+                        name="מחיר שולים ללא אילוצים"
                     />
                 </LineChart>
             </ResponsiveContainer>

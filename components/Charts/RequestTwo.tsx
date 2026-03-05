@@ -276,6 +276,7 @@ export default function RequestTwo() {
                                     value={timePeriod}
                                     onChange={(e) => setTimePeriod(e.target.value as TimePeriod)}
                                     className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
+                                    style={{ fontFamily: 'Heebo, sans-serif' }}
                                 >
                                     <option value="daily">יומי</option>
                                     <option value="weekly">שבועי</option>
@@ -305,7 +306,7 @@ export default function RequestTwo() {
                             value: "הספק תשובות [KW]",
                             angle: -90,
                             position: "insideLeft",
-                            style: { textAnchor: 'middle' }
+                            style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
                         }} />
                         <Tooltip content={<CustomTooltip />} />
                         {activeSeries.small && (

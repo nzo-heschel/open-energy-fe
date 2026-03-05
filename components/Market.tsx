@@ -8,15 +8,14 @@ import download from '@/public/images/download_2.png'
 import api from '@/public/images/API.png'
 import PrivateConsumersChart from './Charts/PrivateConsumersChart'
 import TooltipInfo from './TooltipInfo'
-import { startOfYear, endOfYear, format } from 'date-fns'
+import { format } from 'date-fns'
 import { usePrivateSupplierConnectedConsumers, exportPrivateSupplierConnectedConsumers } from '@/lib/api'
 
 const Market = () => {
     //tooltips
     const [showTooltip, setShowTooltip] = useState(false);
-    const [selectedYear, setSelectedYear] = useState<string>('2025');
-    const [segmentType, setSegmentType] = useState<'regulation_type' | 'sector' | 'meter_type' | 'status' | 'rejection_reason'>('regulation_type');
-    const [selectedSegment, setSelectedSegment] = useState<string>('');
+    const [selectedYear, setSelectedYear] = useState<string>('2026');
+    const [selectedSector, setSelectedSector] = useState<string>('');
 
     // Calculate start and end dates based on selected year
     const startEndDate = useMemo(() => {
@@ -112,6 +111,7 @@ const Market = () => {
                                         onChange={handleYearChange}
                                         className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
                                     >
+                                        <option value="2026">2026</option>
                                         <option value="2025">2025</option>
                                         <option value="2024">2024</option>
                                         <option value="2023">2023</option>
@@ -123,76 +123,23 @@ const Market = () => {
                                 </label>
                             </div>
                             <div className="relative w-[179px]">
-                                <label htmlFor="segment-type-selector" className='flex flex-col gap-1'>
-                                    <span className='text-sm text-slate-600'>סוג פילוח:</span>
+                                <label htmlFor="sector-selector" className='flex flex-col gap-1'>
+                                    <span className='text-sm text-slate-600'>מגזר:</span>
                                     <select
-                                        id="segment-type-selector"
-                                        value={segmentType}
-                                        onChange={(e) => {
-                                            setSegmentType(e.target.value as typeof segmentType);
-                                            setSelectedSegment(''); // Reset selected segment when changing type
-                                        }}
+                                        id="sector-selector"
+                                        value={selectedSector}
+                                        onChange={(e) => setSelectedSector(e.target.value)}
                                         className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
                                     >
-                                        <option value="regulation_type">סוג רגולציה</option>
-                                        <option value="sector">מגזר</option>
-                                        <option value="meter_type">סוג מונה</option>
-                                        <option value="status">סטטוס</option>
-                                        <option value="rejection_reason">סיבת דחייה</option>
+                                        <option value="">הכל</option>
+                                        <option value="residential">ביתי</option>
+                                        <option value="non_residential">לא ביתי</option>
                                     </select>
                                 </label>
                                 <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
                                     <ChevronDown size={14} />
                                 </span>
                             </div>
-                            {privateConsumersData?.segments[segmentType] && privateConsumersData.segments[segmentType].length > 0 && (
-                                <div className="relative w-[179px]">
-                                    <label htmlFor="segment-selector" className='flex flex-col gap-1'>
-                                        <span className='text-sm text-slate-600'>ערך ספציפי:</span>
-                                        <select
-                                            id="segment-selector"
-                                            value={selectedSegment}
-                                            onChange={(e) => setSelectedSegment(e.target.value)}
-                                            className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
-                                        >
-                                            <option value="">הכל</option>
-                                            {Array.from(new Set(
-                                                privateConsumersData.segments[segmentType].map((item: any) => {
-                                                    const key = segmentType === 'regulation_type' ? item.regulation_type :
-                                                        segmentType === 'sector' ? item.sector :
-                                                            segmentType === 'meter_type' ? item.meter_type :
-                                                                segmentType === 'status' ? item.status : item.rejection_reason;
-                                                    return key;
-                                                })
-                                            )).map(key => {
-                                                // Hebrew labels mapping
-                                                const labelMap: Record<string, Record<string, string>> = {
-                                                    sector: {
-                                                        residential: 'ביתי',
-                                                        non_residential: 'לא ביתי',
-                                                    },
-                                                    regulation_type: {
-                                                        competitive_supply: 'אספקה תחרותית',
-                                                        existing_regulation: 'רגולציה קיימת',
-                                                    },
-                                                    meter_type: {
-                                                        basic: 'בסיסי',
-                                                        smart: 'חכם',
-                                                    },
-                                                };
-
-                                                const label = labelMap[segmentType]?.[key] || key;
-                                                return (
-                                                    <option key={key} value={key}>{label}</option>
-                                                );
-                                            })}
-                                        </select>
-                                    </label>
-                                    <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
-                                        <ChevronDown size={14} />
-                                    </span>
-                                </div>
-                            )}
 
                         </div>
                     </div>
@@ -207,8 +154,7 @@ const Market = () => {
                     ) : (
                         <PrivateConsumersChart
                             data={privateConsumersData}
-                            segmentType={segmentType}
-                            selectedSegment={selectedSegment || undefined}
+                            selectedSector={selectedSector || undefined}
                         />
                     )}
                 </CardContent>

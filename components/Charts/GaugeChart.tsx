@@ -93,8 +93,9 @@ export default function GaugeChart({
           borderRadius: 8,
           offsetCenter: [0, '10%'],
           valueAnimation: true,
-          formatter: function (value: number) {
-            return `${value}${unit}`;
+          formatter: function (val: number) {
+            const u = unit.replace(/^\[|\]$/g, '');
+            return `${val} [${u}]`;
           },
           color: 'auto'
         },

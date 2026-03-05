@@ -323,6 +323,8 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                             innerRadius={70}
                             outerRadius={120}
                             paddingAngle={0}
+                            startAngle={90}
+                            endAngle={-270}
                         >
                             {pieData.map((entry, index) =>
                                 hiddenKeys.includes(entry.name) ? null : (
@@ -360,7 +362,7 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                                 angle: -90,
                                 position: "insideLeft",
                                 dx: -15,
-                                style: { textAnchor: 'middle' }
+                                style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
                             }}
                             tickFormatter={(value) => Math.round(value / 1000).toString()}
                         />

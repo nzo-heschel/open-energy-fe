@@ -256,6 +256,12 @@ export type PrivateSupplierConnectedConsumersResponse = {
       total_consumers: number;
       new_additions: number;
     }>;
+    district: Array<{
+      month: string;
+      district: string;
+      total_consumers: number;
+      new_additions: number;
+    }>;
   };
   note?: string;
 };

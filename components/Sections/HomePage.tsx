@@ -27,6 +27,8 @@ import RejectionChart from '../RejectionChart';
 import SMP from '../SMP';
 import TooltipInfo from '../TooltipInfo';
 
+// Shared chart height so both overview (line) and energy mix (pie) cards match Figma
+const HOME_CHART_HEIGHT = 400;
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<'market' | 'smp'>();
@@ -490,32 +492,35 @@ export default function HomePage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex flex-col min-h-[520px]">
                 <div className="flex items-center gap-2 flex-wrap mb-4">
-                  <span className="text-sm text-slate-600">מיון לפי:</span>
+                  <span className="text-sm text-slate-600">סינון לפי:</span>
                   <DateRangePicker
                     onDateRangeChange={handleMixDateRangeChange}
                     defaultPreset="last7Days"
                   />
                 </div>
-                {isLoadingEnergyMix ? (
-                  <div className="flex justify-center items-center h-[300px]">
-                    <p className="text-slate-600">טוען נתונים...</p>
-                  </div>
-                ) : energyMixError ? (
-                  <div className="flex justify-center items-center h-[300px]">
-                    <p className="text-red-600">שגיאה בטעינת הנתונים</p>
-                  </div>
-                ) : energyMixData ? (
-                  <EnergyMixPieChart
-                    key={`energy-mix-${showMixLevel2 ? 'nested' : 'single'}`}
-                    energyMixData={energyMixData}
-                    height={300}
-                    showLevel2={showMixLevel2}
-                  />
-                ) : null}
+                <div className="flex-1 flex flex-col min-h-0">
+                  {isLoadingEnergyMix ? (
+                    <div className="flex justify-center items-center flex-1 min-h-[300px]" style={{ height: `${HOME_CHART_HEIGHT}px` }}>
+                      <p className="text-slate-600">טוען נתונים...</p>
+                    </div>
+                  ) : energyMixError ? (
+                    <div className="flex justify-center items-center flex-1 min-h-[300px]" style={{ height: `${HOME_CHART_HEIGHT}px` }}>
+                      <p className="text-red-600">שגיאה בטעינת הנתונים</p>
+                    </div>
+                  ) : energyMixData ? (
+                    <EnergyMixPieChart
+                      key={`energy-mix-${showMixLevel2 ? 'nested' : 'single'}`}
+                      energyMixData={energyMixData}
+                      height={HOME_CHART_HEIGHT}
+                      showLevel2={showMixLevel2}
+                      useFixedHeight
+                    />
+                  ) : null}
+                </div>
 
-                <div className="flex justify-start">
+                <div className="flex justify-start mt-2">
                   <Button
                     variant="link"
                     className="text-blue-600 text-sm"
@@ -554,7 +559,7 @@ export default function HomePage() {
                           </div>
                         )}
                       </div>
-                      סקירה כללית של משק החשמל בישראל - נטע על
+                      משק החשמל בישראל - מבט על
                     </CardTitle>
                     {/* Buttons SECOND - goes to LEFT in RTL */}
                     <div className="flex items-start md:gap-4 gap-2">
@@ -580,38 +585,41 @@ export default function HomePage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex flex-col min-h-[520px]">
                 <div className="flex items-center gap-2 flex-wrap mb-4">
-                  <span className="text-sm text-slate-600">מיון לפי:</span>
+                  <span className="text-sm text-slate-600">סינון לפי:</span>
                   <DateRangePicker
                     onDateRangeChange={handleOverviewDateRangeChange}
                     onPresetChange={setOverviewSelectedPreset}
                     defaultPreset="last7Days"
                   />
                 </div>
-                {isLoadingEnergyOverview ? (
-                  <div className="flex justify-center items-center h-[300px]">
-                    <p className="text-slate-600">טוען נתונים...</p>
-                  </div>
-                ) : energyOverviewError ? (
-                  <div className="flex justify-center items-center h-[300px]">
-                    <p className="text-red-600">שגיאה בטעינת הנתונים</p>
-                  </div>
-                ) : chart2Data ? (
-                  <Chart2
-                    key={`chart2-${startEndOverviewDate.start}-${startEndOverviewDate.end}-${showOverviewLevel2}`}
-                    data={chart2Data}
-                    startDate={startEndOverviewDate.start}
-                    endDate={startEndOverviewDate.end}
-                    showLevel2={showOverviewLevel2}
-                  />
-                ) : (
-                  <div className="flex justify-center items-center h-[300px]">
-                    <p className="text-slate-600">אין נתונים להצגה</p>
-                  </div>
-                )}
-                {/* Legend */}
-                <div className="mt-4 flex justify-start">
+                <div className="flex-1 flex flex-col min-h-0">
+                  {isLoadingEnergyOverview ? (
+                    <div className="flex justify-center items-center flex-1 min-h-[300px]" style={{ height: `${HOME_CHART_HEIGHT}px` }}>
+                      <p className="text-slate-600">טוען נתונים...</p>
+                    </div>
+                  ) : energyOverviewError ? (
+                    <div className="flex justify-center items-center flex-1 min-h-[300px]" style={{ height: `${HOME_CHART_HEIGHT}px` }}>
+                      <p className="text-red-600">שגיאה בטעינת הנתונים</p>
+                    </div>
+                  ) : chart2Data ? (
+                    <Chart2
+                      key={`chart2-${startEndOverviewDate.start}-${startEndOverviewDate.end}-${showOverviewLevel2}`}
+                      data={chart2Data}
+                      startDate={startEndOverviewDate.start}
+                      endDate={startEndOverviewDate.end}
+                      showLevel2={showOverviewLevel2}
+                      height={HOME_CHART_HEIGHT}
+                    />
+                  ) : (
+                    <div className="flex justify-center items-center flex-1 min-h-[300px]" style={{ height: `${HOME_CHART_HEIGHT}px` }}>
+                      <p className="text-slate-600">אין נתונים להצגה</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-start mt-7">
                   <Button
                     variant="link"
                     className="text-blue-600 text-sm"

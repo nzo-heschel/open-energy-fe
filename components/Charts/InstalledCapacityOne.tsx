@@ -100,7 +100,6 @@ const CustomLegend = ({
 );
 
 // Custom Dropdown Component with Checkboxes
-// Custom Dropdown Component with Checkboxes
 const YearDropdown = ({ selectedYears, setSelectedYears }: { selectedYears: number[], setSelectedYears: (years: number[]) => void }) => {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -135,6 +134,7 @@ const YearDropdown = ({ selectedYears, setSelectedYears }: { selectedYears: numb
             <button
                 type="button"
                 className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6 text-right flex items-center justify-between"
+                style={{ fontFamily: 'Heebo, sans-serif' }}
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <span>{displayText}</span>
@@ -142,7 +142,7 @@ const YearDropdown = ({ selectedYears, setSelectedYears }: { selectedYears: numb
             </button>
 
             {isOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white border border-[#A1A1A1] rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute z-10 mt-1 w-full bg-white border border-[#A1A1A1] rounded-lg shadow-lg max-h-60 overflow-y-auto" style={{ fontFamily: 'Heebo, sans-serif' }}>
                     <div className="p-2 pb-0">
                         <label className="flex items-center space-x-2 space-x-reverse p-1 hover:bg-gray-100 rounded cursor-pointer">
                             <input
@@ -189,6 +189,7 @@ const CapacityDropdown = ({ selectedCapacity, setSelectedCapacity }: { selectedC
             <button
                 type="button"
                 className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6 text-right flex items-center justify-between"
+                style={{ fontFamily: 'Heebo, sans-serif' }}
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <span>{displayText}</span>
@@ -196,7 +197,7 @@ const CapacityDropdown = ({ selectedCapacity, setSelectedCapacity }: { selectedC
             </button>
 
             {isOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white border border-[#A1A1A1] rounded-lg shadow-lg">
+                <div className="absolute z-10 mt-1 w-full bg-white border border-[#A1A1A1] rounded-lg shadow-lg" style={{ fontFamily: 'Heebo, sans-serif' }}>
                     <div className="p-2">
                         {capacityOptions.map((option) => (
                             <button
@@ -306,7 +307,7 @@ export default function InstalledCapacityOne() {
                                     value: "הספק מותקן [MW]",
                                     angle: -90,
                                     position: "insideLeft",
-                                    style: { textAnchor: 'middle' }
+                                    style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
                                 }} />
                                 <Tooltip content={<CustomTooltip />} />
                                 {categories.map((c) => (
@@ -341,7 +342,7 @@ export default function InstalledCapacityOne() {
                                     value: "הספק מותקן [MW]",
                                     angle: -90,
                                     position: "insideLeft",
-                                    style: { textAnchor: 'middle' }
+                                    style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
                                 }} />
                                 <Tooltip content={<CustomTooltip />} />
                                 {categories.map((c) => (

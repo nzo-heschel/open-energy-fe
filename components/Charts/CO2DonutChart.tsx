@@ -253,7 +253,7 @@ const CO2DonutChart = () => {
                                     {item.name} | ({item.percent.toFixed(1)}%)
                                 </span>
                                 <span className="text-sm text-gray-700 flex items-center gap-1">
-                                    {formatNumber(item.rawValue, 0)}<span>tons CO2</span>
+                                    <span>mTCO₂</span>{formatNumber(item.rawValue, 0)}
                                 </span>
                             </div>
                         </div>

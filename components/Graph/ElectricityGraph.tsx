@@ -424,6 +424,7 @@ const ElectricityLineGraph = ({ data, startDate, endDate, selectedPreset }: Elec
                 y={centerY}
                 textAnchor="middle"
                 className="text-sm font-normal text-[#707585]"
+                style={{ fontFamily: 'Heebo, sans-serif' }}
                 transform={`rotate(-90 ${viewBox.x} ${centerY})`}
             >
                 מחיר שולי [MWh/₪]
@@ -442,6 +443,7 @@ const ElectricityLineGraph = ({ data, startDate, endDate, selectedPreset }: Elec
                 y={centerY}
                 textAnchor="middle"
                 className="text-sm font-normal text-[#707585]"
+                style={{ fontFamily: 'Heebo, sans-serif' }}
                 transform={`rotate(-90 ${rightX} ${centerY})`}
             >
                 [MW]
@@ -601,7 +603,7 @@ const ElectricityGraphWithTabs = ({ data, isLoading, error, startDate, endDate, 
                                             : 'bg-transparent text-[#59687D] hover:bg-[#59687D] hover:text-white'
                                             }`}
                                     >
-                                        פיזור נתונים
+                                        תצוגת מתאם
                                     </Button>
                                 </div>
                             </div>

@@ -94,6 +94,8 @@ export default function PieChart({
         type: 'pie',
         radius: [innerRadius, isMobile ? '90%' : '80%'],
         center: isMobile ? ['50%', '50%'] : ['50%', '50%'],
+        startAngle: 270, // 12 o'clock = middle-top (ECharts: 0=3 o'clock, 90=12 o'clock)
+        clockwise: true,
         avoidLabelOverlap: false,
         label: {
           show: showLabels,

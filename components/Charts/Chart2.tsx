@@ -1,6 +1,6 @@
 'use client';
 
-import { LEVEL1_COLORS } from '@/lib/colors';
+import { ENERGY_MIX_FIGMA_FALLBACK, LEVEL1_COLORS } from '@/lib/colors';
 import { differenceInDays, differenceInMonths, differenceInYears, format, parseISO } from 'date-fns';
 import ReactECharts from 'echarts-for-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -18,9 +18,10 @@ interface LineChartProps {
   startDate?: string;
   endDate?: string;
   showLevel2?: boolean;
+  height?: number;
 }
 
-export default function Chart2({ data, title, startDate, endDate, showLevel2 = false }: LineChartProps) {
+export default function Chart2({ data, title, startDate, endDate, showLevel2 = false, height = 450 }: LineChartProps) {
   const [isClient, setIsClient] = useState(false);
   const [selectedLegends, setSelectedLegends] = useState<Record<string, boolean>>({});
 
@@ -185,7 +186,7 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
             const value = param.value || 0;
             const numValue = typeof value === 'number' ? value : 0;
             const percentage = total > 0 ? ((numValue / total) * 100).toFixed(1) : '0';
-            const color = param.color || '#5470c6';
+            const color = param.color || ENERGY_MIX_FIGMA_FALLBACK;
 
             content += `
               <div style="display: flex; align-items: flex-start; gap: 4px; padding-top: 4px;">
@@ -230,8 +231,10 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
         name: "[MW]",
         nameLocation: 'middle',
         nameGap: 40,
+        nameRotate: 90,
         nameTextStyle: {
-          fontSize: 12
+          fontSize: 12,
+          fontFamily: 'Heebo, sans-serif'
         },
         axisLabel: {
           fontSize: 11,
@@ -259,21 +262,24 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
 
   if (!isClient) {
     return (
-      <div className="w-full flex items-center justify-center" style={{ height: `450px` }}>
+      <div className="w-full flex items-center justify-center flex-1 min-h-[300px]" style={{ height: `${height}px` }}>
         <div className="text-slate-500">טוען גרף...</div>
       </div>
     );
   }
 
   return (
-    <div className="w-full">
-      <ReactECharts
-        option={option}
-        style={{ height: `450px` }}
-        opts={{ renderer: 'canvas' }}
-      />
+    <div className="w-full flex flex-col h-full min-h-0">
+      <div className="flex-1 min-h-0 w-full" style={{ height: `${height}px` }}>
+        <ReactECharts
+          option={option}
+          style={{ height: '100%', minHeight: `${height}px` }}
+          opts={{ renderer: 'canvas' }}
+        />
+      </div>
 
-      {/* Custom Legend */}
+      {/* Custom Legend - aligned to bottom of card */}
+      <div className="mt-auto pt-6">
       {showLevel2 ? (
         (() => {
           // Map series names to categories
@@ -287,8 +293,7 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
             'תרמו סולרי': { name: 'אנרגיות מתחדשות', color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
             'פוטו וולטאי משולב אגירה': { name: 'אנרגיות מתחדשות', color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
             'אחר': { name: 'אחר', color: LEVEL1_COLORS['אחר'] },
-            'אגירה שאובה': { name: 'אחר', color: LEVEL1_COLORS['אחר'] },
-            'סה"כ': { name: 'סה"כ', color: '#000000' }
+            'אגירה שאובה': { name: 'אחר', color: LEVEL1_COLORS['אחר'] }
           };
 
           // Group series by category
@@ -306,7 +311,7 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
           const orderedGroups = categoryOrder
             .filter(cat => grouped[cat] && grouped[cat].length > 0)
             .map(cat => ({
-              category: { name: cat, color: LEVEL1_COLORS[cat] || '#5470c6' },
+              category: { name: cat, color: LEVEL1_COLORS[cat] || ENERGY_MIX_FIGMA_FALLBACK },
               items: grouped[cat]
             }));
 
@@ -318,7 +323,7 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
                   <div
                     className="flex items-center gap-2 pr-2 border-r-2"
                     style={{
-                      borderRightColor: group.category.color || '#5470c6',
+                      borderRightColor: group.category.color || ENERGY_MIX_FIGMA_FALLBACK,
                     }}
                   >
                     <span className="md:text-sm text-xs font-medium">{group.category.name}</span>
@@ -339,7 +344,7 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
                         >
                           <div
                             className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: series.color || '#5470c6' }}
+                            style={{ backgroundColor: series.color || ENERGY_MIX_FIGMA_FALLBACK }}
                           ></div>
                           <span className="md:text-sm text-xs">{series.name}</span>
                         </div>
@@ -367,7 +372,7 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
               >
                 <div
                   className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: series.color || '#5470c6' }}
+                  style={{ backgroundColor: series.color || ENERGY_MIX_FIGMA_FALLBACK }}
                 ></div>
                 <span className="md:text-sm text-xs">{series.name}</span>
               </div>
@@ -375,6 +380,7 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -322,6 +322,8 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
                             innerRadius={70}
                             outerRadius={120}
                             paddingAngle={0}
+                            startAngle={90}
+                            endAngle={-270}
                         >
                             {visiblePieData.map((entry, index) => (
                                 <Cell
@@ -354,7 +356,7 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
                                 angle: -90,
                                 position: "insideLeft",
                                 dx: -15,
-                                style: { textAnchor: 'middle', whiteSpace: 'pre-line' }
+                                style: { textAnchor: 'middle', whiteSpace: 'pre-line', fontFamily: 'Heebo, sans-serif' }
                             }}
                         />
                         <Tooltip content={<BarChartTooltip />} cursor={{ fill: 'transparent' }} />

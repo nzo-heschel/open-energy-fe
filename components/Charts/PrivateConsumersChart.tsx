@@ -263,7 +263,7 @@ const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
                             angle: -90,
                             position: "insideLeft",
                             dx: -15,
-                            style: { textAnchor: 'middle' }
+                            style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
                         }}
                     />
                     <Tooltip content={<CustomTooltip />} />

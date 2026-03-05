@@ -1,7 +1,7 @@
 "use client";
 
 import DateRangePicker from '@/components/ui/DateRangePicker';
-import { useCO2EmissionsOverTime, exportCO2EmissionsOverTime } from '@/lib/api';
+import { exportCO2EmissionsOverTime, useCO2EmissionsOverTime } from '@/lib/api';
 import api from '@/public/images/API.png';
 import download from '@/public/images/download_2.png';
 import { format, subDays } from 'date-fns';
@@ -145,7 +145,7 @@ const CO2LineChart = () => {
 
                 {/* Date controls row - same as SMP */}
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-600">מיון לפי:</span>
+                    <span className="text-sm text-slate-600"> סינון לפי:</span>
                     <DateRangePicker
                         onDateRangeChange={handleDateRangeChange}
                         defaultPreset="last7Days"
@@ -167,15 +167,20 @@ const CO2LineChart = () => {
                     </div>
                 ) : (
                     <>
-                        {/* Y-axis label at top */}
-                        <div className="flex justify-end px-2 mb-1">
-                            <p className="text-right text-xs text-[#707585] font-normal">[mTCO₂/h]</p>
-                        </div>
-                        <ResponsiveContainer width="100%" height="95%">
+                        <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={currentData} margin={{ top: 10, right: 0, left: 10, bottom: 10 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis dataKey="date" tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
-                                <YAxis tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
+                                <YAxis
+                                    tickLine={false}
+                                    tick={{ fill: "#6b7280", fontSize: 10 }}
+                                    label={{
+                                        value: "[mTCO₂/h]",
+                                        angle: -90,
+                                        position: "insideLeft",
+                                        style: { textAnchor: "middle", fontFamily: "Heebo, sans-serif" }
+                                    }}
+                                />
                                 {activeLines.co2 && (
                                     <Line
                                         type="linear"

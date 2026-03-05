@@ -4,7 +4,7 @@ import DateRangePicker from '@/components/ui/DateRangePicker';
 import { exportCO2TotalVsRatio, useCO2TotalVsRatio } from '@/lib/api';
 import api from '@/public/images/API.png';
 import download from '@/public/images/download_2.png';
-import { format, subDays } from 'date-fns';
+import { format, parseISO, subDays } from 'date-fns';
 import Image from "next/image";
 import { useState } from "react";
 import {
@@ -74,6 +74,25 @@ const CO2EmissionsChart = () => {
     emissions_ratio: item.emissions_ratio
   })) || [];
 
+  // Format X-axis tick as M/YY (e.g. 1/25 for Jan 2025)
+  const formatXAxisTick = (period: string) => {
+    if (!period) return period;
+    try {
+      const str = String(period);
+      if (/^\d{4}-\d{2}$/.test(str)) {
+        return format(parseISO(str + '-01'), 'M/yy');
+      }
+      if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+        return format(parseISO(str), 'M/yy');
+      }
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) return format(d, 'M/yy');
+    } catch {
+      // ignore
+    }
+    return period;
+  };
+
   return (
     <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[20px] p-4 md:p-6 overflow-hidden">
       <div className="flex flex-col gap-1">
@@ -130,7 +149,7 @@ const CO2EmissionsChart = () => {
 
         {/* Date controls row - same as SMP */}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-600">מיון לפי:</span>
+          <span className="text-sm text-slate-600"> סינון לפי:</span>
           <DateRangePicker
             onDateRangeChange={handleDateRangeChange}
             defaultPreset="last7Days"
@@ -145,12 +164,7 @@ const CO2EmissionsChart = () => {
           </div>
         ) : (
           <>
-            {/* Y-axis labels at top */}
-            <div className="flex justify-between items-end text-right px-2 mb-1">
-              <p className="text-right text-xs text-[#707585] font-normal">יחס פליטות<br />[mTCO₂/MWh]</p>
-              <p className="text-right text-xs text-[#707585] font-normal">סך פליטות<br />[mTCO₂/h]</p>
-            </div>
-            <ResponsiveContainer width="100%" height="85%">
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis
@@ -158,6 +172,7 @@ const CO2EmissionsChart = () => {
                   tickLine={false}
                   axisLine={false}
                   tick={{ fill: "#6b7280", fontSize: 12 }}
+                  tickFormatter={formatXAxisTick}
                 />
                 <YAxis
                   yAxisId="left"
@@ -165,6 +180,12 @@ const CO2EmissionsChart = () => {
                   tickLine={false}
                   axisLine={false}
                   tick={{ fill: "#6b7280", fontSize: 12 }}
+                  label={{
+                    value: "סך פליטות [mTCO₂/h]",
+                    angle: -90,
+                    position: "insideLeft",
+                    style: { textAnchor: "middle", fontFamily: "Heebo, sans-serif" }
+                  }}
                 />
                 <YAxis
                   yAxisId="right"
@@ -172,6 +193,12 @@ const CO2EmissionsChart = () => {
                   tickLine={false}
                   axisLine={false}
                   tick={{ fill: "#6b7280", fontSize: 12 }}
+                  label={{
+                    value: "קצב פליטות [mTCO₂/MWh]",
+                    angle: -90,
+                    position: "insideRight",
+                    style: { textAnchor: "middle", fontFamily: "Heebo, sans-serif" }
+                  }}
                 />
                 {active.co2 && (
                   <Line

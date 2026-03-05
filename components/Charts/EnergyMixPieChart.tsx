@@ -1,6 +1,6 @@
 'use client';
 
-import { LEVEL1_COLORS, LEVEL2_COLORS } from '@/lib/colors';
+import { ENERGY_MIX_FIGMA_FALLBACK, LEVEL1_COLORS, LEVEL2_COLORS } from '@/lib/colors';
 import type { EnergyMixResponse, EnergyOverviewResponse } from '@/types/dto';
 import { ECElementEvent, ECharts } from 'echarts';
 import ReactECharts from 'echarts-for-react';
@@ -30,12 +30,15 @@ interface EnergyMixPieChartProps {
   energyMixData?: EnergyMixResponse | EnergyOverviewResponse | null;
   height?: number;
   showLevel2?: boolean;
+  /** When true, use height as-is on all screens (for consistent card layout) */
+  useFixedHeight?: boolean;
 }
 
 export default function EnergyMixPieChart({
   energyMixData,
   height = 450,
-  showLevel2 = false
+  showLevel2 = false,
+  useFixedHeight = false
 }: EnergyMixPieChartProps) {
 
   // Transform level 1 data
@@ -92,7 +95,7 @@ export default function EnergyMixPieChart({
             level2DataArray.push({
               name: level2NameTranslations[normalizedKey] || key,
               value: value,
-              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
             });
           }
         });
@@ -107,7 +110,7 @@ export default function EnergyMixPieChart({
             level2DataArray.push({
               name: level2NameTranslations[normalizedKey] || key,
               value: value,
-              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
             });
           }
         });
@@ -122,7 +125,7 @@ export default function EnergyMixPieChart({
             level2DataArray.push({
               name: level2NameTranslations[normalizedKey] || key,
               value: value,
-              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
             });
           }
         });
@@ -140,7 +143,7 @@ export default function EnergyMixPieChart({
             level2DataArray.push({
               name: level2NameTranslations[normalizedKey] || key,
               value: numValue,
-              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
             });
           }
         });
@@ -156,7 +159,7 @@ export default function EnergyMixPieChart({
             level2DataArray.push({
               name: level2NameTranslations[normalizedKey] || key,
               value: numValue,
-              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
             });
           }
         });
@@ -172,7 +175,7 @@ export default function EnergyMixPieChart({
             level2DataArray.push({
               name: level2NameTranslations[normalizedKey] || key,
               value: numValue,
-              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
             });
           }
         });
@@ -188,7 +191,7 @@ export default function EnergyMixPieChart({
             level2DataArray.push({
               name: level2NameTranslations[normalizedKey] || key,
               value: value,
-              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
             });
           }
         });
@@ -203,7 +206,7 @@ export default function EnergyMixPieChart({
             level2DataArray.push({
               name: level2NameTranslations[normalizedKey] || key,
               value: value,
-              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
             });
           }
         });
@@ -218,7 +221,7 @@ export default function EnergyMixPieChart({
             level2DataArray.push({
               name: level2NameTranslations[normalizedKey] || key,
               value: value,
-              color: LEVEL2_COLORS[normalizedKey] || '#5470c6'
+              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
             });
           }
         });
@@ -312,6 +315,8 @@ export default function EnergyMixPieChart({
         type: 'pie',
         radius: [innerRingInner, innerRingOuter], // Inner ring dimensions
         center: ['50%', '50%'],
+        startAngle: 90, // 12 o'clock = middle-top (ECharts: 0=3 o'clock, 90=12 o'clock)
+        anticlockwise: true,
         avoidLabelOverlap: false,
         label: {
           show: false
@@ -333,7 +338,7 @@ export default function EnergyMixPieChart({
           value: item.value,
           name: item.name,
           itemStyle: {
-            color: item.color || '#5470c6',
+            color: item.color || ENERGY_MIX_FIGMA_FALLBACK,
             opacity: getOpacity(item.name)
           }
         }))
@@ -345,6 +350,8 @@ export default function EnergyMixPieChart({
         type: 'pie',
         radius: [outerRingInner, outerRingOuter], // Outer ring dimensions
         center: ['50%', '50%'],
+        startAngle: 90, // 12 o'clock = middle-top (ECharts: 0=3 o'clock, 90=12 o'clock)
+        clockwise: true,
         avoidLabelOverlap: false,
         label: {
           show: false
@@ -365,7 +372,7 @@ export default function EnergyMixPieChart({
           value: item.value,
           name: item.name,
           itemStyle: {
-            color: item.color || '#5470c6',
+            color: item.color || ENERGY_MIX_FIGMA_FALLBACK,
             opacity: getOpacity(item.name)
           }
         }))
@@ -377,6 +384,8 @@ export default function EnergyMixPieChart({
         type: 'pie',
         radius: [singleRingInner, singleRingOuter],
         center: ['50%', '50%'],
+        startAngle: 90, // 12 o'clock = middle-top (ECharts: 0=3 o'clock, 90=12 o'clock)
+        clockwise: true,
         avoidLabelOverlap: false,
         label: {
           show: false
@@ -397,7 +406,7 @@ export default function EnergyMixPieChart({
           value: item.value,
           name: item.name,
           itemStyle: {
-            color: item.color || '#5470c6',
+            color: item.color || ENERGY_MIX_FIGMA_FALLBACK,
             opacity: getOpacity(item.name)
           }
         }))
@@ -500,61 +509,56 @@ export default function EnergyMixPieChart({
     );
   }
 
-  // Calculate responsive height - slightly larger for md+ screens
-  const chartHeight = isMdPlus ? Math.max(height * 1.2, 550) : height;
+  const chartHeight = useFixedHeight ? height : (isMdPlus ? Math.max(height * 1.2, 550) : height);
+
+  const total = (energyMixData as EnergyMixResponse)?.total;
 
   return (
-    <div className="w-full overflow-visible relative" style={{ padding: '20px' }}>
-      <ReactECharts
-        option={option}
-        style={{
-          height: `${chartHeight}px`,
-          width: '100%'
-        }}
-        opts={{
-          renderer: 'canvas'
-        }}
-        notMerge={true}
-        lazyUpdate={false}
-        onChartReady={onChartReady}
-        onEvents={{
-          mouseover: (params: any) => {
-            const name = params.data?.name || params.name;
-            if (name) {
-              setHoveredItem(name);
+    <div className="w-full flex flex-col h-full min-h-0 overflow-visible relative" style={{ padding: '20px' }}>
+      <div className="flex-1 min-h-0 flex items-center justify-center relative">
+        <ReactECharts
+          option={option}
+          style={{
+            height: `${chartHeight}px`,
+            width: '100%'
+          }}
+          opts={{
+            renderer: 'canvas'
+          }}
+          notMerge={true}
+          lazyUpdate={false}
+          onChartReady={onChartReady}
+          onEvents={{
+            mouseover: (params: any) => {
+              const name = params.data?.name || params.name;
+              if (name) {
+                setHoveredItem(name);
+              }
+            },
+            mouseout: () => {
+              setHoveredItem(null);
+            },
+            click: (params: ECElementEvent) => {
+              if (params.componentType === 'series' && params.seriesType === 'pie') {
+                handleLegendClick(params.name);
+              }
             }
-          },
-          mouseout: () => {
-            setHoveredItem(null);
-          },
-          // Also update state when user clicks on pie segments
-          click: (params: ECElementEvent) => {
-            if (params.componentType === 'series' && params.seriesType === 'pie') {
-              handleLegendClick(params.name);
-            }
-          }
-        }}
-      />
-      {/* Center text */}
-      {(() => {
-        const total = (energyMixData as EnergyMixResponse)?.total;
-        const centerY = chartHeight / 2;
-        return total !== undefined ? (
-          <div
-            className="absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"
-            style={{ top: `${centerY}px` }}
-          >
+          }}
+        />
+        {total !== undefined ? (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="text-center">
               <div className="text-sm text-slate-500 text-center">סה&quot;כ</div>
               <div className="md:text-lg text-base font-bold text-slate-700 text-center">MW {total.toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
             </div>
           </div>
-        ) : null;
-      })()}
+        ) : null}
+      </div>
 
-      {/* Custom Legend */}
+      {/* Custom Legend - aligned to bottom of card */}
+      <div className="mt-auto pt-1">
       {showLevel2 && groupedLevel2Data ? (
-        <div className="mt-5 space-y-5">
+        <div className="space-y-5">
           {groupedLevel2Data.map((group, groupIndex) => {
             return (
               <div key={groupIndex} className="space-y-1.5">
@@ -562,7 +566,7 @@ export default function EnergyMixPieChart({
                 <div
                   className="flex items-center gap-2 pr-2 border-r-2"
                   style={{
-                    borderRightColor: group.category.color || '#5470c6',
+                    borderRightColor: group.category.color || ENERGY_MIX_FIGMA_FALLBACK,
                   }}
                 >
                   <span className="md:text-sm text-xs font-medium">{group.category.name}</span>
@@ -583,7 +587,7 @@ export default function EnergyMixPieChart({
                       >
                         <div
                           className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: item.color || '#5470c6' }}
+                          style={{ backgroundColor: item.color || ENERGY_MIX_FIGMA_FALLBACK }}
                         ></div>
                         <span className="md:text-sm text-xs">{item.name}</span>
                       </div>
@@ -610,7 +614,7 @@ export default function EnergyMixPieChart({
               >
                 <div
                   className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: item.color || '#5470c6' }}
+                  style={{ backgroundColor: item.color || ENERGY_MIX_FIGMA_FALLBACK }}
                 ></div>
                 <span className="md:text-sm text-xs">{item.name}</span>
               </div>
@@ -618,6 +622,7 @@ export default function EnergyMixPieChart({
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

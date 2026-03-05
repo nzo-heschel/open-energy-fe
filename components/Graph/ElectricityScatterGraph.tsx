@@ -105,6 +105,7 @@ const CustomYAxisLabel = (props: any) => {
       y={centerY}
       textAnchor="middle"
       className="text-sm font-normal text-[#707585]"
+      style={{ fontFamily: 'Heebo, sans-serif' }}
       transform={`rotate(-90 ${viewBox.x} ${centerY})`}
     >
       [MW]
@@ -250,8 +251,8 @@ export function ElectricityScatterGraph({ data, isLoading, error, startDate, end
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend content={<CustomLegend />} />
-          <Scatter name="דוֹר" data={scatterData1.filter((d) => d.type === "דוֹר")} fill="#166534" />
-          <Scatter name="מחיר שוליי כולל אילוצים" data={scatterData1.filter((d) => d.type !== "דוֹר")} fill="#eab308" />
+          <Scatter name="ביקוש נטו" data={scatterData1.filter((d) => d.type === "דוֹר")} fill="#166534" />
+          <Scatter name="מחיר שולים כולל אילוצים" data={scatterData1.filter((d) => d.type !== "דוֹר")} fill="#eab308" />
         </ScatterChart>
       </ResponsiveContainer>
     </div>

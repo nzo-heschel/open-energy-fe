@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import topleft from '@/public/images/Ellipse 89 (1).png';
 import mark from '@/public/images/mark.png';
+import { X } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 
@@ -140,13 +141,21 @@ export default function ContactSection() {
 
             <div className="bg-white rounded-[20px] p-10 border border-[#E9C863] max-w-[516px] w-full">
               {isSubmitted ? (
-                <div className="flex flex-col md:gap-10 gap-5 items-center justify-center text-center md:h-[450px] h-[200px]">
+                <div className="relative flex flex-col md:gap-10 gap-5 items-center justify-center md:h-[450px] h-[200px]">
+                  <button
+                    type="button"
+                    onClick={() => setIsSubmitted(false)}
+                    className="absolute top-4 right-4 p-1 rounded-full text-[#484C56] hover:bg-[#FDFBF6] hover:text-[#1E8025] transition-colors focus:outline-none focus:ring-2 focus:ring-[#1E8025] focus:ring-offset-2"
+                    aria-label="סגור"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                   <Image src={mark} width={80} height={80} className='w-[80px] h-[80px]' alt='' />
-                  <div className="flex flex-col items-center gap-[10px]">
-                    <h3 className="md:text-2xl text-lg font-bold text-center text-[#1E8025]">
+                  <div className="flex flex-col items-start gap-[10px] text-left w-full">
+                    <h3 className="md:text-2xl text-lg font-bold text-[#1E8025]">
                       ההודעה נשלחה בהצלחה!
                     </h3>
-                    <p className="text-center text-[#484C56] md:text-lg text-base">
+                    <p className="text-[#484C56] md:text-lg text-base">
                       מישהו מהצוות שלנו ייצור קשר איתך בקרוב.
                     </p>
                   </div>
@@ -202,7 +211,7 @@ export default function ContactSection() {
                       type="tel"
                       value={formData.phone}
                       onChange={handleChange}
-                      className={getInputClassName('phone')}
+                      className={`${getInputClassName('phone')} pr-4`}
                       placeholder="אזור (אם יש)"
                     />
                     {errors.phone && (
@@ -217,7 +226,7 @@ export default function ContactSection() {
                       name="message"
                       value={formData.message}
                       onChange={handleChange}
-                      className={getTextareaClassName()}
+                      className={`${getTextareaClassName()} pr-4`}
                       placeholder="כתבו כאן את תוכן הפנייה"
                     ></textarea>
                     {errors.message && (

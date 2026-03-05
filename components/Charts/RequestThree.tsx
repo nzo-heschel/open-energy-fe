@@ -254,6 +254,7 @@ export default function RequestThree() {
                                     value={selectedYear}
                                     onChange={(e) => setSelectedYear(e.target.value)}
                                     className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
+                                    style={{ fontFamily: 'Heebo, sans-serif' }}
                                 >
                                     <option value="2025">2025</option>
                                     <option value="2024">2024</option>
@@ -281,7 +282,7 @@ export default function RequestThree() {
                             value: "הספק תשובות [MW]",
                             angle: -90,
                             position: "insideLeft",
-                            style: { textAnchor: 'middle' }
+                            style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
                         }} />
                         <Tooltip content={<CustomTooltip activeTab={activeTab} />} />
 

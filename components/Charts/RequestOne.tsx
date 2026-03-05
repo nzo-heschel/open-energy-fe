@@ -189,6 +189,7 @@ export default function RequestOne() {
                                     value={timeView}
                                     onChange={(e) => setTimeView(e.target.value as "yearly" | "quarterly")}
                                     className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
+                                    style={{ fontFamily: 'Heebo, sans-serif' }}
                                 >
                                     <option value="yearly">שנתי</option>
                                     <option value="quarterly">רבעוני</option>
@@ -220,7 +221,7 @@ export default function RequestOne() {
                                     value: "הספק תשובות [MW]",
                                     angle: -90,
                                     position: "insideLeft",
-                                    style: { textAnchor: 'middle' }
+                                    style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
                                 }} />
                                 <Tooltip content={<CustomTooltip />} />
                                 {activeSeries.negative && (
@@ -289,7 +290,7 @@ export default function RequestOne() {
                                     value: "הספק תשובות [MW]",
                                     angle: -90,
                                     position: "insideLeft",
-                                    style: { textAnchor: 'middle' }
+                                    style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
                                 }} />
                                 <Tooltip content={<CustomTooltip />} />
                                 {activeSeries.negative && (

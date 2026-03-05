@@ -225,7 +225,7 @@ const InstalledCapacityTwo: React.FC = () => {
                                 value: "הספק מותקן [KW]",
                                 angle: -90,
                                 position: "insideLeft",
-                                style: { textAnchor: 'middle' }
+                                style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
                             }}
                         />
                         <Tooltip content={<CustomTooltip />} />

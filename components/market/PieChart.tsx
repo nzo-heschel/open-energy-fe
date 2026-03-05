@@ -78,6 +78,8 @@ export default function PieChart({
         type: 'pie',
         radius: [innerRadius, '70%'],
         center: ['50%', '45%'],
+        startAngle: 90, // 12 o'clock = middle-top (ECharts: 0=3 o'clock, 90=12 o'clock)
+        clockwise: true,
         avoidLabelOverlap: false,
         label: {
           show: showLabels,

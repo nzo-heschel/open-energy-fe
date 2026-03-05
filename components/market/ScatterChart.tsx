@@ -122,13 +122,14 @@ export default function ScatterChart({
     },
     yAxis: {
       type: 'value',
-      name: 'מחיר (₪/MWh)',
-      nameLocation: 'middle',
-      nameGap: 50,
+      name: 'מחיר [₪/MWh]',
+      nameLocation: 'end',
+      nameGap: 15,
       nameTextStyle: {
         fontSize: 12,
         fontFamily: 'Heebo, sans-serif',
-        color: 'var(--color-text)'
+        color: 'var(--color-text)',
+        align: 'left'
       },
       axisLabel: {
         fontSize: 11,

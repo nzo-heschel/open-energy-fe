@@ -98,15 +98,12 @@ interface ElectricityScatterGraphProps {
 
 const CustomYAxisLabel = (props: any) => {
   const { viewBox } = props;
-  const centerY = (viewBox.y + viewBox.height) / 2;
   return (
     <text
-      x={viewBox.x}
-      y={centerY}
+      x={viewBox.x + viewBox.width / 2}
+      y={viewBox.y - 10}
       textAnchor="middle"
-      className="text-sm font-normal text-[#707585]"
-      style={{ fontFamily: 'Heebo, sans-serif' }}
-      transform={`rotate(-90 ${viewBox.x} ${centerY})`}
+      style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}
     >
       [MW]
     </text>

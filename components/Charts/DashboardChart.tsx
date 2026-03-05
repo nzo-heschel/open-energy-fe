@@ -347,17 +347,20 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
             {/* Bar Chart */}
             <div className="w-full md:h-[500px] h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={barData} barCategoryGap="20%" margin={{ top: 30, right: 10, left: 20, bottom: 20 }}>
+                    <ComposedChart data={barData} barCategoryGap="20%" margin={{ top: 50, right: 10, left: 20, bottom: 20 }}>
                         <XAxis dataKey="month" />
                         <YAxis
                             tickFormatter={(value) => Math.round(value / 1000).toString()}
-                            label={{
-                                value: "מספר בקשות\n[באלפים]",
-                                angle: -90,
-                                position: "insideLeft",
-                                dx: -15,
-                                style: { textAnchor: 'middle', whiteSpace: 'pre-line', fontFamily: 'Heebo, sans-serif' }
-                            }}
+                            label={({ viewBox }: any) => (
+                                <g>
+                                    <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 25} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                                        מספר בקשות
+                                    </text>
+                                    <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 10} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                                        [באלפים]
+                                    </text>
+                                </g>
+                            )}
                         />
                         <Tooltip content={<BarChartTooltip />} cursor={{ fill: 'transparent' }} />
                         {/* Approved bar (bottom of stack) */}

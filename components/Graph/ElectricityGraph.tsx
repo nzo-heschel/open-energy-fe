@@ -414,37 +414,40 @@ const ElectricityLineGraph = ({ data, startDate, endDate, selectedPreset }: Elec
         );
     };
 
-    // Custom Y-axis label for left axis (price)
+    // Custom Y-axis label for left axis (price) - positioned at top with two lines
     const CustomLeftYAxisLabel = (props: any) => {
         const { viewBox } = props;
-        const centerY = (viewBox.y + viewBox.height) / 2;
         return (
-            <text
-                x={viewBox.x}
-                y={centerY}
-                textAnchor="middle"
-                className="text-sm font-normal text-[#707585]"
-                style={{ fontFamily: 'Heebo, sans-serif' }}
-                transform={`rotate(-90 ${viewBox.x} ${centerY})`}
-            >
-                מחיר שולי [MWh/₪]
-            </text>
+            <g>
+                <text
+                    x={viewBox.x + viewBox.width / 2}
+                    y={viewBox.y - 25}
+                    textAnchor="middle"
+                    style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}
+                >
+                    מחיר שולי
+                </text>
+                <text
+                    x={viewBox.x + viewBox.width / 2}
+                    y={viewBox.y - 10}
+                    textAnchor="middle"
+                    style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}
+                >
+                    [₪/MWh]
+                </text>
+            </g>
         );
     };
 
-    // Custom Y-axis label for right axis (MW)
+    // Custom Y-axis label for right axis (MW) - positioned at top
     const CustomRightYAxisLabel = (props: any) => {
         const { viewBox } = props;
-        const centerY = (viewBox.y + viewBox.height) / 2;
-        const rightX = viewBox.x + viewBox.width;
         return (
             <text
-                x={rightX}
-                y={centerY}
+                x={viewBox.x + viewBox.width / 2}
+                y={viewBox.y - 10}
                 textAnchor="middle"
-                className="text-sm font-normal text-[#707585]"
-                style={{ fontFamily: 'Heebo, sans-serif' }}
-                transform={`rotate(-90 ${rightX} ${centerY})`}
+                style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}
             >
                 [MW]
             </text>

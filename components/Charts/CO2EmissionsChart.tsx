@@ -165,7 +165,7 @@ const CO2EmissionsChart = () => {
         ) : (
           <>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+              <LineChart data={chartData} margin={{ top: 50, right: 10, left: 10, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="period"
@@ -180,12 +180,16 @@ const CO2EmissionsChart = () => {
                   tickLine={false}
                   axisLine={false}
                   tick={{ fill: "#6b7280", fontSize: 12 }}
-                  label={{
-                    value: "סך פליטות [mTCO₂/h]",
-                    angle: -90,
-                    position: "insideLeft",
-                    style: { textAnchor: "middle", fontFamily: "Heebo, sans-serif" }
-                  }}
+                  label={({ viewBox }: any) => (
+                    <g>
+                      <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 25} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                        סך פליטות
+                      </text>
+                      <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 10} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                        [mTCO₂/h]
+                      </text>
+                    </g>
+                  )}
                 />
                 <YAxis
                   yAxisId="right"
@@ -193,12 +197,16 @@ const CO2EmissionsChart = () => {
                   tickLine={false}
                   axisLine={false}
                   tick={{ fill: "#6b7280", fontSize: 12 }}
-                  label={{
-                    value: "קצב פליטות [mTCO₂/MWh]",
-                    angle: -90,
-                    position: "insideRight",
-                    style: { textAnchor: "middle", fontFamily: "Heebo, sans-serif" }
-                  }}
+                  label={({ viewBox }: any) => (
+                    <g>
+                      <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 25} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                        קצב פליטות
+                      </text>
+                      <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 10} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                        [mTCO₂/MWh]
+                      </text>
+                    </g>
+                  )}
                 />
                 {active.co2 && (
                   <Line

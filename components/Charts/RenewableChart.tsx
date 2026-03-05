@@ -176,9 +176,9 @@ export default function RenewableChart() {
                         <YAxis
                         label={{
                             value: "[%]",
-                            angle: -90,
-                            position: "insideLeft",
-                            style: { textAnchor: "middle", fontFamily: "Heebo, sans-serif" }
+                            position: "top",
+                            offset: 15,
+                            style: { textAnchor: "middle", fontFamily: "Heebo, sans-serif", fontSize: 12, fill: "#707585" }
                         }}
                     />
                         <Tooltip content={<CustomTooltip />} />

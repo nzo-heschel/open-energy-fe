@@ -274,16 +274,20 @@ export default function RequestThree() {
                 <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart
                         data={chartData}
-                        margin={{ top: 20, right: 20, left: 60, bottom: 10 }}
+                        margin={{ top: 50, right: 20, left: 60, bottom: 10 }}
                     >
                         <CartesianGrid vertical={false} strokeDasharray="6 6" />
                         <XAxis dataKey="district" tick={{ fontSize: 12 }} />
-                        <YAxis tick={{ fontSize: 12 }} label={{
-                            value: "הספק תשובות [MW]",
-                            angle: -90,
-                            position: "insideLeft",
-                            style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
-                        }} />
+                        <YAxis tick={{ fontSize: 12 }} label={({ viewBox }: any) => (
+                            <g>
+                                <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 25} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                                    הספק תשובות
+                                </text>
+                                <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 10} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                                    [MW]
+                                </text>
+                            </g>
+                        )} />
                         <Tooltip content={<CustomTooltip activeTab={activeTab} />} />
 
                         {/* Bars */}

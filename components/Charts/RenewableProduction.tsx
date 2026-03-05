@@ -191,14 +191,14 @@ export default function RenewableProduction() {
                 {/* chart area */}
                 <div className="flex-1 md:h-[420px] h-[320px]">
                     <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart data={data} margin={{ top: 20, right: 20, left: 10, bottom: 10 }}>
+                        <ComposedChart data={data} margin={{ top: 40, right: 20, left: 10, bottom: 10 }}>
                             <CartesianGrid vertical={false} strokeDasharray="6 6" />
                             <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                             <YAxis tick={{ fontSize: 12 }} label={{
                                 value: "[MW]",
-                                angle: -90,
-                                position: "insideLeft",
-                                style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
+                                position: "top",
+                                offset: 15,
+                                style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: "#707585" }
                             }} />
                             <Tooltip content={<CustomTooltip />} />
                             {/* Bars (stacked): order matters for stack visual */}

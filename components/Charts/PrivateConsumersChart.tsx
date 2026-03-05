@@ -252,19 +252,32 @@ const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
             <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
                     data={chartData}
-                    margin={{ top: 20, right: 10, left: 20, bottom: 20 }}
+                    margin={{ top: 50, right: 10, left: 20, bottom: 20 }}
                     barCategoryGap="25%"
                 >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="month" />
                     <YAxis
-                        label={{
-                            value: "צרכנים המחוברים לספקי חשמל פרטיים",
-                            angle: -90,
-                            position: "insideLeft",
-                            dx: -15,
-                            style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
-                        }}
+                        label={({ viewBox }: any) => (
+                            <g>
+                                <text
+                                    x={viewBox.x + viewBox.width / 2}
+                                    y={viewBox.y - 25}
+                                    textAnchor="middle"
+                                    style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}
+                                >
+                                    צרכנים המחוברים
+                                </text>
+                                <text
+                                    x={viewBox.x + viewBox.width / 2}
+                                    y={viewBox.y - 10}
+                                    textAnchor="middle"
+                                    style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}
+                                >
+                                    לספקי חשמל פרטיים
+                                </text>
+                            </g>
+                        )}
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend

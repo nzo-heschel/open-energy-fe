@@ -206,7 +206,7 @@ const InstalledCapacityTwo: React.FC = () => {
                 <ResponsiveContainer width="100%" height="80%">
                     <BarChart
                         data={data}
-                        margin={{ top: 20, right: 30, left: 10, bottom: 20 }}
+                        margin={{ top: 50, right: 30, left: 10, bottom: 20 }}
                         barGap={0}
                         barCategoryGap={0}
                     >
@@ -221,12 +221,16 @@ const InstalledCapacityTwo: React.FC = () => {
                             axisLine={{ stroke: '#ddd' }}
                             tickLine={{ stroke: '#ddd' }}
                             tickFormatter={(value) => value.toLocaleString()}
-                            label={{
-                                value: "הספק מותקן [KW]",
-                                angle: -90,
-                                position: "insideLeft",
-                                style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
-                            }}
+                            label={({ viewBox }: any) => (
+                                <g>
+                                    <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 25} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                                        הספק מותקן
+                                    </text>
+                                    <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 10} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                                        [KW]
+                                    </text>
+                                </g>
+                            )}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Legend content={renderLegend} />

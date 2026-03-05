@@ -61,21 +61,28 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-// Custom YAxis Label component
+// Custom YAxis Label component - positioned at top with two lines
 const CustomYAxisLabel = (props: any) => {
     const { viewBox } = props;
-    const centerY = (viewBox.y + viewBox.height) / 2;
     return (
-        <text
-            x={viewBox.x}
-            y={centerY}
-            textAnchor="middle"
-className="text-sm font-normal text-[#707585]"
-        style={{ fontFamily: 'Heebo, sans-serif' }}
-        transform={`rotate(-90 ${viewBox.x} ${centerY})`}
-    >
-        מחיר שולי [MWh/₪]
-        </text>
+        <g>
+            <text
+                x={viewBox.x + viewBox.width / 2}
+                y={viewBox.y - 25}
+                textAnchor="middle"
+                style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}
+            >
+                מחיר שולי
+            </text>
+            <text
+                x={viewBox.x + viewBox.width / 2}
+                y={viewBox.y - 10}
+                textAnchor="middle"
+                style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}
+            >
+                [₪/MWh]
+            </text>
+        </g>
     );
 };
 

@@ -213,7 +213,7 @@ const HeatVsProductionChart: React.FC = () => {
                 ) : (
                     <>
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={currentData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+                            <LineChart data={currentData} margin={{ top: 50, right: 10, left: 10, bottom: 10 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E6E7EA" />
                                 <XAxis
                                     dataKey="date"
@@ -229,12 +229,16 @@ const HeatVsProductionChart: React.FC = () => {
                                     tickLine={false}
                                     axisLine={true}
                                     tick={{ fill: "#6b7280", fontSize: 12 }}
-                                    label={{
-                                        value: "עומס חום [מעלות C°]",
-                                        angle: -90,
-                                        position: "insideLeft",
-                                        style: { textAnchor: "middle", fontFamily: "Heebo, sans-serif" }
-                                    }}
+                                    label={({ viewBox }: any) => (
+                                        <g>
+                                            <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 25} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                                                עומס חום
+                                            </text>
+                                            <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 10} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                                                [מעלות C°]
+                                            </text>
+                                        </g>
+                                    )}
                                 />
 
                                 <YAxis
@@ -245,12 +249,16 @@ const HeatVsProductionChart: React.FC = () => {
                                     tick={{ fill: "#6b7280", fontSize: 12 }}
                                     domain={[0, (dataMax: number) => Math.ceil(dataMax / 1000) * 1000 + 1000]}
                                     width={80}
-                                    label={{
-                                        value: "מגה-וואט [MW]",
-                                        angle: -90,
-                                        position: "insideRight",
-                                        style: { textAnchor: "middle", fontFamily: "Heebo, sans-serif" }
-                                    }}
+                                    label={({ viewBox }: any) => (
+                                        <g>
+                                            <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 25} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                                                מגה-וואט
+                                            </text>
+                                            <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 10} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                                                [MW]
+                                            </text>
+                                        </g>
+                                    )}
                                 />
 
                                 {/* Vertical mid-line near 6/24 - use x value that exists in dataset */}

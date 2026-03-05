@@ -229,12 +229,15 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
       yAxis: {
         type: 'value',
         name: "[MW]",
-        nameLocation: 'middle',
-        nameGap: 40,
-        nameRotate: 90,
+        nameLocation: 'end',
+        
+        nameGap: 15,
         nameTextStyle: {
           fontSize: 12,
-          fontFamily: 'Heebo, sans-serif'
+          fontFamily: 'Heebo, sans-serif',
+          align: 'left',
+          // Negative left padding shifts the [MW] label left so it aligns with tick labels (e.g. 7000K)
+          padding: [0, 0, 0, -32]
         },
         axisLabel: {
           fontSize: 11,

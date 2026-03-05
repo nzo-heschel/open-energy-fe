@@ -353,17 +353,20 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                     <ComposedChart
                         data={barData}
                         barCategoryGap="30%"
-                        margin={{ top: 10, right: 10, left: 20, bottom: 0 }}
+                        margin={{ top: 50, right: 10, left: 20, bottom: 0 }}
                     >
                         <XAxis dataKey="month" />
                         <YAxis
-                            label={{
-                                value: "מספר דחיות\n[באלפים]",
-                                angle: -90,
-                                position: "insideLeft",
-                                dx: -15,
-                                style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
-                            }}
+                            label={({ viewBox }: any) => (
+                                <g>
+                                    <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 25} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                                        מספר דחיות
+                                    </text>
+                                    <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 10} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                                        [באלפים]
+                                    </text>
+                                </g>
+                            )}
                             tickFormatter={(value) => Math.round(value / 1000).toString()}
                         />
                         <Tooltip content={<CustomTooltip />} />

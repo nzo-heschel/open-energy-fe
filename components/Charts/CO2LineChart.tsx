@@ -168,7 +168,7 @@ const CO2LineChart = () => {
                 ) : (
                     <>
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={currentData} margin={{ top: 10, right: 0, left: 10, bottom: 10 }}>
+                            <LineChart data={currentData} margin={{ top: 40, right: 0, left: 10, bottom: 10 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis dataKey="date" tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
                                 <YAxis
@@ -176,9 +176,9 @@ const CO2LineChart = () => {
                                     tick={{ fill: "#6b7280", fontSize: 10 }}
                                     label={{
                                         value: "[mTCO₂/h]",
-                                        angle: -90,
-                                        position: "insideLeft",
-                                        style: { textAnchor: "middle", fontFamily: "Heebo, sans-serif" }
+                                        position: "top",
+                                        offset: 15,
+                                        style: { textAnchor: "middle", fontFamily: "Heebo, sans-serif", fontSize: 12, fill: "#707585" }
                                     }}
                                 />
                                 {activeLines.co2 && (

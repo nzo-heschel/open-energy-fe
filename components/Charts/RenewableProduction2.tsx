@@ -147,16 +147,20 @@ export default function RenewableProduction2() {
                         <ResponsiveContainer width="100%" height="100%">
                             <ComposedChart
                                 data={data}
-                                margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
+                                margin={{ top: 50, right: 20, left: 10, bottom: 10 }}
                             >
                                 <CartesianGrid vertical={false} strokeDasharray="6 6" />
                                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                                <YAxis tick={{ fontSize: 12 }} label={{
-                                    value: "אחוז מכלל הייצור [%]",
-                                    angle: -90,
-                                    position: "insideLeft",
-                                    style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
-                                }} />
+                                <YAxis tick={{ fontSize: 12 }} label={({ viewBox }: any) => (
+                                    <g>
+                                        <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 25} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                                            אחוז מכלל הייצור
+                                        </text>
+                                        <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 10} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                                            [%]
+                                        </text>
+                                    </g>
+                                )} />
                                 <Tooltip content={<CustomTooltip />} />
                                 {/* <div className="mx-1"> */}
                                 {series.map((s, idx) => (
@@ -184,16 +188,20 @@ export default function RenewableProduction2() {
                         <ResponsiveContainer width="100%" height="100%">
                             <ComposedChart
                                 data={data}
-                                margin={{ top: 20, right: 20, left: 0, bottom: 10 }}
+                                margin={{ top: 50, right: 20, left: 0, bottom: 10 }}
                             >
                                 <CartesianGrid vertical={false} strokeDasharray="6 6" />
                                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                                <YAxis tick={{ fontSize: 12 }} label={{
-                                    value: "אחוז מכלל הייצור [%]",
-                                    angle: -90,
-                                    position: "insideLeft",
-                                    style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
-                                }} />
+                                <YAxis tick={{ fontSize: 12 }} label={({ viewBox }: any) => (
+                                    <g>
+                                        <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 25} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                                            אחוז מכלל הייצור
+                                        </text>
+                                        <text x={viewBox.x + viewBox.width / 2} y={viewBox.y - 10} textAnchor="middle" style={{ fontFamily: 'Heebo, sans-serif', fontSize: 12, fill: '#707585' }}>
+                                            [%]
+                                        </text>
+                                    </g>
+                                )} />
                                 <Tooltip content={<CustomTooltip />} />
                                 {/* <div className="mx-1"> */}
                                 {series.map((s, idx) => (

@@ -210,8 +210,7 @@ const CO2DonutChart = () => {
                                     </Pie>
                                     <Tooltip
                                         formatter={(value: number, name: string) => [
-                                            `${value.toFixed(1)}%`,
-                                            name,
+                                            `${value.toFixed(1)}% | ${name}`
                                         ]}
                                         contentStyle={{
                                             backgroundColor: "white",
@@ -227,7 +226,7 @@ const CO2DonutChart = () => {
                             <div className="absolute text-center">
                                 <p className="text-center text-sm text-gray-500">סה״כ</p>
                                 <p className="text-center text-xl font-bold text-gray-800">
-                                    {formatNumber(totalEmissions, 0)} {emissionsMixData?.total_emissions_unit || 'tons CO2'}
+                                    {formatNumber(totalEmissions, 0)} {'mTCO₂'}
                                 </p>
                             </div>
                         </>

@@ -141,17 +141,17 @@ export default function ContactSection() {
 
             <div className="bg-white rounded-[20px] p-10 border border-[#E9C863] max-w-[516px] w-full">
               {isSubmitted ? (
-                <div className="relative flex flex-col md:gap-10 gap-5 items-center justify-center md:h-[450px] h-[200px]">
+                <div className="relative flex flex-col md:gap-10 gap-5 items-center justify-center md:h-[450px] h-[200px] text-center">
                   <button
                     type="button"
                     onClick={() => setIsSubmitted(false)}
-                    className="absolute top-4 right-4 p-1 rounded-full text-[#484C56] hover:bg-[#FDFBF6] hover:text-[#1E8025] transition-colors focus:outline-none focus:ring-2 focus:ring-[#1E8025] focus:ring-offset-2"
+                    className="absolute -top-6 -left-6 p-1 rounded-full text-[#484C56] hover:bg-[#FDFBF6] hover:text-[#1E8025] transition-colors focus:outline-none focus:ring-2 focus:ring-[#1E8025] focus:ring-offset-2"
                     aria-label="סגור"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-10 h-10 text-[#C3C3C3]" />
                   </button>
                   <Image src={mark} width={80} height={80} className='w-[80px] h-[80px]' alt='' />
-                  <div className="flex flex-col items-start gap-[10px] text-left w-full">
+                  <div className="flex flex-col items-center gap-[10px] text-center w-full">
                     <h3 className="md:text-2xl text-lg font-bold text-[#1E8025]">
                       ההודעה נשלחה בהצלחה!
                     </h3>
@@ -169,7 +169,7 @@ export default function ContactSection() {
                         type="text"
                         value={formData.name}
                         onChange={handleChange}
-                        className={`${getInputClassName('name')} pr-4`}
+                        className={`${getInputClassName('name')}`}
                         placeholder="שם"
                       />
                       {!formData.name && (
@@ -190,7 +190,7 @@ export default function ContactSection() {
                         type="email"
                         value={formData.email}
                         onChange={handleChange}
-                        className={`${getInputClassName('email')} pr-4`}
+                        className={`${getInputClassName('email')}`}
                         placeholder="כתובת דוא״ל"
                       />
                       {!formData.email && (
@@ -211,7 +211,7 @@ export default function ContactSection() {
                       type="tel"
                       value={formData.phone}
                       onChange={handleChange}
-                      className={`${getInputClassName('phone')} pr-4`}
+                      className={`${getInputClassName('phone')}`}
                       placeholder="ארגון (אם יש)"
                     />
                     {errors.phone && (
@@ -226,7 +226,7 @@ export default function ContactSection() {
                       name="message"
                       value={formData.message}
                       onChange={handleChange}
-                      className={`${getTextareaClassName()} pr-4`}
+                      className={`${getTextareaClassName()}`}
                       placeholder="כתבו כאן את תוכן הפנייה"
                     ></textarea>
                     {errors.message && (

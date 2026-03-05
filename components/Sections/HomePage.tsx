@@ -501,23 +501,23 @@ export default function HomePage() {
                   />
                 </div>
                 <div className="flex-1 flex flex-col min-h-0">
-                {isLoadingEnergyMix ? (
-                  <div className="flex justify-center items-center flex-1 min-h-[300px]" style={{ height: `${HOME_CHART_HEIGHT}px` }}>
-                    <p className="text-slate-600">טוען נתונים...</p>
-                  </div>
-                ) : energyMixError ? (
-                  <div className="flex justify-center items-center flex-1 min-h-[300px]" style={{ height: `${HOME_CHART_HEIGHT}px` }}>
-                    <p className="text-red-600">שגיאה בטעינת הנתונים</p>
-                  </div>
-                ) : energyMixData ? (
-                  <EnergyMixPieChart
-                    key={`energy-mix-${showMixLevel2 ? 'nested' : 'single'}`}
-                    energyMixData={energyMixData}
-                    height={HOME_CHART_HEIGHT}
-                    showLevel2={showMixLevel2}
-                    useFixedHeight
-                  />
-                ) : null}
+                  {isLoadingEnergyMix ? (
+                    <div className="flex justify-center items-center flex-1 min-h-[300px]" style={{ height: `${HOME_CHART_HEIGHT}px` }}>
+                      <p className="text-slate-600">טוען נתונים...</p>
+                    </div>
+                  ) : energyMixError ? (
+                    <div className="flex justify-center items-center flex-1 min-h-[300px]" style={{ height: `${HOME_CHART_HEIGHT}px` }}>
+                      <p className="text-red-600">שגיאה בטעינת הנתונים</p>
+                    </div>
+                  ) : energyMixData ? (
+                    <EnergyMixPieChart
+                      key={`energy-mix-${showMixLevel2 ? 'nested' : 'single'}`}
+                      energyMixData={energyMixData}
+                      height={HOME_CHART_HEIGHT}
+                      showLevel2={showMixLevel2}
+                      useFixedHeight
+                    />
+                  ) : null}
                 </div>
 
                 <div className="flex justify-start mt-2">
@@ -559,7 +559,7 @@ export default function HomePage() {
                           </div>
                         )}
                       </div>
-                      סקירה כללית של משק החשמל בישראל - נטע על
+                      משק החשמל בישראל - מבט על
                     </CardTitle>
                     {/* Buttons SECOND - goes to LEFT in RTL */}
                     <div className="flex items-start md:gap-4 gap-2">
@@ -595,28 +595,28 @@ export default function HomePage() {
                   />
                 </div>
                 <div className="flex-1 flex flex-col min-h-0">
-                {isLoadingEnergyOverview ? (
-                  <div className="flex justify-center items-center flex-1 min-h-[300px]" style={{ height: `${HOME_CHART_HEIGHT}px` }}>
-                    <p className="text-slate-600">טוען נתונים...</p>
-                  </div>
-                ) : energyOverviewError ? (
-                  <div className="flex justify-center items-center flex-1 min-h-[300px]" style={{ height: `${HOME_CHART_HEIGHT}px` }}>
-                    <p className="text-red-600">שגיאה בטעינת הנתונים</p>
-                  </div>
-                ) : chart2Data ? (
-                  <Chart2
-                    key={`chart2-${startEndOverviewDate.start}-${startEndOverviewDate.end}-${showOverviewLevel2}`}
-                    data={chart2Data}
-                    startDate={startEndOverviewDate.start}
-                    endDate={startEndOverviewDate.end}
-                    showLevel2={showOverviewLevel2}
-                    height={HOME_CHART_HEIGHT}
-                  />
-                ) : (
-                  <div className="flex justify-center items-center flex-1 min-h-[300px]" style={{ height: `${HOME_CHART_HEIGHT}px` }}>
-                    <p className="text-slate-600">אין נתונים להצגה</p>
-                  </div>
-                )}
+                  {isLoadingEnergyOverview ? (
+                    <div className="flex justify-center items-center flex-1 min-h-[300px]" style={{ height: `${HOME_CHART_HEIGHT}px` }}>
+                      <p className="text-slate-600">טוען נתונים...</p>
+                    </div>
+                  ) : energyOverviewError ? (
+                    <div className="flex justify-center items-center flex-1 min-h-[300px]" style={{ height: `${HOME_CHART_HEIGHT}px` }}>
+                      <p className="text-red-600">שגיאה בטעינת הנתונים</p>
+                    </div>
+                  ) : chart2Data ? (
+                    <Chart2
+                      key={`chart2-${startEndOverviewDate.start}-${startEndOverviewDate.end}-${showOverviewLevel2}`}
+                      data={chart2Data}
+                      startDate={startEndOverviewDate.start}
+                      endDate={startEndOverviewDate.end}
+                      showLevel2={showOverviewLevel2}
+                      height={HOME_CHART_HEIGHT}
+                    />
+                  ) : (
+                    <div className="flex justify-center items-center flex-1 min-h-[300px]" style={{ height: `${HOME_CHART_HEIGHT}px` }}>
+                      <p className="text-slate-600">אין נתונים להצגה</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-start mt-7">

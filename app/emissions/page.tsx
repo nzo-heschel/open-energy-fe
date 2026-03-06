@@ -95,8 +95,8 @@ export default function Emissions() {
                         </Button>
                     </div>
 
-                    {/* Charts Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Charts Grid: Figma line chart 649px, donut 532px → ratio ~1 : 1.22, gap 23px */}
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.22fr] gap-[23px]">
                         <CO2DonutChart />
                         <CO2LineChart />
                     </div>

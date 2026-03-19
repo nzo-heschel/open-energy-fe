@@ -28,7 +28,7 @@ const SIZE_BRACKETS = [
     { key: "xlarge", label: "גדול מאוד | +5001 KW", color: "#648AA3" },
     { key: "large", label: "גדול | 631-5000 KW", color: "#60A261" },
     { key: "medium", label: "בינוני | 201-630 KW", color: "#957669" },
-    { key: "small", label: "קטן | 0-200 KW", color: "#C4C95C" },
+    { key: "small", label: "קטן | 0-200 KW", color: "#CEA073" },
 ];
 
 // Static year options (to avoid hydration mismatch)
@@ -171,15 +171,15 @@ export default function RequestTwo() {
             // Map API size brackets to our 4 simplified categories
             // Small (0-200 kW): Up to 16 kW + 16-50 kW + 50-200 kW
             const small = getValue(brackets["Up to 16 kW"]) +
-                          getValue(brackets["16–50 kW"]) +
-                          getValue(brackets["50–200 kW"]);
+                getValue(brackets["16–50 kW"]) +
+                getValue(brackets["50–200 kW"]);
             // Medium (201-630 kW): 200 kW-1 MW
             const medium = getValue(brackets["200 kW–1 MW"]);
             // Large (631-5000 kW): 1-5 MW
             const large = getValue(brackets["1–5 MW"]);
             // XLarge (5001+ kW): 5-50 MW + 50+ MW
             const xlarge = getValue(brackets["5–50 MW"]) +
-                           getValue(brackets["50+ MW"]);
+                getValue(brackets["50+ MW"]);
 
             const total = small + medium + large + xlarge;
 

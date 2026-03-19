@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import download from '@/public/images/download_2.png'
 import api from '@/public/images/API.png'
 import {
-    BarChart,
     Bar,
     XAxis,
     YAxis,
@@ -14,138 +13,58 @@ import {
     LabelList,
     ComposedChart,
 } from "recharts";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import TooltipInfo from "../TooltipInfo";
+import {
+    useResponseCapacityBySize,
+    exportResponseCapacityBySize,
+    ResponseCapacityBySizeFilters
+} from "@/lib/api";
 
-type DataPoint = {
-    date: string;
-    small: number;
-    medium: number;
-    large: number;
-    veryLarge: number;
-};
-
-// ✅ Original monthly data
-const monthlySupplyData: DataPoint[] = [
-    { date: "1/24", small: 500, medium: 100, large: 300, veryLarge: 1700 },
-    { date: "2/24", small: 600, medium: 200, large: 400, veryLarge: 2100 },
-    { date: "3/24", small: 700, medium: 200, large: 500, veryLarge: 2500 },
-    { date: "4/24", small: 500, medium: 100, large: 300, veryLarge: 1900 },
-    { date: "5/24", small: 700, medium: 300, large: 500, veryLarge: 1700 },
-    { date: "6/24", small: 800, medium: 300, large: 600, veryLarge: 1700 },
-    { date: "7/24", small: 900, medium: 400, large: 700, veryLarge: 1900 },
-    { date: "8/24", small: 1000, medium: 500, large: 800, veryLarge: 2800 },
-    { date: "9/24", small: 1100, medium: 600, large: 1000, veryLarge: 3400 },
-    { date: "10/24", small: 1200, medium: 700, large: 1100, veryLarge: 3700 },
-    { date: "11/24", small: 1200, medium: 650, large: 1100, veryLarge: 3750 },
-    { date: "12/24", small: 1300, medium: 700, large: 1200, veryLarge: 4000 },
-    { date: "1/25", small: 1400, medium: 800, large: 1200, veryLarge: 5055 },
+// Size bracket configuration with colors and Hebrew labels (matching Figma - 4 categories)
+const SIZE_BRACKETS = [
+    { key: "xlarge", label: "גדול מאוד | +5001 KW", color: "#648AA3" },
+    { key: "large", label: "גדול | 631-5000 KW", color: "#60A261" },
+    { key: "medium", label: "בינוני | 201-630 KW", color: "#957669" },
+    { key: "small", label: "קטן | 0-200 KW", color: "#C4C95C" },
 ];
 
-const monthlyFacilitiesData: DataPoint[] = [
-    { date: "1/24", small: 20, medium: 10, large: 5, veryLarge: 2 },
-    { date: "2/24", small: 25, medium: 12, large: 6, veryLarge: 3 },
-    { date: "3/24", small: 28, medium: 13, large: 7, veryLarge: 4 },
-    { date: "4/24", small: 22, medium: 11, large: 6, veryLarge: 3 },
-    { date: "5/24", small: 30, medium: 14, large: 8, veryLarge: 5 },
-    { date: "6/24", small: 32, medium: 16, large: 9, veryLarge: 6 },
-    { date: "7/24", small: 35, medium: 18, large: 10, veryLarge: 6 },
-    { date: "8/24", small: 36, medium: 20, large: 11, veryLarge: 7 },
-    { date: "9/24", small: 40, medium: 22, large: 12, veryLarge: 8 },
-    { date: "10/24", small: 42, medium: 23, large: 13, veryLarge: 9 },
-    { date: "11/24", small: 44, medium: 25, large: 14, veryLarge: 9 },
-    { date: "12/24", small: 46, medium: 26, large: 15, veryLarge: 10 },
-    { date: "1/25", small: 50, medium: 28, large: 16, veryLarge: 11 },
-];
-
-// ✅ Weekly data (aggregated from monthly for demonstration)
-const weeklySupplyData: DataPoint[] = [
-    { date: "W1", small: 150, medium: 30, large: 90, veryLarge: 510 },
-    { date: "W2", small: 180, medium: 60, large: 120, veryLarge: 630 },
-    { date: "W3", small: 210, medium: 60, large: 150, veryLarge: 750 },
-    { date: "W4", small: 150, medium: 30, large: 90, veryLarge: 570 },
-];
-
-const weeklyFacilitiesData: DataPoint[] = [
-    { date: "W1", small: 6, medium: 3, large: 1.5, veryLarge: 0.6 },
-    { date: "W2", small: 7.5, medium: 3.6, large: 1.8, veryLarge: 0.9 },
-    { date: "W3", small: 8.4, medium: 3.9, large: 2.1, veryLarge: 1.2 },
-    { date: "W4", small: 6.6, medium: 3.3, large: 1.8, veryLarge: 0.9 },
-];
-
-// ✅ Daily data (further aggregated)
-const dailySupplyData: DataPoint[] = [
-    { date: "Mon", small: 50, medium: 10, large: 30, veryLarge: 170 },
-    { date: "Tue", small: 60, medium: 20, large: 40, veryLarge: 210 },
-    { date: "Wed", small: 70, medium: 20, large: 50, veryLarge: 250 },
-    { date: "Thu", small: 50, medium: 10, large: 30, veryLarge: 190 },
-    { date: "Fri", small: 40, medium: 15, large: 25, veryLarge: 160 },
-];
-
-const dailyFacilitiesData: DataPoint[] = [
-    { date: "Mon", small: 2, medium: 1, large: 0.5, veryLarge: 0.2 },
-    { date: "Tue", small: 2.5, medium: 1.2, large: 0.6, veryLarge: 0.3 },
-    { date: "Wed", small: 2.8, medium: 1.3, large: 0.7, veryLarge: 0.4 },
-    { date: "Thu", small: 2.2, medium: 1.1, large: 0.6, veryLarge: 0.3 },
-    { date: "Fri", small: 2.0, medium: 0.9, large: 0.5, veryLarge: 0.2 },
-];
-
-// Series config with colors and labels
-const series = [
-    { key: "small", label: "גדול מאוד | +5001 KW", color: "#648AA3" },
-    { key: "medium", label: "גדול | 631-5000 KW", color: "#60A261" },
-    { key: "large", label: "בינוני | 201-630 KW", color: "#957669" },
-    { key: "veryLarge", label: "קטן | 0-200 KW", color: "#CEA073" },
-];
-
-type TimePeriod = "daily" | "weekly" | "monthly";
-
-// Data structure by time period and type
-const dataByPeriod = {
-    monthly: {
-        supply: monthlySupplyData,
-        facilities: monthlyFacilitiesData,
-    },
-    weekly: {
-        supply: weeklySupplyData,
-        facilities: weeklyFacilitiesData,
-    },
-    daily: {
-        supply: dailySupplyData,
-        facilities: dailyFacilitiesData,
-    },
-};
+// Static year options (to avoid hydration mismatch)
+const yearOptions = [2026, 2025, 2024, 2023, 2022, 2021];
 
 // Custom Tooltip
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, activeTab }: any) => {
     if (!active || !payload || payload.length === 0) return null;
 
-    const total = payload.reduce((sum: number, entry: any) => sum + entry.value, 0);
+    const total = payload.reduce((sum: number, entry: any) => {
+        const val = Number(entry.value) || 0;
+        return sum + val;
+    }, 0);
+    const unit = activeTab === "supply" ? "KW" : "מתקנים";
 
     return (
         <div className="rounded-lg shadow-xl border border-[#DEDEDE] bg-white p-4 min-w-[160px] text-sm">
             <div className="text-sm text-gray-500">{label}</div>
             <div className="md:text-base text-sm font-medium mb-3 border-b border-[#707585]">
-                סה״כ {total.toLocaleString()} KW
+                סה״כ {Math.round(total).toLocaleString()} {unit}
             </div>
 
-            {series.map((s) => {
-                const entry = payload.find((p: any) => p.dataKey === s.key);
+            {SIZE_BRACKETS.map((bracket) => {
+                const entry = payload.find((p: any) => p.dataKey === bracket.key);
                 if (!entry) return null;
+                const val = Number(entry.value) || 0;
 
                 return (
-                    <div key={s.key} className="flex items-center gap-3 mb-1">
+                    <div key={bracket.key} className="flex items-start gap-2 mb-1">
                         <span
-                            style={{ background: s.color }}
-                            className="w-2 h-2 rounded-full block"
+                            style={{ background: bracket.color }}
+                            className="w-2 h-2 rounded-full block mt-1"
                         />
-                        <div className="flex flex-col text-sm text-gray-600">
-                            <span>{s.label.split(' | ')[0]}</span>
-                            <span className="font-medium flex items-center gap-1">
-                                <span>KW</span>{entry.value.toLocaleString()}
-                            </span>
-                        </div>
+                        <span className="flex flex-col text-sm font-normal">
+                            {bracket.label.split(' | ')[0]} <span className="font-medium">{Math.round(val).toLocaleString()} {unit}</span>
+                        </span>
                     </div>
                 );
             })}
@@ -178,30 +97,31 @@ const CustomLegend = ({
     };
 
     return (
-        <div className="flex flex-row-reverse justify-end gap-6 mt-6">
-            {series.map((s) => (
-                <div
-                    key={s.key}
-                    onClick={() => toggleSeries(s.key)}
-                    onMouseEnter={() => setHoveredSeries(s.key)}
+        <div className="flex flex-row-reverse flex-wrap justify-end gap-4 mt-6">
+            {SIZE_BRACKETS.map((bracket) => (
+                <button
+                    key={bracket.key}
+                    type="button"
+                    onClick={() => toggleSeries(bracket.key)}
+                    onMouseEnter={() => setHoveredSeries(bracket.key)}
                     onMouseLeave={() => setHoveredSeries(null)}
                     className="flex items-center gap-2 text-sm cursor-pointer select-none transition-opacity duration-200"
-                    style={{ opacity: getLegendOpacity(s.key) }}
+                    style={{ opacity: getLegendOpacity(bracket.key) }}
                 >
                     <span
                         style={{
-                            background: s.color,
-                            opacity: activeSeries[s.key] ? 1 : 0.3,
+                            background: bracket.color,
+                            opacity: activeSeries[bracket.key] ? 1 : 0.3,
                         }}
                         className="w-2 h-2 rounded-full block transition-opacity duration-200"
                     />
                     <span
-                        className={`transition-all duration-200 ${activeSeries[s.key] ? "text-gray-800" : "text-gray-400"
+                        className={`transition-all duration-200 ${activeSeries[bracket.key] ? "text-gray-800" : "text-gray-400"
                             }`}
                     >
-                        {s.label}
+                        {bracket.label}
                     </span>
-                </div>
+                </button>
             ))}
         </div>
     );
@@ -209,21 +129,73 @@ const CustomLegend = ({
 
 export default function RequestTwo() {
     const [activeTab, setActiveTab] = useState<"supply" | "facilities">("supply");
-    const [timePeriod, setTimePeriod] = useState<TimePeriod>("monthly");
+    const [selectedYear, setSelectedYear] = useState<number | undefined>(undefined);
     const [showTooltip, setShowTooltip] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     // New state for active series with toggle functionality
     const [activeSeries, setActiveSeries] = useState<{ [key: string]: boolean }>({
-        small: true,
-        medium: true,
+        xlarge: true,
         large: true,
-        veryLarge: true
+        medium: true,
+        small: true,
     });
 
     const [hoveredSeries, setHoveredSeries] = useState<string | null>(null);
 
-    // Get chart data based on active tab and time period
-    const chartData = dataByPeriod[timePeriod][activeTab];
+    // Build filters
+    const filters: ResponseCapacityBySizeFilters = useMemo(() => ({
+        year: selectedYear,
+    }), [selectedYear]);
+
+    // Fetch data from API
+    const { data: apiData, isLoading, error } = useResponseCapacityBySize(filters);
+
+    // Transform API data for chart - use yearly_series and map to 4 categories
+    const chartData = useMemo(() => {
+        if (!apiData?.yearly_series) return [];
+
+        // If only one year in data (specific year selected), show quarterly/monthly breakdown
+        // For now, just show the yearly data
+        return apiData.yearly_series.map((yearData: any) => {
+            const brackets = yearData.size_brackets || {};
+
+            // Helper to get value based on active tab
+            const getValue = (bracket: any) => {
+                if (!bracket) return 0;
+                return activeTab === "supply"
+                    ? Number(bracket.total_mw || 0)
+                    : Number(bracket.count || 0);
+            };
+
+            // Map API size brackets to our 4 simplified categories
+            // Small (0-200 kW): Up to 16 kW + 16-50 kW + 50-200 kW
+            const small = getValue(brackets["Up to 16 kW"]) +
+                          getValue(brackets["16–50 kW"]) +
+                          getValue(brackets["50–200 kW"]);
+            // Medium (201-630 kW): 200 kW-1 MW
+            const medium = getValue(brackets["200 kW–1 MW"]);
+            // Large (631-5000 kW): 1-5 MW
+            const large = getValue(brackets["1–5 MW"]);
+            // XLarge (5001+ kW): 5-50 MW + 50+ MW
+            const xlarge = getValue(brackets["5–50 MW"]) +
+                           getValue(brackets["50+ MW"]);
+
+            const total = small + medium + large + xlarge;
+
+            return {
+                year: yearData.year,
+                small: isNaN(small) ? 0 : small,
+                medium: isNaN(medium) ? 0 : medium,
+                large: isNaN(large) ? 0 : large,
+                xlarge: isNaN(xlarge) ? 0 : xlarge,
+                total: isNaN(total) ? 0 : total,
+            };
+        }).sort((a: any, b: any) => a.year - b.year);
+    }, [apiData, activeTab]);
+
+    // Dynamic bar size based on number of data points
+    const barSize = chartData.length <= 1 ? 120 : (chartData.length <= 3 ? 80 : 60);
 
     // Function to determine opacity for each bar
     const opacityForKey = (key: string) => {
@@ -233,6 +205,18 @@ export default function RequestTwo() {
         }
         // If no series is hovered, show based on active state
         return activeSeries[key] ? 1 : 0.3;
+    };
+
+    // Handle export
+    const handleExport = async () => {
+        setIsExporting(true);
+        try {
+            await exportResponseCapacityBySize(filters);
+        } catch (err) {
+            console.error('Export failed:', err);
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     return (
@@ -246,6 +230,10 @@ export default function RequestTwo() {
                             className="relative"
                             onMouseEnter={() => setShowTooltip(true)}
                             onMouseLeave={() => setShowTooltip(false)}
+                            role="tooltip"
+                            tabIndex={0}
+                            onFocus={() => setShowTooltip(true)}
+                            onBlur={() => setShowTooltip(false)}
                         >
                             <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <g opacity="0.5">
@@ -257,9 +245,9 @@ export default function RequestTwo() {
                                 <div className="absolute top-full left-1/2 -translate-x-1/2 mb-2 z-50">
                                     <TooltipInfo
                                         content="
-                                    הגרף מציג את כמות החשמל שיוצר מאנרגיות מתחדשות (שמש, רוח ואחרים) לאורך שנה נבחרת, לפי חודשים.
-                                    ניתן ללמוד ממנו איך משתנה ייצור החשמל מאנרגיות מתחדשות לאורך השנה, ימים, או חודשים, ומה התרומה של כל סוג טכנולוגיה (רוח, סולארי, אחר) בכל חודש.
-                                    הנתונים נאספים ממערכת נוגה ומתעדכנים מעת לעת. ניתן לסנן לפי סוג טכנולוגיה ושנה, יום או חודש, ולהוריד את המידע לקובץ אקסל או לגשת אליו דרך API.
+                                    הגרף מציג את קיבולת התגובה החיובית לפי גודל מתקן לאורך השנים.
+                                    ניתן לראות את התפלגות ההספק או מספר המתקנים לפי טווחי גודל שונים.
+                                    הנתונים נאספים מרשות החשמל ומתעדכנים מעת לעת. ניתן לסנן לפי שנה ולהוריד את המידע לקובץ אקסל או לגשת אליו דרך API.
                                     "
                                     />
                                 </div>
@@ -268,19 +256,20 @@ export default function RequestTwo() {
                     </h2>
 
                     <div className="flex flex-wrap items-center gap-5">
-                        <span className="text-sm text-slate-600 mt-6">מיון לפי:</span>
+                        <span className="text-sm text-slate-600 mt-6">סינון לפי:</span>
                         <div className="relative w-[113px]">
                             <label htmlFor="" className='flex flex-col gap-1'>
-                                <span className='text-sm text-slate-600'>תקופה:</span>
+                                <span className='text-sm text-slate-600'>פרק זמן:</span>
                                 <select
-                                    value={timePeriod}
-                                    onChange={(e) => setTimePeriod(e.target.value as TimePeriod)}
+                                    value={selectedYear || ""}
+                                    onChange={(e) => setSelectedYear(e.target.value ? Number(e.target.value) : undefined)}
                                     className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
                                     style={{ fontFamily: 'Heebo, sans-serif' }}
                                 >
-                                    <option value="daily">יומי</option>
-                                    <option value="weekly">שבועי</option>
-                                    <option value="monthly">חודשי</option>
+                                    <option value="">חודש</option>
+                                    {yearOptions.map((year) => (
+                                        <option key={year} value={year}>{year}</option>
+                                    ))}
                                 </select>
                                 {/* Custom dropdown arrow */}
                                 <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
@@ -291,68 +280,76 @@ export default function RequestTwo() {
                     </div>
                 </div>
                 <div className="flex items-start md:gap-4 gap-2">
-                    <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
-                    <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
+                    <Link href="/api#response-capacity-by-size">
+                        <Image src={api} width={32} height={32} className='w-[32px] h-[32px] cursor-pointer' alt='API documentation' />
+                    </Link>
+                    <button onClick={handleExport} disabled={isExporting}>
+                        {isExporting ? (
+                            <Loader2 className="w-[32px] h-[32px] animate-spin text-gray-500" />
+                        ) : (
+                            <Image src={download} width={32} height={32} className='w-[32px] h-[32px] cursor-pointer' alt='Download Excel' />
+                        )}
+                    </button>
                 </div>
             </div>
 
             {/* Chart */}
             <div className="w-full h-[420px]">
-                <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={chartData} margin={{ top: 20, right: 20, left: 60, bottom: 10 }}>
-                        <CartesianGrid vertical={false} strokeDasharray="6 6" />
-                        <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                        <YAxis tick={{ fontSize: 12 }} label={{
-                            value: "הספק תשובות [KW]",
-                            angle: -90,
-                            position: "insideLeft",
-                            style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
-                        }} />
-                        <Tooltip content={<CustomTooltip />} />
-                        {activeSeries.small && (
-                            <Bar
-                                dataKey="small"
-                                stackId="a"
-                                fill={series[0].color}
-                                barSize={28}
-                                opacity={opacityForKey("small")}
+                {isLoading ? (
+                    <div className="flex items-center justify-center h-full">
+                        <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
+                    </div>
+                ) : error ? (
+                    <div className="flex items-center justify-center h-full text-red-500">
+                        שגיאה בטעינת הנתונים
+                    </div>
+                ) : chartData.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-gray-500">
+                        אין נתונים להצגה
+                    </div>
+                ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={chartData} margin={{ top: 20, right: 20, left: 60, bottom: 10 }}>
+                            <CartesianGrid vertical={false} strokeDasharray="6 6" />
+                            <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+                            <YAxis
+                                tick={{ fontSize: 12 }}
+                                tickFormatter={(value) => value.toLocaleString()}
+                                label={{
+                                    value: activeTab === "supply" ? "הספק תשובות [KW]" : "מספר מתקנים",
+                                    angle: -90,
+                                    position: "insideLeft",
+                                    style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
+                                }}
                             />
-                        )}
-                        {activeSeries.medium && (
-                            <Bar
-                                dataKey="medium"
-                                stackId="a"
-                                fill={series[1].color}
-                                barSize={28}
-                                opacity={opacityForKey("medium")}
-                            />
-                        )}
-                        {activeSeries.large && (
-                            <Bar
-                                dataKey="large"
-                                stackId="a"
-                                fill={series[2].color}
-                                barSize={28}
-                                opacity={opacityForKey("large")}
-                            />
-                        )}
-                        {activeSeries.veryLarge && (
-                            <Bar
-                                dataKey="veryLarge"
-                                stackId="a"
-                                fill={series[3].color}
-                                barSize={28}
-                                opacity={opacityForKey("veryLarge")}
-                            >
-                                <LabelList
-                                    dataKey="total"
-                                    position="top"
-                                    style={{ fill: "#707585", fontWeight: 500 }}
-                                />
-                            </Bar>
-                        )}
-                    </ComposedChart>
-                </ResponsiveContainer>
+                            <Tooltip content={<CustomTooltip activeTab={activeTab} />} />
+                            {SIZE_BRACKETS.map((bracket, index) => (
+                                activeSeries[bracket.key] && (
+                                    <Bar
+                                        key={bracket.key}
+                                        dataKey={bracket.key}
+                                        stackId="a"
+                                        fill={bracket.color}
+                                        barSize={barSize}
+                                        opacity={opacityForKey(bracket.key)}
+                                    >
+                                        {index === SIZE_BRACKETS.length - 1 && (
+                                            <LabelList
+                                                dataKey="total"
+                                                position="top"
+                                                formatter={(value: number) => {
+                                                    if (value === undefined || value === null || isNaN(value)) return '';
+                                                    return Math.round(value).toLocaleString();
+                                                }}
+                                                style={{ fill: "#707585", fontWeight: 400, fontSize: 14, fontFamily: 'Heebo' }}
+                                            />
+                                        )}
+                                    </Bar>
+                                )
+                            ))}
+                        </ComposedChart>
+                    </ResponsiveContainer>
+                )}
             </div>
 
             {/* Legend */}

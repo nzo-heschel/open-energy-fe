@@ -9,9 +9,18 @@ import type {
   EnergyOverviewResponse,
   FilterOptions,
   HeatLoadVsGenerationResponse,
+  InstalledCapacityByFacilitySizeResponse,
+  InstalledCapacityCumulativeResponse,
+  InstalledCapacityGrowthResponse,
   MarketOverviewResponse,
   MixResponse,
   PrivateSupplierConnectedConsumersResponse,
+  RenewablesPotentialByIndustryResponse,
+  RenewablesProductionMixResponse,
+  RenewablesTransitionResponse,
+  ResponseCapacityByDistrictResponse,
+  ResponseCapacityByPeriodResponse,
+  ResponseCapacityBySizeResponse,
   SmpLineResponse,
   SMPProductionVsMarginalPriceResponse,
   SMPResponse,
@@ -957,6 +966,785 @@ export const exportHeatLoadVsGeneration = async (startDate?: string, endDate?: s
     link.click();
 
     // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(urlObject);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
+//++ Renewables Production Mix data
+export const useRenewablesProductionMix = (startDate: string, endDate: string, category?: 'solar' | 'wind' | 'other') => {
+  const params = new URLSearchParams();
+  params.set('start_date', startDate);
+  params.set('end_date', endDate);
+  if (category) {
+    params.set('category', category);
+  }
+
+  return useQuery<RenewablesProductionMixResponse>({
+    queryKey: ['renewables-production-mix', startDate, endDate, category],
+    queryFn: async () => {
+      try {
+        const data = await fetcher(`${API_BASE}api/v1/renewables/production-mix?${params}`);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+//++ Export Renewables Production Mix data
+export const exportRenewablesProductionMix = async (startDate: string, endDate: string, category?: 'solar' | 'wind' | 'other') => {
+  const params = new URLSearchParams();
+  params.set('start_date', startDate);
+  params.set('end_date', endDate);
+  if (category) {
+    params.set('category', category);
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}api/v1/renewables/production-mix/export?${params}`, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    // Get the filename from Content-Disposition header or use a default
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'renewables-production-mix.xlsx'; // default filename
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+
+    // Get the blob from response
+    const blob = await response.blob();
+
+    // Create a temporary URL and trigger download
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
+//++ Renewables Transition data
+export const useRenewablesTransition = (year?: string) => {
+  const params = new URLSearchParams();
+  if (year) {
+    params.set('year', year);
+  }
+
+  return useQuery<RenewablesTransitionResponse>({
+    queryKey: ['renewables-transition', year],
+    queryFn: async () => {
+      try {
+        const url = params.toString()
+          ? `${API_BASE}api/v1/renewables/transition?${params}`
+          : `${API_BASE}api/v1/renewables/transition`;
+        const data = await fetcher(url);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+//++ Export Renewables Transition data
+export const exportRenewablesTransition = async (year?: string) => {
+  const params = new URLSearchParams();
+  if (year) {
+    params.set('year', year);
+  }
+
+  try {
+    const url = params.toString()
+      ? `${API_BASE}api/v1/renewables/transition/export?${params}`
+      : `${API_BASE}api/v1/renewables/transition/export`;
+
+    const response = await fetch(url, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    // Get the filename from Content-Disposition header or use a default
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'renewables-transition.xlsx'; // default filename
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    } else if (year) {
+      filename = `renewables-transition-${year}.xlsx`;
+    }
+
+    // Get the blob from response
+    const blob = await response.blob();
+
+    // Create a temporary URL and trigger download
+    const urlObject = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = urlObject;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(urlObject);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
+//++ Renewables Potential by Industry data
+export const useRenewablesPotentialByIndustry = (year?: string) => {
+  const params = new URLSearchParams();
+  if (year) {
+    params.set('year', year);
+  }
+
+  return useQuery<RenewablesPotentialByIndustryResponse>({
+    queryKey: ['renewables-potential-by-industry', year],
+    queryFn: async () => {
+      try {
+        const url = params.toString()
+          ? `${API_BASE}api/v1/renewables/potential-by-industry?${params}`
+          : `${API_BASE}api/v1/renewables/potential-by-industry`;
+        const data = await fetcher(url);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+//++ Export Renewables Potential by Industry data
+export const exportRenewablesPotentialByIndustry = async (year?: string) => {
+  const params = new URLSearchParams();
+  if (year) {
+    params.set('year', year);
+  }
+
+  try {
+    const url = params.toString()
+      ? `${API_BASE}api/v1/renewables/potential-by-industry/export?${params}`
+      : `${API_BASE}api/v1/renewables/potential-by-industry/export`;
+
+    const response = await fetch(url, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    // Get the filename from Content-Disposition header or use a default
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'renewables-potential-by-industry.xlsx'; // default filename
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    } else if (year) {
+      filename = `renewables-potential-by-industry-${year}.xlsx`;
+    }
+
+    // Get the blob from response
+    const blob = await response.blob();
+
+    // Create a temporary URL and trigger download
+    const urlObject = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = urlObject;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(urlObject);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
+//++ Installed Capacity Cumulative data
+export type InstalledCapacityFilters = {
+  year?: number;
+  district?: 'Jerusalem' | 'North' | 'South' | 'Haifa' | 'Center' | 'Tel Aviv' | 'Judea & Samaria' | 'Other';
+  technology?: 'Photovoltaic' | 'Wind' | 'Solar Thermal' | 'Other';
+};
+
+export const useInstalledCapacityCumulative = (filters?: InstalledCapacityFilters) => {
+  const params = new URLSearchParams();
+  if (filters?.year) {
+    params.set('year', filters.year.toString());
+  }
+  if (filters?.district) {
+    params.set('district', filters.district);
+  }
+  if (filters?.technology) {
+    params.set('technology', filters.technology);
+  }
+
+  return useQuery<InstalledCapacityCumulativeResponse>({
+    queryKey: ['installed-capacity-cumulative', filters?.year, filters?.district, filters?.technology],
+    queryFn: async () => {
+      try {
+        const url = params.toString()
+          ? `${API_BASE}api/v1/renewables/installed-capacity/cumulative?${params}`
+          : `${API_BASE}api/v1/renewables/installed-capacity/cumulative`;
+        const data = await fetcher(url);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+//++ Export Installed Capacity Cumulative data
+export const exportInstalledCapacityCumulative = async (filters?: InstalledCapacityFilters) => {
+  const params = new URLSearchParams();
+  if (filters?.year) {
+    params.set('year', filters.year.toString());
+  }
+  if (filters?.district) {
+    params.set('district', filters.district);
+  }
+  if (filters?.technology) {
+    params.set('technology', filters.technology);
+  }
+
+  try {
+    const url = params.toString()
+      ? `${API_BASE}api/v1/renewables/installed-capacity/cumulative/export?${params}`
+      : `${API_BASE}api/v1/renewables/installed-capacity/cumulative/export`;
+
+    const response = await fetch(url, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'installed-capacity-cumulative.xlsx';
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+
+    const blob = await response.blob();
+    const urlObject = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = urlObject;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(urlObject);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
+//++ Installed Capacity Growth data
+export const useInstalledCapacityGrowth = (filters?: Omit<InstalledCapacityFilters, 'year'>) => {
+  const params = new URLSearchParams();
+  if (filters?.district) {
+    params.set('district', filters.district);
+  }
+  if (filters?.technology) {
+    params.set('technology', filters.technology);
+  }
+
+  return useQuery<InstalledCapacityGrowthResponse>({
+    queryKey: ['installed-capacity-growth', filters?.district, filters?.technology],
+    queryFn: async () => {
+      try {
+        const url = params.toString()
+          ? `${API_BASE}api/v1/renewables/installed-capacity/growth?${params}`
+          : `${API_BASE}api/v1/renewables/installed-capacity/growth`;
+        const data = await fetcher(url);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+//++ Export Installed Capacity Growth data
+export const exportInstalledCapacityGrowth = async (filters?: Omit<InstalledCapacityFilters, 'year'>) => {
+  const params = new URLSearchParams();
+  if (filters?.district) {
+    params.set('district', filters.district);
+  }
+  if (filters?.technology) {
+    params.set('technology', filters.technology);
+  }
+
+  try {
+    const url = params.toString()
+      ? `${API_BASE}api/v1/renewables/installed-capacity/growth/export?${params}`
+      : `${API_BASE}api/v1/renewables/installed-capacity/growth/export`;
+
+    const response = await fetch(url, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'installed-capacity-growth.xlsx';
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+
+    const blob = await response.blob();
+    const urlObject = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = urlObject;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(urlObject);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
+//++ Installed Capacity by Facility Size data
+export type InstalledCapacityByFacilitySizeFilters = {
+  year?: number;
+  district?: 'Jerusalem' | 'North' | 'South' | 'Haifa' | 'Center' | 'Tel Aviv' | 'Judea & Samaria' | 'Other';
+};
+
+export const useInstalledCapacityByFacilitySize = (filters?: InstalledCapacityByFacilitySizeFilters) => {
+  const params = new URLSearchParams();
+  if (filters?.year) {
+    params.set('year', filters.year.toString());
+  }
+  if (filters?.district) {
+    params.set('district', filters.district);
+  }
+
+  return useQuery<InstalledCapacityByFacilitySizeResponse>({
+    queryKey: ['installed-capacity-by-facility-size', filters?.year, filters?.district],
+    queryFn: async () => {
+      try {
+        const url = params.toString()
+          ? `${API_BASE}api/v1/renewables/installed-capacity/by-facility-size?${params}`
+          : `${API_BASE}api/v1/renewables/installed-capacity/by-facility-size`;
+        const data = await fetcher(url);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+//++ Export Installed Capacity by Facility Size data
+export const exportInstalledCapacityByFacilitySize = async (filters?: InstalledCapacityByFacilitySizeFilters) => {
+  const params = new URLSearchParams();
+  if (filters?.year) {
+    params.set('year', filters.year.toString());
+  }
+  if (filters?.district) {
+    params.set('district', filters.district);
+  }
+
+  try {
+    const url = params.toString()
+      ? `${API_BASE}api/v1/renewables/installed-capacity/by-facility-size/export?${params}`
+      : `${API_BASE}api/v1/renewables/installed-capacity/by-facility-size/export`;
+
+    const response = await fetch(url, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'installed-capacity-by-facility-size.xlsx';
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+
+    const blob = await response.blob();
+    const urlObject = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = urlObject;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(urlObject);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
+//++ Response Capacity by Period data
+export type ResponseCapacityByPeriodFilters = {
+  year?: number;
+  district?: 'Jerusalem' | 'North' | 'South' | 'Haifa' | 'Center' | 'Tel Aviv' | 'Judea & Samaria' | 'Other';
+  technology?: 'Photovoltaic' | 'Wind' | 'Other';
+  response_type?: 'Positive' | 'Partial Positive' | 'Limited Positive' | 'Negative';
+  include_cancelled?: boolean;
+};
+
+export const useResponseCapacityByPeriod = (filters?: ResponseCapacityByPeriodFilters) => {
+  const params = new URLSearchParams();
+  if (filters?.year) {
+    params.set('year', filters.year.toString());
+  }
+  if (filters?.district) {
+    params.set('district', filters.district);
+  }
+  if (filters?.technology) {
+    params.set('technology', filters.technology);
+  }
+  if (filters?.response_type) {
+    params.set('response_type', filters.response_type);
+  }
+  if (filters?.include_cancelled !== undefined) {
+    params.set('include_cancelled', filters.include_cancelled.toString());
+  }
+
+  return useQuery<ResponseCapacityByPeriodResponse>({
+    queryKey: ['response-capacity-by-period', filters?.year, filters?.district, filters?.technology, filters?.response_type, filters?.include_cancelled],
+    queryFn: async () => {
+      try {
+        const url = params.toString()
+          ? `${API_BASE}api/v1/renewables/response-capacity/by-period?${params}`
+          : `${API_BASE}api/v1/renewables/response-capacity/by-period`;
+        const data = await fetcher(url);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+//++ Export Response Capacity by Period data
+export const exportResponseCapacityByPeriod = async (filters?: ResponseCapacityByPeriodFilters) => {
+  const params = new URLSearchParams();
+  if (filters?.year) {
+    params.set('year', filters.year.toString());
+  }
+  if (filters?.district) {
+    params.set('district', filters.district);
+  }
+  if (filters?.technology) {
+    params.set('technology', filters.technology);
+  }
+  if (filters?.response_type) {
+    params.set('response_type', filters.response_type);
+  }
+  if (filters?.include_cancelled !== undefined) {
+    params.set('include_cancelled', filters.include_cancelled.toString());
+  }
+
+  try {
+    const url = params.toString()
+      ? `${API_BASE}api/v1/renewables/response-capacity/by-period/export?${params}`
+      : `${API_BASE}api/v1/renewables/response-capacity/by-period/export`;
+
+    const response = await fetch(url, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'response-capacity-by-period.xlsx';
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+
+    const blob = await response.blob();
+    const urlObject = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = urlObject;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(urlObject);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
+//++ Response Capacity by Size data
+export type ResponseCapacityBySizeFilters = {
+  year?: number;
+  district?: 'Jerusalem' | 'North' | 'South' | 'Haifa' | 'Center' | 'Tel Aviv' | 'Judea & Samaria' | 'Other';
+  include_cancelled?: boolean;
+};
+
+export const useResponseCapacityBySize = (filters?: ResponseCapacityBySizeFilters) => {
+  const params = new URLSearchParams();
+  if (filters?.year) {
+    params.set('year', filters.year.toString());
+  }
+  if (filters?.district) {
+    params.set('district', filters.district);
+  }
+  if (filters?.include_cancelled !== undefined) {
+    params.set('include_cancelled', filters.include_cancelled.toString());
+  }
+
+  return useQuery<ResponseCapacityBySizeResponse>({
+    queryKey: ['response-capacity-by-size', filters?.year, filters?.district, filters?.include_cancelled],
+    queryFn: async () => {
+      try {
+        const url = params.toString()
+          ? `${API_BASE}api/v1/renewables/response-capacity/by-size?${params}`
+          : `${API_BASE}api/v1/renewables/response-capacity/by-size`;
+        const data = await fetcher(url);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+//++ Export Response Capacity by Size data
+export const exportResponseCapacityBySize = async (filters?: ResponseCapacityBySizeFilters) => {
+  const params = new URLSearchParams();
+  if (filters?.year) {
+    params.set('year', filters.year.toString());
+  }
+  if (filters?.district) {
+    params.set('district', filters.district);
+  }
+  if (filters?.include_cancelled !== undefined) {
+    params.set('include_cancelled', filters.include_cancelled.toString());
+  }
+
+  try {
+    const url = params.toString()
+      ? `${API_BASE}api/v1/renewables/response-capacity/by-size/export?${params}`
+      : `${API_BASE}api/v1/renewables/response-capacity/by-size/export`;
+
+    const response = await fetch(url, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'response-capacity-by-size.xlsx';
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+
+    const blob = await response.blob();
+    const urlObject = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = urlObject;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(urlObject);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
+//++ Response Capacity by District data
+export type ResponseCapacityByDistrictFilters = {
+  year?: number;
+  technology?: 'Photovoltaic' | 'Wind' | 'Other';
+  include_cancelled?: boolean;
+};
+
+export const useResponseCapacityByDistrict = (filters?: ResponseCapacityByDistrictFilters) => {
+  const params = new URLSearchParams();
+  if (filters?.year) {
+    params.set('year', filters.year.toString());
+  }
+  if (filters?.technology) {
+    params.set('technology', filters.technology);
+  }
+  if (filters?.include_cancelled !== undefined) {
+    params.set('include_cancelled', filters.include_cancelled.toString());
+  }
+
+  return useQuery<ResponseCapacityByDistrictResponse>({
+    queryKey: ['response-capacity-by-district', filters?.year, filters?.technology, filters?.include_cancelled],
+    queryFn: async () => {
+      try {
+        const url = params.toString()
+          ? `${API_BASE}api/v1/renewables/response-capacity/by-district?${params}`
+          : `${API_BASE}api/v1/renewables/response-capacity/by-district`;
+        const data = await fetcher(url);
+        return data;
+      } catch (error) {
+        console.warn('API call failed:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+//++ Export Response Capacity by District data
+export const exportResponseCapacityByDistrict = async (filters?: ResponseCapacityByDistrictFilters) => {
+  const params = new URLSearchParams();
+  if (filters?.year) {
+    params.set('year', filters.year.toString());
+  }
+  if (filters?.technology) {
+    params.set('technology', filters.technology);
+  }
+  if (filters?.include_cancelled !== undefined) {
+    params.set('include_cancelled', filters.include_cancelled.toString());
+  }
+
+  try {
+    const url = params.toString()
+      ? `${API_BASE}api/v1/renewables/response-capacity/by-district/export?${params}`
+      : `${API_BASE}api/v1/renewables/response-capacity/by-district/export`;
+
+    const response = await fetch(url, {
+      headers: {
+        'x-api-key': INTERNAL_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'response-capacity-by-district.xlsx';
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+
+    const blob = await response.blob();
+    const urlObject = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = urlObject;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(urlObject);
   } catch (error) {

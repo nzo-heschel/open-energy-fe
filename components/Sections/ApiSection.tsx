@@ -421,6 +421,385 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
   "message": "File uploaded. Re-run the target API to get the updated results."
 }`
     },
+    // Installed Capacity Endpoints
+    {
+      id: 'installed-capacity-cumulative',
+      title: 'הספק מותקן (מצטבר)',
+      description: 'Returns the cumulative installed capacity time series with technology and district breakdowns',
+      endpoint: 'GET /api/v1/renewables/installed-capacity/cumulative',
+      method: 'GET',
+      parameters: [
+        'year (optional, int)',
+        'district (optional, Jerusalem|North|South|Haifa|Center|Tel Aviv|Judea & Samaria|Other)',
+        'technology (optional, Photovoltaic|Wind|Solar Thermal|Other)'
+      ],
+      responseExample: `{
+  "title": "Installed Capacity (Cumulative) of Renewable Energy Facilities",
+  "total_installed_mw": 7756.107,
+  "total_facilities": 63687,
+  "series": [
+    {
+      "period": "2012-01",
+      "added_mw": 0.123,
+      "cumulative_mw": 0.123
+    }
+  ],
+  "technology_breakdown": {
+    "Photovoltaic": 7200.0,
+    "Wind": 300.0,
+    "Solar Thermal": 150.0,
+    "Other": 106.107
+  },
+  "district_breakdown": {
+    "South": 3000.0,
+    "North": 1500.0
+  }
+}`
+    },
+    {
+      id: 'installed-capacity-cumulative-export',
+      title: 'ייצוא הספק מותקן (מצטבר)',
+      description: 'Export cumulative installed capacity data to Excel file',
+      endpoint: 'GET /api/v1/renewables/installed-capacity/cumulative/export',
+      method: 'GET',
+      parameters: [
+        'year (optional, int)',
+        'district (optional)',
+        'technology (optional)'
+      ],
+      responseExample: 'Streamed Excel file (installed_capacity_cumulative.xlsx)'
+    },
+    {
+      id: 'installed-capacity-growth',
+      title: 'קצב גידול הספק מותקן',
+      description: 'Reports yearly additions plus percentage growth on the cumulative series',
+      endpoint: 'GET /api/v1/renewables/installed-capacity/growth',
+      method: 'GET',
+      parameters: [
+        'district (optional)',
+        'technology (optional)'
+      ],
+      responseExample: `{
+  "title": "Installed Capacity — Growth Rate",
+  "series": [
+    {
+      "year": 2024,
+      "added_mw": 420.0,
+      "cumulative_mw": 7200.0,
+      "growth_rate_percent": 6.2
+    }
+  ],
+  "filters_applied": {
+    "district": null,
+    "technology": "Photovoltaic"
+  }
+}`
+    },
+    {
+      id: 'installed-capacity-growth-export',
+      title: 'ייצוא קצב גידול הספק מותקן',
+      description: 'Export installed capacity growth data to Excel file',
+      endpoint: 'GET /api/v1/renewables/installed-capacity/growth/export',
+      method: 'GET',
+      parameters: [
+        'district (optional)',
+        'technology (optional)'
+      ],
+      responseExample: 'Streamed Excel file (installed_capacity_growth.xlsx)'
+    },
+    {
+      id: 'installed-capacity-by-facility-size',
+      title: 'הספק מותקן לפי גודל מתקן',
+      description: 'Returns installed capacity broken down by facility size brackets over time',
+      endpoint: 'GET /api/v1/renewables/installed-capacity/by-facility-size',
+      method: 'GET',
+      parameters: [
+        'district (optional, Jerusalem|North|South|Haifa|Center|Tel Aviv|Judea & Samaria|Other)'
+      ],
+      responseExample: `{
+  "series": [
+    {
+      "year": 2020,
+      "size_brackets": {
+        "Up to 16 kW": 125000.5,
+        "16–50 kW": 85000.2,
+        "50–200 kW": 45000.1,
+        "200 kW–1 MW": 32000.0,
+        "1–5 MW": 18000.0,
+        "5–50 MW": 12000.0,
+        "50+ MW": 8000.0
+      }
+    }
+  ],
+  "total_mw": 7500.0
+}`
+    },
+    {
+      id: 'installed-capacity-by-facility-size-export',
+      title: 'ייצוא הספק מותקן לפי גודל מתקן',
+      description: 'Export installed capacity by facility size data to Excel file',
+      endpoint: 'GET /api/v1/renewables/installed-capacity/by-facility-size/export',
+      method: 'GET',
+      parameters: [
+        'district (optional)'
+      ],
+      responseExample: 'Streamed Excel file (installed_capacity_by_facility_size.xlsx)'
+    },
+    // Response Capacity by Period Endpoints
+    {
+      id: 'response-capacity-by-period',
+      title: 'קיבולת תגובה לפי תקופה',
+      description: 'Aggregated response capacity per time period with breakdowns by response type',
+      endpoint: 'GET /api/v1/renewables/response-capacity/by-period',
+      method: 'GET',
+      parameters: [
+        'year (optional, int)',
+        'district (optional, Jerusalem|North|South|Haifa|Center|Tel Aviv|Judea & Samaria|Other)',
+        'technology (optional, Photovoltaic|Wind|Other)',
+        'response_type (optional, Positive|Partial Positive|Limited Positive|Negative)',
+        'include_cancelled (optional, bool)'
+      ],
+      responseExample: `{
+  "title": "Response Capacity Divided by Period",
+  "total_mw": 18214.205,
+  "series": [
+    {
+      "period": "2023-12",
+      "total_mw": 320.5,
+      "request_count": 820,
+      "response_type_breakdown": {
+        "Positive": 238.5,
+        "Negative": 40.0,
+        "Partial Positive": 30.0,
+        "Limited Positive": 12.0
+      }
+    }
+  ],
+  "response_type_breakdown": {
+    "Positive": 15000.0,
+    "Negative": 1500.0,
+    "Partial Positive": 1000.0,
+    "Limited Positive": 714.0
+  }
+}`
+    },
+    {
+      id: 'response-capacity-by-period-export',
+      title: 'ייצוא קיבולת תגובה לפי תקופה',
+      description: 'Export response capacity by period data to Excel file',
+      endpoint: 'GET /api/v1/renewables/response-capacity/by-period/export',
+      method: 'GET',
+      parameters: [
+        'year (optional, int)',
+        'district (optional)',
+        'technology (optional)',
+        'response_type (optional)',
+        'include_cancelled (optional, bool)'
+      ],
+      responseExample: 'Streamed Excel file (response_capacity_by_period.xlsx)'
+    },
+    // Response Capacity by Size Endpoints
+    {
+      id: 'response-capacity-by-size',
+      title: 'קיבולת תגובה לפי גודל מתקן',
+      description: 'Shows response MW split by size brackets plus yearly totals',
+      endpoint: 'GET /api/v1/renewables/response-capacity/by-size',
+      method: 'GET',
+      parameters: [
+        'year (optional, int)',
+        'district (optional, Jerusalem|North|South|Haifa|Center|Tel Aviv|Judea & Samaria|Other)',
+        'include_cancelled (optional, bool)'
+      ],
+      responseExample: `{
+  "title": "Response Capacity by Facility Size",
+  "series": [
+    {
+      "year": 2024,
+      "size_bracket": "1–5 MW",
+      "total_mw": 1240.0,
+      "request_count": 220
+    }
+  ],
+  "size_brackets": [
+    "Up to 16 kW",
+    "16–50 kW",
+    "50–200 kW",
+    "200 kW–1 MW",
+    "1–5 MW",
+    "5–50 MW",
+    "50+ MW"
+  ]
+}`
+    },
+    {
+      id: 'response-capacity-by-size-export',
+      title: 'ייצוא קיבולת תגובה לפי גודל מתקן',
+      description: 'Export response capacity by size data to Excel file',
+      endpoint: 'GET /api/v1/renewables/response-capacity/by-size/export',
+      method: 'GET',
+      parameters: [
+        'year (optional, int)',
+        'district (optional)',
+        'include_cancelled (optional, bool)'
+      ],
+      responseExample: 'Streamed Excel file (response_capacity_by_size.xlsx)'
+    },
+    // Response Capacity by District Endpoints
+    {
+      id: 'response-capacity-by-district',
+      title: 'קיבולת תגובה לפי מחוז',
+      description: 'Aggregates response capacity per district with a technology breakdown',
+      endpoint: 'GET /api/v1/renewables/response-capacity/by-district',
+      method: 'GET',
+      parameters: [
+        'year (optional, int)',
+        'technology (optional, Photovoltaic|Wind|Other)',
+        'include_cancelled (optional, bool)'
+      ],
+      responseExample: `{
+  "title": "Response Capacity Divided by District",
+  "series": [
+    {
+      "district": "South",
+      "total_mw": 7200.0,
+      "request_count": 2100,
+      "technology_breakdown": {
+        "Photovoltaic": 6800.0,
+        "Wind": 400.0
+      }
+    }
+  ],
+  "district_technology_breakdown": {
+    "South": {
+      "Photovoltaic": 6800.0,
+      "Wind": 400.0
+    }
+  }
+}`
+    },
+    {
+      id: 'response-capacity-by-district-export',
+      title: 'ייצוא קיבולת תגובה לפי מחוז',
+      description: 'Export response capacity by district data to Excel file',
+      endpoint: 'GET /api/v1/renewables/response-capacity/by-district/export',
+      method: 'GET',
+      parameters: [
+        'year (optional, int)',
+        'technology (optional)',
+        'include_cancelled (optional, bool)'
+      ],
+      responseExample: 'Streamed Excel file (response_capacity_by_district.xlsx)'
+    },
+    // Renewables Transition Endpoints
+    {
+      id: 'renewables-transition',
+      title: 'המעבר לאנרגיות מתחדשות',
+      description: 'Shows the national transition to renewables month by month',
+      endpoint: 'GET /api/v1/renewables/transition',
+      method: 'GET',
+      parameters: ['year (optional, 4-digit year; defaults to the current year)'],
+      responseExample: `{
+  "year": "2025",
+  "renewable_share_percent": 16.2,
+  "monthly_totals": [
+    {
+      "month": "2025-01",
+      "renewable_mw": 4880.0,
+      "total_mw": 28500.0,
+      "renewable_share_percent": 17.1
+    }
+  ],
+  "notes": "Share is calculated with 5-minute samples divided by 12 and grouped by month."
+}`
+    },
+    {
+      id: 'renewables-transition-export',
+      title: 'ייצוא נתוני מעבר לאנרגיות מתחדשות',
+      description: 'Export renewables transition data to Excel file',
+      endpoint: 'GET /api/v1/renewables/transition/export',
+      method: 'GET',
+      parameters: ['year (optional, 4-digit year)'],
+      responseExample: 'Streamed Excel file (renewables_transition.xlsx)'
+    },
+    // Renewables Potential by Industry Endpoints
+    {
+      id: 'renewables-potential-by-industry',
+      title: 'פוטנציאל אנרגיות מתחדשות לפי ענף',
+      description: 'Estimates renewable production potential per industry vertical',
+      endpoint: 'GET /api/v1/renewables/potential-by-industry',
+      method: 'GET',
+      parameters: ['year (optional, 4-digit year; defaults to the current year)'],
+      responseExample: `{
+  "year": "2025",
+  "total_potential_mw": 3865.3,
+  "industry_breakdown": [
+    {
+      "industry_type": "industrial",
+      "renewable_potential_mw": 1670.2,
+      "solar_share_percent": 48.6
+    }
+  ],
+  "notes": "Industry names follow the Electricity Authority classification."
+}`
+    },
+    {
+      id: 'renewables-potential-by-industry-export',
+      title: 'ייצוא פוטנציאל אנרגיות מתחדשות לפי ענף',
+      description: 'Export renewables potential by industry data to Excel file',
+      endpoint: 'GET /api/v1/renewables/potential-by-industry/export',
+      method: 'GET',
+      parameters: ['year (optional, 4-digit year)'],
+      responseExample: 'Streamed Excel file (renewables_potential_by_industry.xlsx)'
+    },
+    // Renewables Production Mix Endpoints
+    {
+      id: 'renewables-production-mix',
+      title: 'תמהיל ייצור אנרגיות מתחדשות',
+      description: 'Returns the renewable portion of the production mix with breakdowns for solar, wind, and other sources',
+      endpoint: 'GET /api/v1/renewables/production-mix',
+      method: 'GET',
+      parameters: ['start_date (optional, YYYY-MM-DD)', 'end_date (optional, YYYY-MM-DD)', 'category (optional, solar | wind | other)'],
+      responseExample: `{
+  "start_date": "2026-01-01",
+  "end_date": "2026-01-31",
+  "view": "month",
+  "total_renewable_mw": 124500.4,
+  "breakdown": [
+    {
+      "type": "photovoltaic",
+      "value": 101750.2,
+      "share_percent": 81.8
+    },
+    {
+      "type": "wind",
+      "value": 15000.6,
+      "share_percent": 12.1
+    },
+    {
+      "type": "other",
+      "value": 8000.4,
+      "share_percent": 6.1
+    }
+  ],
+  "series": [
+    {
+      "period": "2026-01-01",
+      "solar_mw": 4200.5,
+      "wind_mw": 520.0,
+      "other_mw": 230.1
+    }
+  ]
+}`
+    },
+    {
+      id: 'renewables-production-mix-export',
+      title: 'ייצוא תמהיל ייצור אנרגיות מתחדשות',
+      description: 'Export renewables production mix to Excel file',
+      endpoint: 'GET /api/v1/renewables/production-mix/export',
+      method: 'GET',
+      parameters: ['start_date (optional, YYYY-MM-DD)', 'end_date (optional, YYYY-MM-DD)', 'category (optional, solar | wind | other)'],
+      responseExample: 'Streamed Excel file (renewables_production_mix.xlsx)'
+    },
     // Heat Load vs Generation Endpoints
     {
       id: 'heat-load-vs-generation',
@@ -506,6 +885,28 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
     { id: 'co2-emissions-over-time', name: 'CO2 emissions over time', endpoint: 'api/v1/co2/emissions-over-time', method: 'GET', category: 'CO2' },
     { id: 'co2-emissions-over-time-export', name: 'Export CO2 emissions over time', endpoint: 'api/v1/co2/emissions-over-time/export', method: 'GET', category: 'CO2' },
     { id: 'co2-total-vs-ratio', name: 'Total vs Ratio CO2 emissions', endpoint: 'api/v1/co2/total-vs-ratio', method: 'GET', category: 'CO2' },
+    // Installed Capacity
+    { id: 'installed-capacity-cumulative', name: 'Cumulative installed capacity', endpoint: 'api/v1/renewables/installed-capacity/cumulative', method: 'GET', category: 'Renewables' },
+    { id: 'installed-capacity-cumulative-export', name: 'Export cumulative installed capacity', endpoint: 'api/v1/renewables/installed-capacity/cumulative/export', method: 'GET', category: 'Renewables' },
+    { id: 'installed-capacity-growth', name: 'Installed capacity growth rate', endpoint: 'api/v1/renewables/installed-capacity/growth', method: 'GET', category: 'Renewables' },
+    { id: 'installed-capacity-growth-export', name: 'Export installed capacity growth', endpoint: 'api/v1/renewables/installed-capacity/growth/export', method: 'GET', category: 'Renewables' },
+    { id: 'installed-capacity-by-facility-size', name: 'Installed capacity by facility size', endpoint: 'api/v1/renewables/installed-capacity/by-facility-size', method: 'GET', category: 'Renewables' },
+    { id: 'installed-capacity-by-facility-size-export', name: 'Export installed capacity by facility size', endpoint: 'api/v1/renewables/installed-capacity/by-facility-size/export', method: 'GET', category: 'Renewables' },
+    { id: 'response-capacity-by-period', name: 'Response capacity by period', endpoint: 'api/v1/renewables/response-capacity/by-period', method: 'GET', category: 'Renewables' },
+    { id: 'response-capacity-by-period-export', name: 'Export response capacity by period', endpoint: 'api/v1/renewables/response-capacity/by-period/export', method: 'GET', category: 'Renewables' },
+    { id: 'response-capacity-by-size', name: 'Response capacity by size', endpoint: 'api/v1/renewables/response-capacity/by-size', method: 'GET', category: 'Renewables' },
+    { id: 'response-capacity-by-size-export', name: 'Export response capacity by size', endpoint: 'api/v1/renewables/response-capacity/by-size/export', method: 'GET', category: 'Renewables' },
+    { id: 'response-capacity-by-district', name: 'Response capacity by district', endpoint: 'api/v1/renewables/response-capacity/by-district', method: 'GET', category: 'Renewables' },
+    { id: 'response-capacity-by-district-export', name: 'Export response capacity by district', endpoint: 'api/v1/renewables/response-capacity/by-district/export', method: 'GET', category: 'Renewables' },
+    // Renewables Transition
+    { id: 'renewables-transition', name: 'National transition to renewables', endpoint: 'api/v1/renewables/transition', method: 'GET', category: 'Renewables' },
+    { id: 'renewables-transition-export', name: 'Export renewables transition', endpoint: 'api/v1/renewables/transition/export', method: 'GET', category: 'Renewables' },
+    // Renewables Potential by Industry
+    { id: 'renewables-potential-by-industry', name: 'Renewables potential by industry', endpoint: 'api/v1/renewables/potential-by-industry', method: 'GET', category: 'Renewables' },
+    { id: 'renewables-potential-by-industry-export', name: 'Export renewables potential by industry', endpoint: 'api/v1/renewables/potential-by-industry/export', method: 'GET', category: 'Renewables' },
+    // Renewables Production Mix
+    { id: 'renewables-production-mix', name: 'Renewables production mix breakdown', endpoint: 'api/v1/renewables/production-mix', method: 'GET', category: 'Renewables' },
+    { id: 'renewables-production-mix-export', name: 'Export renewables production mix', endpoint: 'api/v1/renewables/production-mix/export', method: 'GET', category: 'Renewables' },
     // Heat Load vs Generation
     { id: 'heat-load-vs-generation', name: 'Heat load vs electricity generation', endpoint: 'api/v1/heat-load-vs-generation', method: 'GET', category: 'Climate' },
     { id: 'heat-load-vs-generation-export', name: 'Export heat load vs generation', endpoint: 'api/v1/heat-load-vs-generation/export', method: 'GET', category: 'Climate' },

@@ -70,7 +70,7 @@ const Page = () => {
                                         <span className="font-medium">ייצור אנרגיות מתחדשות</span>
                                     </Button>
 
-                                    <Button
+                                    {/* <Button
                                         variant="outline"
                                         onClick={() => handleTab('municipal')}
                                         className={`w-max flex items-center gap-2 justify-between md:px-3 px-2 h-10 border rounded-full transition-all ${activeTab === 'municipal'
@@ -93,7 +93,7 @@ const Page = () => {
                                             </defs>
                                         </svg>
                                         <span className="font-medium">תצוגה יישובית</span>
-                                    </Button>
+                                    </Button> */}
 
                                     <Button
                                         variant="outline"

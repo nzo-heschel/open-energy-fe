@@ -12,38 +12,24 @@ import {
     CartesianGrid,
     Tooltip,
     Bar,
-    Legend,
     LabelList,
 } from "recharts";
-import { ChevronDown } from "lucide-react";
-import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import TooltipInfo from "../TooltipInfo";
+import { exportRenewablesProductionMix, useRenewablesProductionMix } from "@/lib/api";
+import { format, subDays } from "date-fns";
+import DateRangePicker from "../ui/DateRangePicker";
 
 type DataPoint = {
-    month: string;
+    period: string;
+    label?: string;
     total: number;
     other: number;
     solar: number;
     wind: number;
-    otherMW?: number;
-    solarMW?: number;
-    windMW?: number;
+    otherMW: number;
+    solarMW: number;
+    windMW: number;
 };
-
-const data: DataPoint[] = [
-    { month: "01/24", total: 17, other: 7, solar: 3, wind: 7, otherMW: 3500, solarMW: 1500, windMW: 3500 },
-    { month: "02/24", total: 12, other: 5, solar: 3, wind: 4, otherMW: 2500, solarMW: 1400, windMW: 1200 },
-    { month: "03/24", total: 14, other: 6, solar: 4, wind: 4, otherMW: 2800, solarMW: 1600, windMW: 1400 },
-    { month: "04/24", total: 12, other: 5, solar: 4, wind: 3, otherMW: 2600, solarMW: 1800, windMW: 1200 },
-    { month: "05/24", total: 12, other: 6, solar: 4, wind: 2, otherMW: 5537, solarMW: 4537, windMW: 3469 },
-    { month: "06/24", total: 13, other: 6, solar: 3, wind: 4, otherMW: 3000, solarMW: 1400, windMW: 2600 },
-    { month: "07/24", total: 15, other: 7, solar: 4, wind: 4, otherMW: 3200, solarMW: 1700, windMW: 2800 },
-    { month: "08/24", total: 19, other: 9, solar: 5, wind: 5, otherMW: 4200, solarMW: 2100, windMW: 3200 },
-    { month: "09/24", total: 19, other: 9, solar: 5, wind: 5, otherMW: 4200, solarMW: 2100, windMW: 3200 },
-    { month: "10/24", total: 27, other: 12, solar: 7, wind: 8, otherMW: 6000, solarMW: 2600, windMW: 3200 },
-    { month: "11/24", total: 31, other: 13, solar: 9, wind: 9, otherMW: 6800, solarMW: 3600, windMW: 3600 },
-    { month: "12/24", total: 37, other: 15, solar: 11, wind: 11, otherMW: 9000, solarMW: 5400, windMW: 6000 },
-];
 
 const series = [
     { key: "other", label: "אחר", color: "#2F6497" },
@@ -55,11 +41,6 @@ const series = [
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload || payload.length === 0) return null;
 
-    const byKey = new Map<string, any>();
-    payload.forEach((p: any) => {
-        byKey.set(p.dataKey, p);
-    });
-
     const payloadPoint = payload[0]?.payload;
     const totalMW =
         (payloadPoint.windMW || 0) + (payloadPoint.solarMW || 0) + (payloadPoint.otherMW || 0);
@@ -70,7 +51,6 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             <div className="md:text-base text-sm font-medium mb-3 border-b border-[#707585]">{totalMW ? `${totalMW.toLocaleString()} MW` : `סה״כ ${payloadPoint.total}`}</div>
 
             {series.map((s) => {
-                const val = payloadPoint[s.key];
                 const mwKey = `${s.key}MW` as keyof typeof payloadPoint;
                 return (
                     <div key={s.key} className="flex items-center gap-3 mb-1">
@@ -91,6 +71,54 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function RenewableProduction() {
     const [activeSeries, setActiveSeries] = useState<string | null>(null);
     const [showTooltip, setShowTooltip] = useState(false);
+    const [startDate, setStartDate] = useState<string>(() => {
+        return format(subDays(new Date(), 6), 'yyyy-MM-dd');
+    });
+    const [endDate, setEndDate] = useState<string>(() => {
+        return format(new Date(), 'yyyy-MM-dd');
+    });
+
+    const { data: apiData, isLoading, error } = useRenewablesProductionMix(startDate, endDate);
+
+    const handleDateRangeChange = (newStartDate: string, newEndDate: string) => {
+        setStartDate(newStartDate);
+        setEndDate(newEndDate);
+    };
+
+    const handleExport = async () => {
+        try {
+            await exportRenewablesProductionMix(startDate, endDate);
+        } catch (error) {
+            console.error('Failed to export renewables production mix data:', error);
+        }
+    };
+
+    // Transform API data to chart format
+    const chartData = useMemo<DataPoint[]>(() => {
+        if (!apiData?.series) {
+            return [];
+        }
+
+        return apiData.series.map((item) => {
+            const totalMW = (item.solar_mw || 0) + (item.wind_mw || 0) + (item.other_mw || 0);
+            // Calculate percentage shares for stacked bar heights
+            const solarPercent = totalMW > 0 ? ((item.solar_mw || 0) / totalMW) * 100 : 0;
+            const windPercent = totalMW > 0 ? ((item.wind_mw || 0) / totalMW) * 100 : 0;
+            const otherPercent = totalMW > 0 ? ((item.other_mw || 0) / totalMW) * 100 : 0;
+
+            return {
+                period: item.period,
+                label: item.label || item.period,
+                total: Math.round(totalMW),
+                solar: Math.round(solarPercent),
+                wind: Math.round(windPercent),
+                other: Math.round(otherPercent),
+                solarMW: item.solar_mw || 0,
+                windMW: item.wind_mw || 0,
+                otherMW: item.other_mw || 0,
+            };
+        });
+    }, [apiData]);
 
 
     const opacityForKey = (key: string) => (activeSeries && activeSeries !== key ? 0.18 : 1);
@@ -158,28 +186,29 @@ export default function RenewableProduction() {
                     </h2>
                     <p className="mr-14">פרק זמן:</p>
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-600">מיון לפי:</span>
-                        <div className="relative w-[202px]">
-                            <select
-                                className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
-                                style={{ fontFamily: 'Heebo, sans-serif' }}
-                            >
-                                <option>יומי</option>
-                                <option>שבועי</option>
-                                <option>חודשי</option>
-                            </select>
-
-                            {/* Custom dropdown arrow */}
-                            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-black text-xs">
-                                <ChevronDown size={14} />
-                            </span>
-                        </div>
+                        <span className="text-sm text-slate-600">סינון לפי:</span>
+                        <DateRangePicker
+                            onDateRangeChange={handleDateRangeChange}
+                            defaultPreset="last7Days"
+                        />
                     </div>
                 </div>
 
                 <div className="flex items-start md:gap-4 gap-2">
-                    <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
-                    <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='image' />
+                    <a
+                        href="/api#renewables-production-mix"
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        aria-label="View API Documentation"
+                    >
+                        <Image src={api} width={32} height={32} className='w-[32px] h-[32px]' alt='API' />
+                    </a>
+                    <button
+                        onClick={handleExport}
+                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                        aria-label="Export to Excel"
+                    >
+                        <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='Download' />
+                    </button>
                 </div>
             </div>
 
@@ -190,50 +219,65 @@ export default function RenewableProduction() {
                 </div>
                 {/* chart area */}
                 <div className="flex-1 md:h-[420px] h-[320px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart data={data} margin={{ top: 20, right: 20, left: 10, bottom: 10 }}>
-                            <CartesianGrid vertical={false} strokeDasharray="6 6" />
-                            <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                            <YAxis tick={{ fontSize: 12 }} label={{
-                                value: "[MW]",
-                                angle: -90,
-                                position: "insideLeft",
-                                style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
-                            }} />
-                            <Tooltip content={<CustomTooltip />} />
-                            {/* Bars (stacked): order matters for stack visual */}
-                            <Bar
-                                dataKey="other"
-                                stackId="a"
-                                fill={series[0].color}
-                                radius={[0, 0, 0, 0]}
-                                barSize={28}
-                                opacity={opacityForKey("other")}
-                            />
-                            <Bar
-                                dataKey="solar"
-                                stackId="a"
-                                fill={series[1].color}
-                                radius={[0, 0, 0, 0]}
-                                barSize={28}
-                                opacity={opacityForKey("solar")}
-                            />
-                            <Bar
-                                dataKey="wind"
-                                stackId="a"
-                                fill={series[2].color}
-                                radius={[4, 4, 0, 0]}
-                                barSize={28}
-                                opacity={opacityForKey("wind")}
-                            >
-                                <LabelList
-                                    dataKey="total"
-                                    position="top"
-                                    style={{ fill: "#707585", fontWeight: 500 }}
+                    {isLoading ? (
+                        <div className="flex justify-center items-center h-full">
+                            <p className="text-slate-600">טוען נתונים...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="flex justify-center items-center h-full">
+                            <p className="text-red-600">שגיאה בטעינת הנתונים</p>
+                        </div>
+                    ) : chartData.length === 0 ? (
+                        <div className="flex justify-center items-center h-full">
+                            <p className="text-slate-600">אין נתונים זמינים</p>
+                        </div>
+                    ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart data={chartData} margin={{ top: 20, right: 20, left: 10, bottom: 10 }}>
+                                <CartesianGrid vertical={false} strokeDasharray="6 6" />
+                                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                                <YAxis tick={{ fontSize: 12 }} label={{
+                                    value: "[MW]",
+                                    angle: -90,
+                                    position: "insideLeft",
+                                    style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
+                                }} />
+                                <Tooltip content={<CustomTooltip />} />
+                                {/* Bars (stacked): order matters for stack visual */}
+                                <Bar
+                                    dataKey="other"
+                                    stackId="a"
+                                    fill={series[0].color}
+                                    radius={[0, 0, 0, 0]}
+                                    barSize={28}
+                                    opacity={opacityForKey("other")}
                                 />
-                            </Bar>
-                        </ComposedChart>
-                    </ResponsiveContainer>
+                                <Bar
+                                    dataKey="solar"
+                                    stackId="a"
+                                    fill={series[1].color}
+                                    radius={[0, 0, 0, 0]}
+                                    barSize={28}
+                                    opacity={opacityForKey("solar")}
+                                />
+                                <Bar
+                                    dataKey="wind"
+                                    stackId="a"
+                                    fill={series[2].color}
+                                    radius={[4, 4, 0, 0]}
+                                    barSize={28}
+                                    opacity={opacityForKey("wind")}
+                                >
+                                    <LabelList
+                                        dataKey="total"
+                                        position="top"
+                                        style={{ fill: "#707585", fontWeight: 500 }}
+                                        formatter={(value: number) => value.toLocaleString()}
+                                    />
+                                </Bar>
+                            </ComposedChart>
+                        </ResponsiveContainer>
+                    )}
                 </div>
             </div>
         </div>

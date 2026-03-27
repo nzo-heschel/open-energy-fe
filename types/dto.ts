@@ -548,3 +548,178 @@ export type HeatLoadVsGenerationResponse = {
     electricity_generation_mw: number;
   }>;
 };
+
+// Renewables Production Mix API response
+export type RenewablesProductionMixResponse = {
+  start_date: string;
+  end_date: string;
+  view: 'day' | 'month' | 'year';
+  total_renewable_mw: number;
+  breakdown: Array<{
+    type: 'photovoltaic' | 'wind' | 'other';
+    value: number;
+    share_percent: number;
+  }>;
+  series: Array<{
+    period: string;
+    label?: string;
+    solar_mw: number;
+    wind_mw: number;
+    other_mw: number;
+  }>;
+};
+
+// Renewables Transition API response
+export type RenewablesTransitionResponse = {
+  year: string;
+  renewable_share_percent: number;
+  monthly_totals: Array<{
+    month: string;
+    renewable_mw: number;
+    total_mw: number;
+    renewable_share_percent: number;
+  }>;
+  notes?: string;
+};
+
+// Renewables Potential by Industry API response
+export type RenewablesPotentialByIndustryResponse = {
+  year: string;
+  total_potential_mw: number;
+  industry_breakdown: Array<{
+    industry_type: string;
+    renewable_potential_mw: number;
+    solar_share_percent: number;
+  }>;
+  notes?: string;
+};
+
+// Installed Capacity Cumulative API response
+export type InstalledCapacityCumulativeResponse = {
+  title: string;
+  total_installed_mw: number;
+  total_facilities: number;
+  series: Array<{
+    period: string;
+    added_mw: number;
+    cumulative_mw: number;
+  }>;
+  technology_breakdown: {
+    Photovoltaic?: number;
+    Wind?: number;
+    'Solar Thermal'?: number;
+    Other?: number;
+  };
+  district_breakdown: Record<string, number>;
+};
+
+// Installed Capacity Growth API response
+export type InstalledCapacityGrowthResponse = {
+  title: string;
+  series: Array<{
+    year: number;
+    added_mw: number;
+    cumulative_mw: number;
+    growth_rate_percent: number;
+  }>;
+  technology_breakdown?: {
+    Photovoltaic?: number;
+    Wind?: number;
+    'Solar Thermal'?: number;
+    Other?: number;
+  };
+  district_breakdown?: Record<string, number>;
+  filters_applied: {
+    district: string | null;
+    technology: string | null;
+  };
+};
+
+// Installed Capacity by Facility Size API response
+export type InstalledCapacityByFacilitySizeResponse = {
+  series: Array<{
+    year: number;
+    size_brackets: {
+      'Up to 16 kW'?: number;
+      '16–50 kW'?: number;
+      '50–200 kW'?: number;
+      '200 kW–1 MW'?: number;
+      '1–5 MW'?: number;
+      '5–50 MW'?: number;
+      '50+ MW'?: number;
+    };
+  }>;
+  total_mw: number;
+};
+
+// Response Capacity by Period API response
+export type ResponseCapacityByPeriodResponse = {
+  title: string;
+  title_he?: string;
+  total_mw: number;
+  total_requests?: number;
+  filters_applied?: {
+    year: number | null;
+    district: string | null;
+    technology: string | null;
+    response_type: string | null;
+    include_cancelled: boolean;
+  };
+  series: Array<{
+    period: string;
+    total_mw: number;
+    request_count: number;
+    response_type_breakdown?: Partial<
+      Record<
+        'Positive' | 'Negative' | 'Partial Positive' | 'Limited Positive',
+        | number
+        | {
+            total_mw?: number;
+            count?: number;
+          }
+      >
+    >;
+  }>;
+  response_type_breakdown: Partial<
+    Record<
+      'Positive' | 'Negative' | 'Partial Positive' | 'Limited Positive',
+      | number
+      | {
+          total_mw?: number;
+          count?: number;
+        }
+    >
+  >;
+};
+
+// Response Capacity by Size API response
+export type ResponseCapacityBySizeResponse = {
+  title: string;
+  series: Array<{
+    year: number;
+    size_bracket: string;
+    total_mw: number;
+    request_count: number;
+  }>;
+  size_brackets: string[];
+};
+
+// Response Capacity by District API response
+export type ResponseCapacityByDistrictResponse = {
+  title: string;
+  series: Array<{
+    district: string;
+    total_mw: number;
+    request_count: number;
+    technology_breakdown: {
+      Photovoltaic?: number;
+      Wind?: number;
+      Other?: number;
+    };
+  }>;
+  district_technology_breakdown: Record<string, {
+    Photovoltaic?: number;
+    Wind?: number;
+    Other?: number;
+  }>;
+};

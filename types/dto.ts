@@ -702,6 +702,15 @@ export type ResponseCapacityBySizeResponse = {
     request_count: number;
   }>;
   size_brackets: string[];
+  yearly_series?: Array<{
+    year: number;
+    size_brackets: {
+      [key: string]: {
+        total_mw: number;
+        count: number;
+      };
+    };
+  }>;
 };
 
 // Response Capacity by District API response

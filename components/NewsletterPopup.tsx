@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { X, Mail } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 
 async function trackReason(reason: number) {
   await fetch('/api/newsletter-track', {
@@ -14,6 +14,7 @@ async function trackReason(reason: number) {
 
 export default function NewsletterPopup() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isPending, setIsPending] = useState(false);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
   const interests = [
@@ -52,10 +53,13 @@ export default function NewsletterPopup() {
     const reason =
       selectedInterests.length > 0 ? interests.indexOf(selectedInterests[0]) + 1 : 0;
     if (reason >= 1 && reason <= 5) {
+      setIsPending(true);
       try {
         await trackReason(reason);
       } catch {
         /* ignore */
+      } finally {
+        setIsPending(false);
       }
     }
 
@@ -64,6 +68,7 @@ export default function NewsletterPopup() {
   };
 
   const handleClose = () => {
+    if (isPending) return;
     setIsOpen(false);
   };
 
@@ -86,8 +91,10 @@ export default function NewsletterPopup() {
           <div className="relative bg-white border border-[#357A5B] rounded-2xl max-w-[447px] w-full p-[30px] mx-4">
             {/* Close Button */}
             <button
+              type="button"
               onClick={handleClose}
-              className="absolute -top-14 left-0 p-2 w-[44px] h-[44px] bg-white border border-[#357A5B] rounded-xl flex items-center justify-center"
+              disabled={isPending}
+              className="absolute -top-14 left-0 p-2 w-[44px] h-[44px] bg-white border border-[#357A5B] rounded-xl flex items-center justify-center disabled:opacity-50 disabled:pointer-events-none"
             >
               <X className="w-5 h-5" />
             </button>
@@ -104,7 +111,9 @@ export default function NewsletterPopup() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Interest areas */}
-              <div className="text-right space-y-3">
+              <div
+                className={`text-right space-y-3 ${isPending ? 'pointer-events-none opacity-60' : ''}`}
+              >
                 {interests.map((interest) => (
                   <label key={interest} className="flex flex-row-reverse items-center justify-end gap-3 text-gray-700 cursor-pointer">
                     <span className="text-[#59687D] font-medium text-base">{interest}</span>
@@ -112,6 +121,7 @@ export default function NewsletterPopup() {
                       type="radio"
                       name="interest"
                       value={interest}
+                      disabled={isPending}
                       checked={selectedInterests.includes(interest)}
                       onChange={() => {
                         setSelectedInterests([interest]);
@@ -126,9 +136,17 @@ export default function NewsletterPopup() {
               <div className="pt-4">
                 <Button
                   type="submit"
-                  className="w-max bg-[#1E8025] hover:bg-green-700 text-white font-medium py-[10px] px-[30px] rounded-full text-xl font-extrabold"
+                  disabled={isPending}
+                  className="w-max bg-[#1E8025] hover:bg-green-700 text-white font-medium py-[10px] px-[30px] rounded-full text-xl font-extrabold disabled:opacity-70"
                 >
-                  המשך גלישה באתר
+                  {isPending ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-6 w-6 animate-spin" aria-hidden />
+                      <span>שולח…</span>
+                    </span>
+                  ) : (
+                    'המשך גלישה באתר'
+                  )}
                 </Button>
               </div>
             </form>

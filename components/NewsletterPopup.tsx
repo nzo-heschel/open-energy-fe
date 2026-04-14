@@ -4,6 +4,14 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { X, Mail } from 'lucide-react';
 
+async function trackReason(reason: number) {
+  await fetch('/api/newsletter-track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason }),
+  });
+}
+
 export default function NewsletterPopup() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
@@ -38,15 +46,20 @@ export default function NewsletterPopup() {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Save in session that user has submitted the form
+    const reason =
+      selectedInterests.length > 0 ? interests.indexOf(selectedInterests[0]) + 1 : 0;
+    if (reason >= 1 && reason <= 5) {
+      try {
+        await trackReason(reason);
+      } catch {
+        /* ignore */
+      }
+    }
+
     sessionStorage.setItem('newsletter-submitted', 'true');
-
-    // Add logic here to send data to server
-    console.log('Newsletter subscription:', { interests: selectedInterests });
-
     setIsOpen(false);
   };
 

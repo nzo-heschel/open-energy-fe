@@ -15,6 +15,8 @@ import type {
   MarketOverviewResponse,
   MixResponse,
   PrivateSupplierConnectedConsumersResponse,
+  RenewablesDelivery4InternationalComparisonResponse,
+  RenewablesDelivery4Response,
   RenewablesPotentialByIndustryResponse,
   RenewablesProductionMixResponse,
   RenewablesTransitionResponse,
@@ -1044,6 +1046,131 @@ export const exportRenewablesProductionMix = async (startDate: string, endDate: 
     // Cleanup
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
+//++ Renewables delivery-4 — Israel renewable forecast vs targets
+export const useRenewablesDelivery4 = () => {
+  return useQuery<RenewablesDelivery4Response>({
+    queryKey: ['renewables-delivery-4'],
+    queryFn: async () => {
+      const data = await fetcher(`${API_BASE}api/v1/renewables/delivery-4/renewable-forecast-israel
+`);
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+export const exportRenewablesDelivery4RenewableForecastIsrael = async () => {
+  try {
+    const response = await fetch(
+      `${API_BASE}api/v1/renewables/delivery-4/renewable-forecast-israel/export`,
+      {
+        headers: {
+          'x-api-key': INTERNAL_API_KEY,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'renewable-forecast-israel.xlsx';
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+
+    const blob = await response.blob();
+    const urlObject = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = urlObject;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(urlObject);
+  } catch (error) {
+    console.error('Export error:', error);
+    throw error;
+  }
+};
+
+const buildInternationalComparisonParams = (include2050: boolean, includeSolar: boolean) => {
+  const params = new URLSearchParams();
+  params.set('include_2050_targets', include2050 ? 'true' : 'false');
+  params.set('include_solar_share', includeSolar ? 'true' : 'false');
+  return params;
+};
+
+//++ Renewables delivery-4 — international renewable comparison
+export const useRenewablesDelivery4InternationalComparison = (
+  include2050: boolean,
+  includeSolar: boolean
+) => {
+  const params = buildInternationalComparisonParams(include2050, includeSolar);
+
+  return useQuery<RenewablesDelivery4InternationalComparisonResponse>({
+    queryKey: ['renewables-delivery-4-international-comparison', include2050, includeSolar],
+    queryFn: async () => {
+      const data = await fetcher(
+        `${API_BASE}api/v1/renewables/delivery-4/international-renewable-comparison?${params}`
+      );
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 15 * 60 * 1000,
+  });
+};
+
+export const exportRenewablesDelivery4InternationalComparison = async (
+  include2050: boolean,
+  includeSolar: boolean
+) => {
+  const params = buildInternationalComparisonParams(include2050, includeSolar);
+  try {
+    const response = await fetch(
+      `${API_BASE}api/v1/renewables/delivery-4/international-renewable-comparison/export?${params}`,
+      {
+        headers: {
+          'x-api-key': INTERNAL_API_KEY,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Export failed');
+    }
+
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'international-renewable-comparison.xlsx';
+
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, '');
+      }
+    }
+
+    const blob = await response.blob();
+    const urlObject = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = urlObject;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(urlObject);
   } catch (error) {
     console.error('Export error:', error);
     throw error;

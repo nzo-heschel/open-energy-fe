@@ -31,8 +31,153 @@ const SIZE_BRACKETS = [
     { key: "small", label: "קטן | 0-200 KW", color: "#CEA073" },
 ];
 
-// Static year options (to avoid hydration mismatch)
-const yearOptions = [2026, 2025, 2024, 2023, 2022, 2021];
+const YearMultiSelectDropdown = ({
+    selectedYears,
+    onChange,
+    options,
+    showLatestMonth,
+    onToggleLatestMonth,
+    isOpen,
+    setIsOpen,
+}: {
+    selectedYears: string[];
+    onChange: (years: string[]) => void;
+    options: string[];
+    showLatestMonth: boolean;
+    onToggleLatestMonth: () => void;
+    isOpen: boolean;
+    setIsOpen: (isOpen: boolean) => void;
+}) => {
+    const allSelected = !showLatestMonth && (selectedYears.length === 0 || selectedYears.length === options.length);
+    const hasCustomSelection = !showLatestMonth && selectedYears.length > 0 && selectedYears.length < options.length;
+
+    const CustomCheckbox = ({
+        checked,
+        indeterminate = false,
+    }: {
+        checked: boolean;
+        indeterminate?: boolean;
+    }) => (
+        <span className="relative inline-block w-[19px] h-[19px] shrink-0" aria-hidden="true">
+            <span className="absolute inset-0 box-border bg-[#DEDEDE] border-[1.5px] border-[#484C56] rounded-[2px]" />
+            {indeterminate ? (
+                <span className="absolute left-[36.84%] right-[36.84%] top-[36.84%] bottom-[36.84%] bg-[#484C56]" />
+            ) : checked ? (
+                <svg
+                    viewBox="0 0 20 20"
+                    className="absolute left-[17%] right-[17%] top-[22%] bottom-[22%] w-auto h-auto"
+                    fill="none"
+                >
+                    <path
+                        d="M3 10.2L7.4 14.4L16.8 4.8"
+                        stroke="#484C56"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                </svg>
+            ) : null}
+        </span>
+    );
+
+    const toggleYear = (year: string) => {
+        setIsOpen(true);
+        if (showLatestMonth) {
+            onToggleLatestMonth();
+        }
+        if (selectedYears.includes(year)) {
+            onChange(selectedYears.filter((y) => y !== year));
+            return;
+        }
+        onChange([...selectedYears, year]);
+    };
+
+    const toggleAll = () => {
+        setIsOpen(true);
+        if (showLatestMonth) {
+            onToggleLatestMonth();
+        }
+        if (allSelected) {
+            onChange([]);
+            return;
+        }
+        onChange([...options]);
+    };
+
+    return (
+        <div className="relative">
+            <button
+                type="button"
+                className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6 text-right flex items-center justify-between"
+                style={{ fontFamily: 'Heebo, sans-serif' }}
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <span>
+                    {showLatestMonth ? "חודש אחרון" : allSelected ? "בחירה מרובה" : `${selectedYears.length} שנים`}
+                </span>
+                <ChevronDown size={14} className={`transform ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isOpen && (
+                <div
+                    className="absolute z-10 mt-1 w-full min-w-[179px] h-[258px] bg-[#FAFAFC] border border-[#A1A1A1] rounded-2xl shadow-[0px_3px_30px_rgba(153,191,65,0.16)] p-[15px_10px]"
+                    style={{ fontFamily: 'Heebo, sans-serif' }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="flex items-start gap-[10px]">
+                        <div className="w-1 h-10 bg-[#C3C3C3] rounded-[100px] mt-1" />
+                        <div className="flex flex-col gap-[10px] flex-1 h-[228px] overflow-y-auto pr-1">
+                            <button
+                                type="button"
+                                className="w-full flex flex-row-reverse justify-end items-center gap-[10px] text-right text-base font-medium text-[#59687D]"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onToggleLatestMonth();
+                                }}
+                            >
+                                <span>חודש אחרון</span>
+                                <CustomCheckbox checked={showLatestMonth} />
+                            </button>
+                            <button
+                                type="button"
+                                className="w-full flex flex-row-reverse justify-end items-center gap-[10px] text-right text-base font-medium text-[#59687D]"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleAll();
+                                }}
+                            >
+                                <span>הכל</span>
+                                <CustomCheckbox checked={allSelected} indeterminate={hasCustomSelection} />
+                            </button>
+
+                            {options.map((year) => {
+                                const checked = !showLatestMonth && (allSelected || selectedYears.includes(year));
+                                return (
+                                    <button
+                                        key={year}
+                                        type="button"
+                                        className="w-full flex-row-reverse flex justify-end items-center gap-[10px] text-right text-base font-medium text-[#59687D]"
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleYear(year);
+                                        }}
+                                    >
+                                        <span>{year}</span>
+                                        <CustomCheckbox checked={checked} />
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 // Custom Tooltip
 const CustomTooltip = ({ active, payload, label, activeTab }: any) => {
@@ -129,7 +274,9 @@ const CustomLegend = ({
 
 export default function RequestTwo() {
     const [activeTab, setActiveTab] = useState<"supply" | "facilities">("supply");
-    const [selectedYear, setSelectedYear] = useState<number | undefined>(undefined);
+    const [selectedYears, setSelectedYears] = useState<string[]>([]);
+    const [showLatestMonth, setShowLatestMonth] = useState(false);
+    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
     const [showTooltip, setShowTooltip] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
 
@@ -144,19 +291,16 @@ export default function RequestTwo() {
     const [hoveredSeries, setHoveredSeries] = useState<string | null>(null);
 
     // Build filters
-    const filters: ResponseCapacityBySizeFilters = useMemo(() => ({
-        year: selectedYear,
-    }), [selectedYear]);
+    // API currently supports a single year filter. We fetch all and filter client-side for multi-select.
+    const filters: ResponseCapacityBySizeFilters = useMemo(() => ({}), []);
 
     // Fetch data from API
     const { data: apiData, isLoading, error } = useResponseCapacityBySize(filters);
 
     // Transform API data for chart - use yearly_series and map to 4 categories
-    const chartData = useMemo(() => {
+    const allYearData = useMemo(() => {
         if (!apiData?.yearly_series) return [];
 
-        // If only one year in data (specific year selected), show quarterly/monthly breakdown
-        // For now, just show the yearly data
         return apiData.yearly_series.map((yearData: any) => {
             const brackets = yearData.size_brackets || {};
 
@@ -193,6 +337,26 @@ export default function RequestTwo() {
             };
         }).sort((a: any, b: any) => a.year - b.year);
     }, [apiData, activeTab]);
+
+    const availableYearOptions = useMemo(
+        () => allYearData.map((item: any) => String(item.year)).sort((a, b) => Number(b) - Number(a)),
+        [allYearData]
+    );
+
+    const chartData = useMemo(() => {
+        if (allYearData.length === 0) return [];
+
+        if (showLatestMonth) {
+            return [allYearData[allYearData.length - 1]];
+        }
+
+        if (selectedYears.length === 0) {
+            return allYearData;
+        }
+
+        const yearSet = new Set(selectedYears.map((year) => Number(year)));
+        return allYearData.filter((item: any) => yearSet.has(item.year));
+    }, [allYearData, selectedYears, showLatestMonth]);
 
     // Dynamic bar size based on number of data points
     const barSize = chartData.length <= 1 ? 120 : (chartData.length <= 3 ? 80 : 60);
@@ -260,21 +424,23 @@ export default function RequestTwo() {
                         <div className="relative w-[113px]">
                             <label htmlFor="" className='flex flex-col gap-1'>
                                 <span className='text-sm text-slate-600'>פרק זמן:</span>
-                                <select
-                                    value={selectedYear || ""}
-                                    onChange={(e) => setSelectedYear(e.target.value ? Number(e.target.value) : undefined)}
-                                    className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
-                                    style={{ fontFamily: 'Heebo, sans-serif' }}
-                                >
-                                    <option value="">חודש</option>
-                                    {yearOptions.map((year) => (
-                                        <option key={year} value={year}>{year}</option>
-                                    ))}
-                                </select>
-                                {/* Custom dropdown arrow */}
-                                <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
-                                    <ChevronDown size={14} />
-                                </span>
+                                <YearMultiSelectDropdown
+                                    selectedYears={selectedYears}
+                                    onChange={(years) => {
+                                        setSelectedYears(years);
+                                        if (years.length > 0 && showLatestMonth) {
+                                            setShowLatestMonth(false);
+                                        }
+                                    }}
+                                    options={availableYearOptions}
+                                    showLatestMonth={showLatestMonth}
+                                    onToggleLatestMonth={() => {
+                                        setShowLatestMonth((prev) => !prev);
+                                        setSelectedYears([]);
+                                    }}
+                                    isOpen={isYearDropdownOpen}
+                                    setIsOpen={setIsYearDropdownOpen}
+                                />
                             </label>
                         </div>
                     </div>

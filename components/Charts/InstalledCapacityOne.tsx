@@ -226,7 +226,7 @@ export default function InstalledCapacityOne() {
             <div className="rounded-lg shadow-xl border border-[#DEDEDE] bg-white p-4 min-w-[160px] text-sm">
                 <div className="text-sm text-gray-500">{label}</div>
                 <div className="md:text-base text-sm font-medium mb-3 border-b border-[#707585]">סה״כ {total.toLocaleString()} MW</div>
-                {payload.map((entry: any) => (
+                {payload.slice().reverse().map((entry: any) => (
                     <div key={entry.dataKey} className="flex items-start gap-2 mb-1">
                         <span
                             style={{ background: entry.color }}

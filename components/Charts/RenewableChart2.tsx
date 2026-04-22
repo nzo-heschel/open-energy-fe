@@ -24,34 +24,44 @@ import type { RenewablesDelivery4InternationalRegion } from "@/types/dto";
 
 const pct = (fraction: number) => fraction * 100;
 
-/** Figma Open-Energy-Updated-Color */
+/** Stacked bar palette (design reference) */
 const colors = {
-    solarPct: "#F4D150",
-    renewableRemainderPct: "#98C74E",
-    target2030Pct: "#C4C95C",
-    target2050Pct: "#8BBFE1",
+    solarPct: "#f6cf65",
+    renewableRemainderPct: "#92c854",
+    target2030Pct: "#bdcb5d",
+    target2050Pct: "#8abce4",
 } as const;
 
 const labelInsideStyle: React.CSSProperties = {
     fill: "#ffffff",
     fontSize: 13,
     fontWeight: 600,
-    textShadow: "0 1px 2px rgba(0,0,0,0.45)",
+    textShadow: "0 1px 2px rgba(0,0,0,0.55)",
 };
 
+/** Stronger shadow on yellow so white % stays readable */
 const solarPctLabelStyle: React.CSSProperties = {
-    fill: "#2a2a2a",
+    fill: "#ffffff",
     fontSize: 13,
     fontWeight: 600,
+    textShadow: "0 1px 3px rgba(0,0,0,0.75), 0 0 2px rgba(0,0,0,0.4)",
 };
 
 type ChartRow = {
     country: string;
     region_key: string;
+    /** Stacked segment widths (sum to 2030% or 2050% cumulative target) */
     solarPct: number | null;
     renewableRemainderPct: number | null;
+    /** Width from cumulative baseline up to 2030 target (not full 2030 %) */
     target2030Pct: number;
+    /** Width from 2030 target to 2050 target */
     target2050Pct: number | null;
+    /** Labels inside bars = cumulative % at end of each segment (Figma) */
+    labelCumSolar: number | null;
+    labelCumAfterRemainder: number | null;
+    labelCum2030: number;
+    labelCum2050: number | null;
 };
 
 function buildRows(
@@ -60,7 +70,13 @@ function buildRows(
     includeSolar: boolean
 ): ChartRow[] {
     return regions.map((r) => {
-        const solarVal =
+        const t30 = pct(r.renewable_target_2030);
+        const t50 =
+            include2050 && r.renewable_target_2050 != null && r.renewable_target_2050 > 0
+                ? pct(r.renewable_target_2050)
+                : null;
+
+        const solarW =
             includeSolar && r.solar_share_2024 != null && r.solar_share_2024 > 0
                 ? pct(r.solar_share_2024)
                 : null;
@@ -69,22 +85,30 @@ function buildRows(
         if (r.renewable_share_2024 != null && r.renewable_share_2024 > 0) {
             const total = pct(r.renewable_share_2024);
             renewableRemainderPct =
-                solarVal != null ? Math.max(0, total - solarVal) : total;
+                solarW != null ? Math.max(0, total - solarW) : total;
         }
 
-        const target2030Pct = pct(r.renewable_target_2030);
-        const target2050Pct =
-            include2050 && r.renewable_target_2050 != null && r.renewable_target_2050 > 0
-                ? pct(r.renewable_target_2050)
-                : null;
+        const afterSolar = (solarW ?? 0) + (renewableRemainderPct ?? 0);
+        const segTo2030 = Math.max(0, t30 - afterSolar);
+        const segTo2050 = t50 != null ? Math.max(0, t50 - t30) : null;
+
+        const labelCumSolar = solarW != null ? Math.round(solarW) : null;
+        const labelCumAfterRemainder =
+            renewableRemainderPct != null ? Math.round(afterSolar) : null;
+        const labelCum2030 = Math.round(t30);
+        const labelCum2050 = t50 != null ? Math.round(t50) : null;
 
         return {
             country: r.region_he || r.region,
             region_key: r.region_key,
-            solarPct: solarVal,
+            solarPct: solarW,
             renewableRemainderPct,
-            target2030Pct,
-            target2050Pct,
+            target2030Pct: segTo2030,
+            target2050Pct: segTo2050,
+            labelCumSolar,
+            labelCumAfterRemainder,
+            labelCum2030,
+            labelCum2050,
         };
     });
 }
@@ -96,6 +120,69 @@ function rowStackSum(r: ChartRow): number {
 }
 
 /** Country name above the outer end of the stacked bar (Figma) */
+type RechartsLabelProps = {
+    x?: number | string;
+    y?: number | string;
+    width?: number | string;
+    height?: number | string;
+    value?: number | string;
+    payload?: ChartRow;
+};
+
+function makeCumulativeSegmentLabel(dataKey: keyof ChartRow, chartData: ChartRow[]) {
+    /** Recharts strips non-SVG fields from `content` props — use `index` + `chartData` for row labels */
+    function CumulativeSegmentLabel(props: any) {
+        const p = props as {
+            x?: number | string;
+            y?: number | string;
+            width?: number | string;
+            height?: number | string;
+            value?: number | string;
+            index?: number;
+            viewBox?: { x?: number; y?: number; width?: number; height?: number };
+        };
+        const vb = p.viewBox;
+        const x = typeof p.x === "number" ? p.x : Number(p.x ?? vb?.x) || 0;
+        const y = typeof p.y === "number" ? p.y : Number(p.y ?? vb?.y) || 0;
+        const width = typeof p.width === "number" ? p.width : Number(p.width ?? vb?.width) || 0;
+        const height = typeof p.height === "number" ? p.height : Number(p.height ?? vb?.height) || 0;
+        const value = typeof p.value === "number" ? p.value : Number(p.value);
+        const row = typeof p.index === "number" ? chartData[p.index] : undefined;
+        if (!row || !value || Number.isNaN(value) || value < 1) return null;
+        if (width < 16) return null;
+
+        let text: string | null = null;
+        if (dataKey === "solarPct" && row.labelCumSolar != null) {
+            text = `${row.labelCumSolar}%`;
+        } else if (dataKey === "renewableRemainderPct" && row.labelCumAfterRemainder != null) {
+            text = `${row.labelCumAfterRemainder}%`;
+        } else if (dataKey === "target2030Pct") {
+            text = `${row.labelCum2030}%`;
+        } else if (dataKey === "target2050Pct" && row.labelCum2050 != null) {
+            text = `${row.labelCum2050}%`;
+        }
+        if (!text) return null;
+
+        const style = dataKey === "solarPct" ? solarPctLabelStyle : labelInsideStyle;
+        const pad = 6;
+        const tx = x + width - pad;
+        const ty = y + height / 2;
+        return (
+            <text
+                x={tx}
+                y={ty}
+                dominantBaseline="middle"
+                textAnchor="end"
+                style={style}
+            >
+                {text}
+            </text>
+        );
+    }
+    CumulativeSegmentLabel.displayName = `CumulativeSegmentLabel(${String(dataKey)})`;
+    return CumulativeSegmentLabel;
+}
+
 function CountryNameLabel(props: {
     x?: number | string;
     y?: number | string;
@@ -168,10 +255,17 @@ export default function RenewableChart2() {
         [data?.regions]
     );
 
-    /** Figma: כיום → 2030 → 2050 → סולארי */
+    /** Figma: סולארי → (כיום) → 2030 → 2050 */
     const legendRows: LegendRow[] = useMemo(() => {
         const labels = data?.column_labels;
         const rows: LegendRow[] = [];
+        rows.push({
+            dataKey: "solarPct",
+            color: colors.solarPct,
+            label: labels?.solar_share_2024?.he ?? "אנרגיה סולארית",
+            toggleable: true,
+            enabled: includeSolar,
+        });
         if (hasRenewableShare) {
             rows.push({
                 dataKey: "renewableRemainderPct",
@@ -194,13 +288,6 @@ export default function RenewableChart2() {
             label: labels?.renewable_target_2050?.he ?? "יעדים ל-2050",
             toggleable: true,
             enabled: include2050,
-        });
-        rows.push({
-            dataKey: "solarPct",
-            color: colors.solarPct,
-            label: labels?.solar_share_2024?.he ?? "אנרגיה סולארית",
-            toggleable: true,
-            enabled: includeSolar,
         });
         return rows;
     }, [data?.column_labels, include2050, includeSolar, hasRenewableShare]);
@@ -335,14 +422,14 @@ export default function RenewableChart2() {
                         type="button"
                         onClick={handleExport}
                         disabled={exporting}
-                        className="leading-none disabled:opacity-50 rounded-full border border-[#E0E0E0] p-1.5 hover:bg-[#F8F8F8] transition-colors"
+                        className="leading-none disabled:opacity-50"
                         aria-label="ייצוא לאקסל"
                     >
                         <Image src={download} width={28} height={28} className="w-7 h-7" alt="" />
                     </button>
                     <Link
                         href="/api#renewables-delivery-4-international-renewable-comparison"
-                        className="leading-none rounded-full border border-[#E0E0E0] p-1.5 hover:bg-[#F8F8F8] transition-colors"
+                        className="leading-none"
                     >
                         <Image src={api} width={28} height={28} className="w-7 h-7" alt="API" />
                     </Link>
@@ -386,8 +473,10 @@ export default function RenewableChart2() {
                                     dataKey={key}
                                     stackId="a"
                                     fill={colors[key as keyof typeof colors]}
+                                    stroke="#ffffff"
+                                    strokeWidth={1}
                                     barSize={30}
-                                    radius={[0, 3, 3, 0]}
+                                    radius={0}
                                     opacity={barOpacity(key)}
                                 >
                                     {barIndex === barKeys.length - 1 && (
@@ -403,10 +492,7 @@ export default function RenewableChart2() {
                                     <LabelList
                                         dataKey={key}
                                         position="center"
-                                        formatter={(val: number) =>
-                                            val != null && val >= 5 ? `${Math.round(val)}%` : ""
-                                        }
-                                        style={key === "solarPct" ? solarPctLabelStyle : labelInsideStyle}
+                                        content={makeCumulativeSegmentLabel(key, chartData)}
                                     />
                                 </Bar>
                             ))}
@@ -421,22 +507,20 @@ export default function RenewableChart2() {
                                 key={row.dataKey}
                                 type="button"
                                 disabled={!row.toggleable}
-                                className={`flex items-center justify-end gap-2.5 transition-opacity duration-200 border-0 bg-transparent p-0 w-full ${
-                                    row.toggleable ? "cursor-pointer" : "cursor-default"
-                                }`}
+                                className={`flex items-center justify-end gap-2.5 transition-opacity duration-200 border-0 bg-transparent p-0 w-full ${row.toggleable ? "cursor-pointer" : "cursor-default"
+                                    }`}
                                 style={{ opacity: legendRowOpacity(row) }}
                                 onClick={() => handleLegendRowClick(row)}
                                 onMouseEnter={() => handleLegendMouseEnter(row)}
                                 onMouseLeave={handleLegendMouseLeave}
                             >
                                 <span
-                                    className={`text-sm leading-tight ${
-                                        row.toggleable && row.enabled
-                                            ? "font-medium text-[#484C56]"
-                                            : row.toggleable
-                                              ? "font-medium text-gray-400"
-                                              : "font-medium text-[#484C56]"
-                                    }`}
+                                    className={`text-sm leading-tight ${row.toggleable && row.enabled
+                                        ? "font-medium text-[#484C56]"
+                                        : row.toggleable
+                                            ? "font-medium text-gray-400"
+                                            : "font-medium text-[#484C56]"
+                                        }`}
                                 >
                                     {row.label}
                                 </span>

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import download from '@/public/images/download_2.png'
 import api from '@/public/images/API.png'
 import {
@@ -30,17 +30,6 @@ const SIZE_BRACKETS = [
     { key: "large", label: "גדול | 631-5000 KW", color: "#60A261" },
     { key: "medium", label: "בינוני | 201-630 KW", color: "#C4C95C" },
     { key: "small", label: "קטן | 0-200 KW", color: "#D8EB4D" },
-];
-
-// Year options
-const yearOptions = [
-    { value: "", label: "הכל" },
-    { value: "2025", label: "2025" },
-    { value: "2024", label: "2024" },
-    { value: "2023", label: "2023" },
-    { value: "2022", label: "2022" },
-    { value: "2021", label: "2021" },
-    { value: "2020", label: "2020" },
 ];
 
 // Display mode options (הספק/מספר מתקנים)
@@ -93,6 +82,140 @@ const FilterDropdown = ({
                                 {option.label}
                             </button>
                         ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const YearMultiSelectDropdown = ({
+    selectedYears,
+    onChange,
+    options,
+    isOpen,
+    setIsOpen,
+}: {
+    selectedYears: string[];
+    onChange: (years: string[]) => void;
+    options: string[];
+    isOpen: boolean;
+    setIsOpen: (isOpen: boolean) => void;
+}) => {
+    const allSelected = selectedYears.length === 0 || selectedYears.length === options.length;
+    const hasCustomSelection = selectedYears.length > 0 && selectedYears.length < options.length;
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isOpen, setIsOpen]);
+
+    const CustomCheckbox = ({
+        checked,
+        indeterminate = false,
+    }: {
+        checked: boolean;
+        indeterminate?: boolean;
+    }) => (
+        <span className="relative inline-block w-[19px] h-[19px] shrink-0" aria-hidden="true">
+            <span className="absolute inset-0 box-border bg-[#DEDEDE] border-[1.5px] border-[#484C56] rounded-[2px]" />
+            {indeterminate ? (
+                <span className="absolute left-[36.84%] right-[36.84%] top-[36.84%] bottom-[36.84%] bg-[#484C56]" />
+            ) : checked ? (
+                <svg
+                    viewBox="0 0 20 20"
+                    className="absolute left-[17%] right-[17%] top-[22%] bottom-[22%] w-auto h-auto"
+                    fill="none"
+                >
+                    <path
+                        d="M3 10.2L7.4 14.4L16.8 4.8"
+                        stroke="#484C56"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                </svg>
+            ) : null}
+        </span>
+    );
+
+    const toggleYear = (year: string) => {
+        if (selectedYears.includes(year)) {
+            onChange(selectedYears.filter((y) => y !== year));
+            return;
+        }
+        onChange([...selectedYears, year]);
+    };
+
+    const toggleAll = () => {
+        if (allSelected) {
+            onChange([]);
+            return;
+        }
+        onChange([...options]);
+    };
+
+    return (
+        <div className="relative" ref={containerRef}>
+            <button
+                type="button"
+                className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6 text-right flex items-center justify-between"
+                style={{ fontFamily: 'Heebo, sans-serif' }}
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <span>{allSelected ? "בחירה מרובה" : `${selectedYears.length} שנים`}</span>
+                <ChevronDown size={14} className={`transform ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isOpen && (
+                <div
+                    className="absolute z-10 mt-1 w-full min-w-[179px] h-[258px] bg-[#FAFAFC] border border-[#A1A1A1] rounded-2xl shadow-[0px_3px_30px_rgba(153,191,65,0.16)] p-[15px_10px]"
+                    style={{ fontFamily: 'Heebo, sans-serif' }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="flex items-start gap-[10px]">
+                        <div className="w-1 h-10 bg-[#C3C3C3] rounded-[100px] mt-1" />
+                        <div className="flex flex-col  gap-[10px] flex-1 h-[228px] overflow-y-auto pr-1">
+                            <button
+                                type="button"
+                                className="w-full flex flex-row-reverse justify-end items-center gap-[10px] text-right text-base font-medium text-[#59687D]"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleAll();
+                                }}
+                            >
+                                <span>הכל</span>
+                                <CustomCheckbox checked={allSelected} indeterminate={hasCustomSelection} />
+                            </button>
+
+                            {options.map((year) => {
+                                const checked = allSelected || selectedYears.includes(year);
+                                return (
+                                    <button
+                                        key={year}
+                                        type="button"
+                                        className="w-full flex-row-reverse flex justify-end items-center gap-[10px] text-right text-base font-medium text-[#59687D]"
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleYear(year);
+                                        }}
+                                    >
+                                        <span>{year}</span>
+                                        <CustomCheckbox checked={checked} />
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             )}
@@ -187,14 +310,15 @@ const InstalledCapacityTwo: React.FC = () => {
     const [hoveredKey, setHoveredKey] = useState<string | null>(null);
     const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(new Set());
     const [showTooltip, setShowTooltip] = useState(false);
-    const [selectedYear, setSelectedYear] = useState<string>("");
+    const [selectedYears, setSelectedYears] = useState<string[]>([]);
+    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
     const [displayMode, setDisplayMode] = useState<string>("capacity");
     const [isExporting, setIsExporting] = useState(false);
 
     // Build filters
     const filters: InstalledCapacityByFacilitySizeFilters = useMemo(() => ({
-        year: selectedYear ? parseInt(selectedYear) : undefined,
-    }), [selectedYear]);
+        year: undefined,
+    }), []);
 
     // Fetch data from API
     const { data: apiData, isLoading, error } = useInstalledCapacityByFacilitySize(filters);
@@ -203,7 +327,7 @@ const InstalledCapacityTwo: React.FC = () => {
     const chartData = useMemo(() => {
         if (!apiData?.series) return [];
 
-        return apiData.series.map((item) => {
+        const mappedData = apiData.series.map((item) => {
             const brackets = item.size_brackets || {};
 
             // Helper to get value based on display mode
@@ -238,7 +362,20 @@ const InstalledCapacityTwo: React.FC = () => {
                 total: isNaN(total) ? 0 : total,
             };
         });
-    }, [apiData, displayMode]);
+
+        if (selectedYears.length === 0) {
+            return mappedData;
+        }
+
+        const selectedYearSet = new Set(selectedYears.map((year) => Number(year)));
+        return mappedData.filter((item) => selectedYearSet.has(item.year));
+    }, [apiData, displayMode, selectedYears]);
+
+    const availableYearOptions = useMemo(() => {
+        if (!apiData?.series) return [];
+        const uniqueYears = Array.from(new Set(apiData.series.map((item) => String(item.year))));
+        return uniqueYears.sort((a, b) => Number(b) - Number(a));
+    }, [apiData]);
 
     const handleLegendMouseEnter = (dataKey: string) => {
         setHoveredKey(dataKey);
@@ -316,11 +453,12 @@ const InstalledCapacityTwo: React.FC = () => {
                         <div className="relative w-[150px]">
                             <label className='flex flex-col gap-1'>
                                 <span className='text-sm text-slate-600'>שנה</span>
-                                <FilterDropdown
-                                    value={selectedYear}
-                                    onChange={setSelectedYear}
-                                    options={yearOptions}
-                                    placeholder="הכל"
+                                <YearMultiSelectDropdown
+                                    selectedYears={selectedYears}
+                                    onChange={setSelectedYears}
+                                    options={availableYearOptions}
+                                    isOpen={isYearDropdownOpen}
+                                    setIsOpen={setIsYearDropdownOpen}
                                 />
                             </label>
                         </div>

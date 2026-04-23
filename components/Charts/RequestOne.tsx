@@ -47,8 +47,129 @@ const series = [
     { key: "positive", apiKey: "Positive" as const, label: "חיובית", color: "#60A261" },
 ];
 
-// Static year options (to avoid hydration mismatch)
-const yearOptions = [2026, 2025, 2024, 2023, 2022, 2021];
+const YearMultiSelectDropdown = ({
+    selectedYears,
+    onChange,
+    options,
+    isOpen,
+    setIsOpen,
+}: {
+    selectedYears: string[];
+    onChange: (years: string[]) => void;
+    options: string[];
+    isOpen: boolean;
+    setIsOpen: (isOpen: boolean) => void;
+}) => {
+    const allSelected = selectedYears.length === 0 || selectedYears.length === options.length;
+    const hasCustomSelection = selectedYears.length > 0 && selectedYears.length < options.length;
+
+    const CustomCheckbox = ({
+        checked,
+        indeterminate = false,
+    }: {
+        checked: boolean;
+        indeterminate?: boolean;
+    }) => (
+        <span className="relative inline-block w-[19px] h-[19px] shrink-0" aria-hidden="true">
+            <span className="absolute inset-0 box-border bg-[#DEDEDE] border-[1.5px] border-[#484C56] rounded-[2px]" />
+            {indeterminate ? (
+                <span className="absolute left-[36.84%] right-[36.84%] top-[36.84%] bottom-[36.84%] bg-[#484C56]" />
+            ) : checked ? (
+                <svg
+                    viewBox="0 0 20 20"
+                    className="absolute left-[17%] right-[17%] top-[22%] bottom-[22%] w-auto h-auto"
+                    fill="none"
+                >
+                    <path
+                        d="M3 10.2L7.4 14.4L16.8 4.8"
+                        stroke="#484C56"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                </svg>
+            ) : null}
+        </span>
+    );
+
+    const toggleYear = (year: string) => {
+        setIsOpen(true);
+        if (selectedYears.includes(year)) {
+            onChange(selectedYears.filter((y) => y !== year));
+            return;
+        }
+        onChange([...selectedYears, year]);
+    };
+
+    const toggleAll = () => {
+        setIsOpen(true);
+        if (allSelected) {
+            onChange([]);
+            return;
+        }
+        onChange([...options]);
+    };
+
+    return (
+        <div className="relative">
+            <button
+                type="button"
+                className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6 text-right flex items-center justify-between"
+                style={{ fontFamily: 'Heebo, sans-serif' }}
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <span>{allSelected ? "בחירה מרובה" : `${selectedYears.length} שנים`}</span>
+                <ChevronDown size={14} className={`transform ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isOpen && (
+                <div
+                    className="absolute z-10 mt-1 w-full min-w-[179px] h-[258px] bg-[#FAFAFC] border border-[#A1A1A1] rounded-2xl shadow-[0px_3px_30px_rgba(153,191,65,0.16)] p-[15px_10px]"
+                    style={{ fontFamily: 'Heebo, sans-serif' }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="flex items-start gap-[10px]">
+                        <div className="w-1 h-10 bg-[#C3C3C3] rounded-[100px] mt-1" />
+                        <div className="flex flex-col gap-[10px] flex-1 h-[228px] overflow-y-auto pr-1">
+                            <button
+                                type="button"
+                                className="w-full flex flex-row-reverse justify-end items-center gap-[10px] text-right text-base font-medium text-[#59687D]"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleAll();
+                                }}
+                            >
+                                <span>הכל</span>
+                                <CustomCheckbox checked={allSelected} indeterminate={hasCustomSelection} />
+                            </button>
+
+                            {options.map((year) => {
+                                const checked = allSelected || selectedYears.includes(year);
+                                return (
+                                    <button
+                                        key={year}
+                                        type="button"
+                                        className="w-full flex-row-reverse flex justify-end items-center gap-[10px] text-right text-base font-medium text-[#59687D]"
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleYear(year);
+                                        }}
+                                    >
+                                        <span>{year}</span>
+                                        <CustomCheckbox checked={checked} />
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const readBreakdownNumber = (value: BreakdownValue, mode: "mw" | "count"): number => {
     if (value === undefined) return 0;
@@ -227,7 +348,8 @@ const CustomLegend = ({
 
 export default function RequestOne() {
     const [tab, setTab] = useState<TabKey>("1");
-    const [selectedYear, setSelectedYear] = useState<number | undefined>(undefined);
+    const [selectedYears, setSelectedYears] = useState<string[]>([]);
+    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
 
     const [activeSeries, setActiveSeries] = useState<Record<string, boolean>>({
@@ -240,20 +362,32 @@ export default function RequestOne() {
     const [hoveredSeries, setHoveredSeries] = useState<string | null>(null);
 
     // Build filters
-    const filters: ResponseCapacityByPeriodFilters = useMemo(() => ({
-        year: selectedYear,
-    }), [selectedYear]);
+    // API supports only a single year filter. For multi-select, we fetch all years and filter client-side.
+    const filters: ResponseCapacityByPeriodFilters = useMemo(() => ({}), []);
 
     // Fetch data from API
     const { data: apiData, isLoading, error } = useResponseCapacityByPeriod(filters);
 
-    // Transform API data for chart - aggregate by year when no specific year is selected
+    const availableYearOptions = useMemo(() => {
+        if (!apiData?.series) return [];
+        const years = apiData.series
+            .map((item) => item.period.split('-')[0])
+            .filter(Boolean);
+        return Array.from(new Set(years)).sort((a, b) => Number(b) - Number(a));
+    }, [apiData]);
+
+    const singleSelectedYear = selectedYears.length === 1 ? Number(selectedYears[0]) : undefined;
+
+    // Transform API data for chart
     const chartData = useMemo(() => {
         if (!apiData?.series) return [];
 
-        // If a specific year is selected, show monthly data
-        if (selectedYear) {
-            return apiData.series.map((item) => {
+        // If exactly one year is selected, show monthly data for that year
+        if (singleSelectedYear) {
+            const yearString = String(singleSelectedYear);
+            return apiData.series
+                .filter((item) => item.period.startsWith(`${yearString}-`) || item.period === yearString)
+                .map((item) => {
                 const split = splitPeriodMetric({
                     tab,
                     totalMw: item.total_mw,
@@ -278,7 +412,9 @@ export default function RequestOne() {
             });
         }
 
-        // When "all" is selected, aggregate by year
+        const selectedYearSet = selectedYears.length > 0 ? new Set(selectedYears) : null;
+
+        // Otherwise, aggregate by year (and filter to selected years when provided)
         const yearMap = new Map<string, {
             totalMw: number;
             requestCount: number;
@@ -287,6 +423,7 @@ export default function RequestOne() {
 
         apiData.series.forEach((item) => {
             const year = item.period.split('-')[0];
+            if (selectedYearSet && !selectedYearSet.has(year)) return;
             if (!yearMap.has(year)) {
                 yearMap.set(year, {
                     totalMw: 0,
@@ -325,7 +462,7 @@ export default function RequestOne() {
                     positive: split.positive,
                 };
             });
-    }, [apiData, tab, selectedYear]);
+    }, [apiData, tab, selectedYears, singleSelectedYear]);
 
     const opacityForKey = (key: string) => {
         if (hoveredSeries) {
@@ -337,7 +474,7 @@ export default function RequestOne() {
     const yAxisLabel = tab === "1" ? "הספק תשובות [MW]" : "מספר מתקנים";
 
     // Wider bars when showing yearly data (fewer bars)
-    const barSize = selectedYear ? 36 : 80;
+    const barSize = singleSelectedYear ? 36 : 80;
 
     // Handle export
     const handleExport = async () => {
@@ -393,18 +530,11 @@ export default function RequestOne() {
                     />
                     <Tooltip content={<CustomTooltip tab={tab} />} />
                     <Bar
-                        dataKey="negative"
+                        dataKey="positive"
                         stackId="a"
-                        fill={series[0].color}
+                        fill={series[3].color}
                         barSize={barSize}
-                        opacity={activeSeries.negative ? opacityForKey("negative") : 0}
-                    />
-                    <Bar
-                        dataKey="limitedPositive"
-                        stackId="a"
-                        fill={series[1].color}
-                        barSize={barSize}
-                        opacity={activeSeries.limitedPositive ? opacityForKey("limitedPositive") : 0}
+                        opacity={activeSeries.positive ? opacityForKey("positive") : 0}
                     />
                     <Bar
                         dataKey="partialPositive"
@@ -414,12 +544,19 @@ export default function RequestOne() {
                         opacity={activeSeries.partialPositive ? opacityForKey("partialPositive") : 0}
                     />
                     <Bar
-                        dataKey="positive"
+                        dataKey="limitedPositive"
                         stackId="a"
-                        fill={series[3].color}
+                        fill={series[1].color}
+                        barSize={barSize}
+                        opacity={activeSeries.limitedPositive ? opacityForKey("limitedPositive") : 0}
+                    />
+                    <Bar
+                        dataKey="negative"
+                        stackId="a"
+                        fill={series[0].color}
                         barSize={barSize}
                         radius={[4, 4, 0, 0]}
-                        opacity={activeSeries.positive ? opacityForKey("positive") : 0}
+                        opacity={activeSeries.negative ? opacityForKey("negative") : 0}
                     >
                         <LabelList
                             dataKey="total"
@@ -447,21 +584,13 @@ export default function RequestOne() {
                         <div className="relative w-[113px]">
                             <label htmlFor="" className='flex flex-col gap-1'>
                                 <span className='text-sm text-slate-600'>שנה:</span>
-                                <select
-                                    value={selectedYear || ""}
-                                    onChange={(e) => setSelectedYear(e.target.value ? Number(e.target.value) : undefined)}
-                                    className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
-                                    style={{ fontFamily: 'Heebo, sans-serif' }}
-                                >
-                                    <option value="">הכל</option>
-                                    {yearOptions.map((year) => (
-                                        <option key={year} value={year}>{year}</option>
-                                    ))}
-                                </select>
-                                {/* Custom dropdown arrow */}
-                                <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
-                                    <ChevronDown size={14} />
-                                </span>
+                                <YearMultiSelectDropdown
+                                    selectedYears={selectedYears}
+                                    onChange={setSelectedYears}
+                                    options={availableYearOptions}
+                                    isOpen={isYearDropdownOpen}
+                                    setIsOpen={setIsYearDropdownOpen}
+                                />
                             </label>
                         </div>
                     </div>

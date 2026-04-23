@@ -569,6 +569,68 @@ export type RenewablesProductionMixResponse = {
   }>;
 };
 
+// Renewables delivery-4 — forecast vs targets (fractions in [0, 1])
+export type RenewablesDelivery4DataPoint = {
+  year: number;
+  renewable_rate: number;
+  realistic_forecast: number;
+  ministry_target: number;
+  nzo_target: number;
+};
+
+export type RenewablesDelivery4Response = {
+  title: string;
+  title_he?: string;
+  value_unit?: string;
+  value_unit_description?: string;
+  series_labels?: Record<string, string>;
+  data: RenewablesDelivery4DataPoint[];
+  metadata?: {
+    year_start?: number;
+    year_end?: number;
+    realistic_forecast_factor?: number;
+  };
+  source?: { csv_path?: string };
+};
+
+export type RenewablesDelivery4InternationalColumnLabel = {
+  en: string;
+  he: string;
+};
+
+export type RenewablesDelivery4InternationalRegion = {
+  region: string;
+  region_he?: string;
+  region_key: string;
+  renewable_target_2030: number;
+  renewable_target_2050?: number | null;
+  solar_share_2024?: number | null;
+  /** Total renewable share in generation (optional); when set with solar, non-solar segment = this minus solar */
+  renewable_share_2024?: number | null;
+};
+
+export type RenewablesDelivery4InternationalComparisonResponse = {
+  diagram_id?: string;
+  title: string;
+  title_he?: string;
+  value_unit?: string;
+  value_unit_description?: string;
+  filters?: {
+    include_2030_targets?: boolean;
+    include_2050_targets?: boolean;
+    include_solar_share?: boolean;
+  };
+  column_labels?: Record<string, RenewablesDelivery4InternationalColumnLabel>;
+  regions: RenewablesDelivery4InternationalRegion[];
+  regions_without_solar_data?: string[];
+  validation?: unknown[];
+  source?: {
+    csv_path?: string;
+    source_notes?: string[];
+  };
+  prd_notes?: Record<string, string>;
+};
+
 // Renewables Transition API response
 export type RenewablesTransitionResponse = {
   year: string;

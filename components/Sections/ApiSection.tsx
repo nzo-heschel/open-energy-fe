@@ -721,6 +721,56 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
       parameters: ['year (optional, 4-digit year)'],
       responseExample: 'Streamed Excel file (renewables_transition.xlsx)'
     },
+    {
+      id: 'renewables-delivery-4-renewable-forecast-israel',
+      title: 'תחזית אנרגיות מתחדשות מול יעדים (ישראל)',
+      description: 'Annual series: actual renewable rate, realistic forecast, ministry and NZO targets (values as fractions 0–1)',
+      endpoint: 'GET /api/v1/renewables/delivery-4/',
+      method: 'GET',
+      responseExample: `{
+  "title": "Renewables forecast trajectory in Israel",
+  "title_he": "תחזית שיעור אנרגיות מתחדשות בישראל",
+  "value_unit": "fraction",
+  "data": [{ "year": 2020, "renewable_rate": 0.063, "realistic_forecast": 0.063, "ministry_target": 0.1, "nzo_target": 0.275 }],
+  "metadata": { "year_start": 2020, "year_end": 2050 }
+}`
+    },
+    {
+      id: 'renewables-delivery-4-renewable-forecast-israel-export',
+      title: 'ייצוא תחזית מתחדשות מול יעדים',
+      description: 'Export renewable forecast vs targets chart data to Excel',
+      endpoint: 'GET /api/v1/renewables/delivery-4/renewable-forecast-israel/export',
+      method: 'GET',
+      responseExample: 'Streamed Excel file'
+    },
+    {
+      id: 'renewables-delivery-4-international-renewable-comparison',
+      title: 'השוואה בינלאומית — יעדי מתחדשות מול בפועל',
+      description: 'Per-region 2030/2050 renewable targets and optional 2024 solar share (fractions 0–1)',
+      endpoint: 'GET /api/v1/renewables/delivery-4/international-renewable-comparison',
+      method: 'GET',
+      parameters: [
+        'include_2050_targets (optional, bool, default true)',
+        'include_solar_share (optional, bool, default true)',
+      ],
+      responseExample: `{
+  "title_he": "אנרגיות מתחדשות יעדים מול ייצור בפועל",
+  "regions": [{ "region": "Israel", "region_he": "ישראל", "renewable_target_2030": 0.3, "solar_share_2024": 0.146, "renewable_target_2050": 0.77 }],
+  "regions_without_solar_data": []
+}`
+    },
+    {
+      id: 'renewables-delivery-4-international-renewable-comparison-export',
+      title: 'ייצוא השוואה בינלאומית',
+      description: 'Export international renewable comparison to Excel (same filter query params as GET)',
+      endpoint: 'GET /api/v1/renewables/delivery-4/international-renewable-comparison/export',
+      method: 'GET',
+      parameters: [
+        'include_2050_targets (optional, bool, default true)',
+        'include_solar_share (optional, bool, default true)',
+      ],
+      responseExample: 'Streamed Excel file'
+    },
     // Renewables Potential by Industry Endpoints
     {
       id: 'renewables-potential-by-industry',
@@ -901,6 +951,10 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
     // Renewables Transition
     { id: 'renewables-transition', name: 'National transition to renewables', endpoint: 'api/v1/renewables/transition', method: 'GET', category: 'Renewables' },
     { id: 'renewables-transition-export', name: 'Export renewables transition', endpoint: 'api/v1/renewables/transition/export', method: 'GET', category: 'Renewables' },
+    { id: 'renewables-delivery-4-renewable-forecast-israel', name: 'Israel renewable forecast vs targets', endpoint: 'api/v1/renewables/delivery-4/', method: 'GET', category: 'Renewables' },
+    { id: 'renewables-delivery-4-renewable-forecast-israel-export', name: 'Export Israel renewable forecast vs targets', endpoint: 'api/v1/renewables/delivery-4/renewable-forecast-israel/export', method: 'GET', category: 'Renewables' },
+    { id: 'renewables-delivery-4-international-renewable-comparison', name: 'International renewable targets vs actual', endpoint: 'api/v1/renewables/delivery-4/international-renewable-comparison', method: 'GET', category: 'Renewables' },
+    { id: 'renewables-delivery-4-international-renewable-comparison-export', name: 'Export international renewable comparison', endpoint: 'api/v1/renewables/delivery-4/international-renewable-comparison/export', method: 'GET', category: 'Renewables' },
     // Renewables Potential by Industry
     { id: 'renewables-potential-by-industry', name: 'Renewables potential by industry', endpoint: 'api/v1/renewables/potential-by-industry', method: 'GET', category: 'Renewables' },
     { id: 'renewables-potential-by-industry-export', name: 'Export renewables potential by industry', endpoint: 'api/v1/renewables/potential-by-industry/export', method: 'GET', category: 'Renewables' },

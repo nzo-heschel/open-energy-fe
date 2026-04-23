@@ -20,7 +20,8 @@ import TooltipInfo from "../TooltipInfo";
 import {
     useResponseCapacityBySize,
     exportResponseCapacityBySize,
-    ResponseCapacityBySizeFilters
+    ResponseCapacityBySizeFilters,
+    useResponseCapacityByPeriod,
 } from "@/lib/api";
 
 // Size bracket configuration with colors and Hebrew labels (matching Figma - 4 categories)
@@ -297,6 +298,14 @@ export default function RequestTwo() {
     // Fetch data from API
     const { data: apiData, isLoading, error } = useResponseCapacityBySize(filters);
 
+    // Current year/month for "last month" view (by-size does not support month grouping)
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonthKey = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    // Fetch monthly data for the current year from by-period
+    const { data: periodData } = useResponseCapacityByPeriod({ year: currentYear });
+
     // Transform API data for chart - use yearly_series and map to 4 categories
     const allYearData = useMemo(() => {
         if (!apiData?.yearly_series) return [];
@@ -344,11 +353,24 @@ export default function RequestTwo() {
     );
 
     const chartData = useMemo(() => {
-        if (allYearData.length === 0) return [];
-
         if (showLatestMonth) {
-            return [allYearData[allYearData.length - 1]];
+            const match = periodData?.series?.find((item: any) => item.period === currentMonthKey);
+            if (!match) return [];
+            const value = activeTab === "supply"
+                ? Number(match.total_mw || 0)
+                : Number(match.request_count || 0);
+            // by-period has no size breakdown — put the month total into a single bracket
+            return [{
+                year: match.period,
+                small: 0,
+                medium: 0,
+                large: 0,
+                xlarge: isNaN(value) ? 0 : value,
+                total: isNaN(value) ? 0 : value,
+            }];
         }
+
+        if (allYearData.length === 0) return [];
 
         if (selectedYears.length === 0) {
             return allYearData;
@@ -356,7 +378,7 @@ export default function RequestTwo() {
 
         const yearSet = new Set(selectedYears.map((year) => Number(year)));
         return allYearData.filter((item: any) => yearSet.has(item.year));
-    }, [allYearData, selectedYears, showLatestMonth]);
+    }, [allYearData, selectedYears, showLatestMonth, periodData, activeTab, currentMonthKey]);
 
     // Dynamic bar size based on number of data points
     const barSize = chartData.length <= 1 ? 120 : (chartData.length <= 3 ? 80 : 60);

@@ -50,7 +50,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             <div className="text-xs text-gray-500 mb-2">{label}</div>
             <div className="md:text-base text-sm font-medium mb-3 border-b border-[#707585]">{totalMW ? `${totalMW.toLocaleString()} MW` : `סה״כ ${payloadPoint.total}`}</div>
 
-            {series.map((s) => {
+            {[...series].reverse().map((s) => {
                 const mwKey = `${s.key}MW` as keyof typeof payloadPoint;
                 return (
                     <div key={s.key} className="flex items-center gap-3 mb-1">
@@ -100,11 +100,13 @@ export default function RenewableProduction() {
         }
 
         return apiData.series.map((item) => {
-            const totalMW = (item.solar_mw || 0) + (item.wind_mw || 0) + (item.other_mw || 0);
+            const totalMW =
+                item.total_mwh ??
+                ((item.solar_mwh || 0) + (item.wind_mwh || 0) + (item.other_mwh || 0));
             // Calculate percentage shares for stacked bar heights
-            const solarPercent = totalMW > 0 ? ((item.solar_mw || 0) / totalMW) * 100 : 0;
-            const windPercent = totalMW > 0 ? ((item.wind_mw || 0) / totalMW) * 100 : 0;
-            const otherPercent = totalMW > 0 ? ((item.other_mw || 0) / totalMW) * 100 : 0;
+            const solarPercent = totalMW > 0 ? ((item.solar_mwh || 0) / totalMW) * 100 : 0;
+            const windPercent = totalMW > 0 ? ((item.wind_mwh || 0) / totalMW) * 100 : 0;
+            const otherPercent = totalMW > 0 ? ((item.other_mwh || 0) / totalMW) * 100 : 0;
 
             return {
                 period: item.period,
@@ -113,9 +115,9 @@ export default function RenewableProduction() {
                 solar: Math.round(solarPercent),
                 wind: Math.round(windPercent),
                 other: Math.round(otherPercent),
-                solarMW: item.solar_mw || 0,
-                windMW: item.wind_mw || 0,
-                otherMW: item.other_mw || 0,
+                solarMW: item.solar_mwh || 0,
+                windMW: item.wind_mwh || 0,
+                otherMW: item.other_mwh || 0,
             };
         });
     }, [apiData]);
@@ -125,7 +127,7 @@ export default function RenewableProduction() {
 
     const CustomRightLegend = () => (
         <div className="flex md:flex-col gap-4 items-start p-4">
-            {series.map((s) => (
+            {[...series].reverse().map((s) => (
                 <div
                     key={s.key}
                     onMouseEnter={() => setActiveSeries(s.key)}

@@ -553,20 +553,28 @@ export type HeatLoadVsGenerationResponse = {
 export type RenewablesProductionMixResponse = {
   start_date: string;
   end_date: string;
-  view: 'day' | 'month' | 'year';
-  total_renewable_mw: number;
-  breakdown: Array<{
-    type: 'photovoltaic' | 'wind' | 'other';
-    value: number;
-    share_percent: number;
-  }>;
+  filter: 'day' | 'month' | 'year';
+  category_filter: 'solar' | 'wind' | 'other' | null;
   series: Array<{
     period: string;
     label?: string;
-    solar_mw: number;
-    wind_mw: number;
-    other_mw: number;
+    solar_mwh: number;
+    wind_mwh: number;
+    other_mwh: number;
+    total_mwh: number;
   }>;
+  totals: {
+    solar: number;
+    wind: number;
+    other: number;
+    total: number;
+  };
+  energy_types?: {
+    solar?: string;
+    wind?: string;
+    other?: string;
+  };
+  tooltip?: string;
 };
 
 // Renewables delivery-4 — forecast vs targets (fractions in [0, 1])
@@ -633,9 +641,40 @@ export type RenewablesDelivery4InternationalComparisonResponse = {
 
 // Renewables Transition API response
 export type RenewablesTransitionResponse = {
-  year: string;
-  renewable_share_percent: number;
-  monthly_totals: Array<{
+  year: number | string;
+  start_date?: string;
+  end_date?: string;
+  filter?: string;
+  series?: Array<{
+    date: string;
+    // Current API shape
+    renewable_mwh?: number;
+    renewable_share_percent?: number;
+    // Older shape with per-technology breakdown
+    solar_mwh?: number;
+    wind_mwh?: number;
+    other_mwh?: number;
+    total_mwh: number;
+  }>;
+  totals?: {
+    solar?: number;
+    wind?: number;
+    other?: number;
+    renewable?: number;
+    renewable_mwh?: number;
+    total?: number;
+    total_mwh?: number;
+  };
+  energy_types?: {
+    solar?: string;
+    wind?: string;
+    other?: string;
+  };
+  tooltip?: string;
+  source?: string;
+  // Legacy fields — older responses provided these; compute from `totals` / `series` when absent.
+  renewable_share_percent?: number;
+  monthly_totals?: Array<{
     month: string;
     renewable_mw: number;
     total_mw: number;

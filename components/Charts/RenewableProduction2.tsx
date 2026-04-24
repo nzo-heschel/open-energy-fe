@@ -14,8 +14,8 @@ import {
     YAxis,
 } from "recharts";
 import TooltipInfo from "../TooltipInfo";
+import YearMultiSelectDropdown from "../ui/YearMultiSelectDropdown";
 import { exportRenewablesTransition, useRenewablesTransition, exportRenewablesPotentialByIndustry, useRenewablesPotentialByIndustry } from "@/lib/api";
-import { ChevronDown } from "lucide-react";
 
 // Hebrew month names
 const hebrewMonths: Record<string, string> = {
@@ -32,8 +32,9 @@ const hebrewMonths: Record<string, string> = {
     "11": "נובמבר",
     "12": "דצמבר",
 };
+const MONTH_ORDER = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"];
 
-// Colors for different years
+// Year → color. 2021–2024 match the Figma palette exactly.
 const yearColors: Record<string, string> = {
     "2021": "#8BBFE1",
     "2022": "#3A7C2F",
@@ -43,166 +44,217 @@ const yearColors: Record<string, string> = {
     "2026": "#64B5F6",
 };
 
+// Fixed set of years we support. Hooks must be called in a stable order, so we
+// fetch this list unconditionally and let the dropdown filter which to render.
+const SUPPORTED_YEARS = ["2021", "2022", "2023", "2024", "2025", "2026"];
+
+const toNumber = (v: unknown): number => {
+    if (typeof v === 'number') return v;
+    if (typeof v === 'string') {
+        const parsed = parseFloat(v);
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+    return 0;
+};
+
+// Aggregate a daily renewables-transition series into a per-month share %.
+// Returns { "01": 12.3, "02": 14.1, ... } — keys are two-digit months.
+function aggregateMonthlyShare(series: Array<Record<string, unknown>> | undefined): Record<string, number> {
+    if (!series?.length) return {};
+    const monthly: Record<string, { renewable: number; total: number }> = {};
+    for (const raw of series) {
+        const item = raw as Record<string, unknown>;
+        const dateStr = (item.date ?? item.period ?? item.month) as string | undefined;
+        const monthNum = dateStr?.split('-')[1];
+        if (!monthNum) continue;
+        const renewable =
+            item.renewable_mwh !== undefined
+                ? toNumber(item.renewable_mwh)
+                : toNumber(item.solar_mwh ?? item.solar) +
+                  toNumber(item.wind_mwh ?? item.wind) +
+                  toNumber(item.other_mwh ?? item.other);
+        const total = toNumber(item.total_mwh ?? item.total);
+        const bucket = monthly[monthNum] ?? { renewable: 0, total: 0 };
+        bucket.renewable += renewable;
+        bucket.total += total;
+        monthly[monthNum] = bucket;
+    }
+    const result: Record<string, number> = {};
+    for (const [m, { renewable, total }] of Object.entries(monthly)) {
+        result[m] = total > 0 ? (renewable / total) * 100 : 0;
+    }
+    return result;
+}
 
 export default function RenewableProduction2() {
-    const [activeSeries, setActiveSeries] = useState<string | null>(null);
     const [tab, setTab] = useState(1);
     const [showTooltip, setShowTooltip] = useState(false);
     const currentYear = new Date().getFullYear();
-    const [selectedYear, setSelectedYear] = useState<string>(currentYear.toString());
 
-    // Generate available years (last 5 years)
-    const availableYears = useMemo(() => {
-        const years: string[] = [];
-        for (let i = 0; i < 5; i++) {
-            years.push((currentYear - i).toString());
-        }
-        return years;
-    }, [currentYear]);
+    // Multi-year selection — default to the four Figma years plus current year when available.
+    const defaultSelection = useMemo(
+        () => SUPPORTED_YEARS.filter((y) => ["2021", "2022", "2023", "2024"].includes(y)),
+        []
+    );
+    const [selectedYears, setSelectedYears] = useState<string[]>(defaultSelection);
+    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
+    const [hoveredYear, setHoveredYear] = useState<string | null>(null);
 
-    // Tab 1: Transition data (monthly)
-    const { data: transitionData, isLoading: transitionLoading, error: transitionError } = useRenewablesTransition(selectedYear);
+    // One query per supported year — stable hook order.
+    const q2021 = useRenewablesTransition("2021");
+    const q2022 = useRenewablesTransition("2022");
+    const q2023 = useRenewablesTransition("2023");
+    const q2024 = useRenewablesTransition("2024");
+    const q2025 = useRenewablesTransition("2025");
+    const q2026 = useRenewablesTransition("2026");
+    const yearData: Record<string, any> = {
+        "2021": q2021.data,
+        "2022": q2022.data,
+        "2023": q2023.data,
+        "2024": q2024.data,
+        "2025": q2025.data,
+        "2026": q2026.data,
+    };
+    const yearLoading: Record<string, boolean> = {
+        "2021": q2021.isLoading,
+        "2022": q2022.isLoading,
+        "2023": q2023.isLoading,
+        "2024": q2024.isLoading,
+        "2025": q2025.isLoading,
+        "2026": q2026.isLoading,
+    };
+    const yearError: Record<string, unknown> = {
+        "2021": q2021.error,
+        "2022": q2022.error,
+        "2023": q2023.error,
+        "2024": q2024.error,
+        "2025": q2025.error,
+        "2026": q2026.error,
+    };
 
-    // Tab 2: Potential by industry data
-    const { data: industryData, isLoading: industryLoading, error: industryError } = useRenewablesPotentialByIndustry(selectedYear);
+    // Tab 2: Potential by industry — use the newest selected year (or current) to drive it.
+    const industryYear = selectedYears.length > 0
+        ? selectedYears.slice().sort().slice(-1)[0]
+        : currentYear.toString();
+    const { data: industryData, isLoading: industryLoading, error: industryError } = useRenewablesPotentialByIndustry(industryYear);
 
-    // Determine loading/error based on current tab
+    // Years the user actually wants to see; fall back to "all" when the selection is empty.
+    const visibleYears = useMemo(() => {
+        const pool = selectedYears.length > 0 ? selectedYears : SUPPORTED_YEARS;
+        return pool.filter((y) => SUPPORTED_YEARS.includes(y)).sort();
+    }, [selectedYears]);
+
+    // Loading/error for Tab 1 is the union of the visible years' queries.
+    const transitionLoading = visibleYears.some((y) => yearLoading[y]);
+    const transitionError = visibleYears.some((y) => yearError[y]);
+
     const isLoading = tab === 1 ? transitionLoading : industryLoading;
     const error = tab === 1 ? transitionError : industryError;
 
-    const handleExport = async () => {
-        try {
-            if (tab === 1) {
-                await exportRenewablesTransition(selectedYear);
-            } else {
-                await exportRenewablesPotentialByIndustry(selectedYear);
-            }
-        } catch (error) {
-            console.error('Failed to export data:', error);
-        }
-    };
-
-    // Transform API data to chart format based on tab
-    const { chartData, series } = useMemo(() => {
-        if (tab === 1) {
-            // Tab 1: Monthly transition data
-            if (!transitionData?.monthly_totals) {
-                return { chartData: [], series: [] };
-            }
-
-            const yearSeries = [{
-                key: selectedYear,
-                label: selectedYear,
-                color: yearColors[selectedYear] || "#8BBFE1"
-            }];
-
-            const data = transitionData.monthly_totals.map((item) => {
-                const monthNum = item.month.split('-')[1];
-                const monthName = hebrewMonths[monthNum] || item.month;
-
-                return {
-                    month: monthName,
-                    [selectedYear]: item.renewable_mw,
-                    renewableMW: item.renewable_mw,
-                    totalMW: item.total_mw,
-                    sharePercent: item.renewable_share_percent,
-                };
-            });
-
-            return { chartData: data, series: yearSeries };
-        } else {
-            // Tab 2: Industry potential data
-            if (!industryData?.industry_breakdown) {
-                return { chartData: [], series: [] };
-            }
-
-            const industrySeries = [{
-                key: 'potential',
-                label: 'פוטנציאל מתחדשות',
-                color: "#7BC94A"
-            }];
-
-            const data = industryData.industry_breakdown.map((item) => ({
+    // Build the monthly grouped-bar data: one row per month, one key per visible year.
+    const chartData = useMemo(() => {
+        if (tab !== 1) {
+            if (!industryData?.industry_breakdown) return [] as any[];
+            return industryData.industry_breakdown.map((item) => ({
                 month: item.industry_type,
                 potential: item.renewable_potential_mw,
                 renewableMW: item.renewable_potential_mw,
                 solarShare: item.solar_share_percent,
             }));
-
-            return { chartData: data, series: industrySeries };
         }
-    }, [transitionData, industryData, selectedYear, tab]);
 
-    const opacityForKey = (key: string) =>
-        activeSeries && activeSeries !== key ? 0.18 : 1;
+        const perYear: Record<string, Record<string, number>> = {};
+        for (const y of visibleYears) {
+            perYear[y] = aggregateMonthlyShare(yearData[y]?.series);
+        }
 
-    // Custom tooltip
+        return MONTH_ORDER.map((monthNum) => {
+            const row: Record<string, unknown> = { month: hebrewMonths[monthNum] };
+            for (const y of visibleYears) {
+                const pct = perYear[y]?.[monthNum];
+                if (typeof pct === 'number' && pct > 0) {
+                    row[y] = Number(pct.toFixed(2));
+                }
+            }
+            return row;
+        }).filter((row) => visibleYears.some((y) => typeof row[y] === 'number'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tab, industryData, visibleYears, q2021.data, q2022.data, q2023.data, q2024.data, q2025.data, q2026.data]);
+
+    // Series metadata for the legend (reversed so the most recent year sits first in RTL).
+    const legendSeries = useMemo(
+        () => visibleYears.map((y) => ({
+            key: y,
+            label: y,
+            color: yearColors[y] ?? "#999999",
+        })),
+        [visibleYears]
+    );
+
+    const handleExport = async () => {
+        try {
+            if (tab === 1) {
+                // Export the most recent selected year (server endpoint is single-year).
+                await exportRenewablesTransition(visibleYears[visibleYears.length - 1]);
+            } else {
+                await exportRenewablesPotentialByIndustry(industryYear);
+            }
+        } catch (err) {
+            console.error('Failed to export data:', err);
+        }
+    };
+
+    const opacityForKey = (key: string) => (hoveredYear && hoveredYear !== key ? 0.25 : 1);
+
+    // Tooltip: month header + total of shown percentages + per-year rows (Figma layout).
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (!active || !payload || payload.length === 0) return null;
 
-        const dataPoint = payload[0]?.payload;
+        if (tab === 2) {
+            const dataPoint = payload[0]?.payload;
+            return (
+                <div className="rounded-lg shadow-xl border border-[#DEDEDE] bg-white p-3 min-w-[160px] text-sm">
+                    <div className="text-sm text-gray-500 mb-2">{label}</div>
+                    <div className="text-sm font-medium mb-1">
+                        פוטנציאל מתחדשות: <span className="font-bold">{dataPoint?.renewableMW?.toLocaleString()} MW</span>
+                    </div>
+                    <div className="text-sm font-medium border-t border-[#707585] pt-1 mt-1">
+                        חלק סולארי: <span className="font-bold">{dataPoint?.solarShare?.toFixed(1)}%</span>
+                    </div>
+                </div>
+            );
+        }
+
+        const rows = legendSeries
+            .map((s) => {
+                const entry = payload.find((p: any) => p.dataKey === s.key);
+                const value = entry ? Number(entry.value) : undefined;
+                return typeof value === 'number' ? { ...s, value } : null;
+            })
+            .filter((r): r is { key: string; label: string; color: string; value: number } => r !== null);
+
+        const total = rows.reduce((sum, r) => sum + r.value, 0);
 
         return (
-            <div className="rounded-lg shadow-xl border border-[#DEDEDE] bg-white p-3 min-w-[160px] text-sm">
-                <div className="text-sm text-gray-500 mb-2">{label}</div>
-                {tab === 1 ? (
-                    <>
-                        <div className="text-sm font-medium mb-1">
-                            אנרגיה מתחדשת: <span className="font-bold">{dataPoint?.renewableMW?.toLocaleString()} MW</span>
+            <div className="rounded-lg shadow-xl border border-[#DEDEDE] bg-white p-3 min-w-[140px] text-sm">
+                <div className="text-sm text-[#707585] mb-1 text-right">{label}</div>
+                <div className="text-base font-medium text-[#59687D] border-b border-[#707585] pb-1 mb-2 text-right">
+                    סה״כ {total.toFixed(0)}%
+                </div>
+                <div className="flex flex-col gap-1">
+                    {rows.map((r) => (
+                        <div key={r.key} className="flex flex-row-reverse items-center justify-between gap-3">
+                            <div className="flex flex-row-reverse items-center gap-2">
+                                <span className="w-2 h-2 rounded-full" style={{ background: r.color }} />
+                                <span className="text-sm text-[#59687D]">{r.label}</span>
+                            </div>
+                            <span className="text-sm font-medium text-[#484C56]">{r.value.toFixed(0)}%</span>
                         </div>
-                        <div className="text-sm font-medium mb-1">
-                            סה״כ ייצור: <span className="font-bold">{dataPoint?.totalMW?.toLocaleString()} MW</span>
-                        </div>
-                        <div className="text-sm font-medium border-t border-[#707585] pt-1 mt-1">
-                            אחוז מתחדשות: <span className="font-bold">{dataPoint?.sharePercent?.toFixed(1)}%</span>
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <div className="text-sm font-medium mb-1">
-                            פוטנציאל מתחדשות: <span className="font-bold">{dataPoint?.renewableMW?.toLocaleString()} MW</span>
-                        </div>
-                        <div className="text-sm font-medium border-t border-[#707585] pt-1 mt-1">
-                            חלק סולארי: <span className="font-bold">{dataPoint?.solarShare?.toFixed(1)}%</span>
-                        </div>
-                    </>
-                )}
+                    ))}
+                </div>
             </div>
         );
     };
-
-    // Custom legend under the chart
-    const CustomLegend = () => (
-        <div className="flex justify-start gap-6 mt-4">
-            {series.map((s) => (
-                <div
-                    key={s.key}
-                    onMouseEnter={() => setActiveSeries(s.key)}
-                    onMouseLeave={() => setActiveSeries(null)}
-                    className="flex items-center gap-2 cursor-pointer select-none"
-                >
-                    <span
-                        style={{
-                            background: s.color,
-                            opacity: activeSeries && activeSeries !== s.key ? 0.3 : 1,
-                        }}
-                        className="w-2 h-2 rounded-full inline-block"
-                    />
-                    <span className="md:text-sm text-xs">{s.label}</span>
-                </div>
-            ))}
-            {tab === 1 && transitionData?.renewable_share_percent !== undefined && (
-                <div className="text-sm text-gray-600 mr-auto">
-                    ממוצע שנתי: {transitionData.renewable_share_percent.toFixed(1)}%
-                </div>
-            )}
-            {tab === 2 && industryData?.total_potential_mw !== undefined && (
-                <div className="text-sm text-gray-600 mr-auto">
-                    סה״כ פוטנציאל: {industryData.total_potential_mw.toLocaleString()} MW
-                </div>
-            )}
-        </div>
-    );
 
     return (
         <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[20px] p-6">
@@ -229,7 +281,6 @@ export default function RenewableProduction2() {
                                 </g>
                             </svg>
 
-                            {/* Tooltip that appears on hover */}
                             {showTooltip && (
                                 <div className="absolute top-full left-1/2 -translate-x-1/2 mb-2 z-50">
                                     <TooltipInfo
@@ -245,20 +296,14 @@ export default function RenewableProduction2() {
                     </h2>
                     <div className="flex items-center gap-2">
                         <span className="text-sm text-slate-600">בחר שנה:</span>
-                        <div className="relative w-[120px]">
-                            <select
-                                value={selectedYear}
-                                onChange={(e) => setSelectedYear(e.target.value)}
-                                className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
-                                style={{ fontFamily: 'Heebo, sans-serif' }}
-                            >
-                                {availableYears.map((year) => (
-                                    <option key={year} value={year}>{year}</option>
-                                ))}
-                            </select>
-                            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-black text-xs">
-                                <ChevronDown size={14} />
-                            </span>
+                        <div className="relative w-[140px]">
+                            <YearMultiSelectDropdown
+                                selectedYears={selectedYears}
+                                onChange={setSelectedYears}
+                                options={SUPPORTED_YEARS.slice().sort((a, b) => Number(b) - Number(a))}
+                                isOpen={isYearDropdownOpen}
+                                setIsOpen={setIsYearDropdownOpen}
+                            />
                         </div>
                     </div>
                 </div>
@@ -298,36 +343,72 @@ export default function RenewableProduction2() {
                         <ComposedChart
                             data={chartData}
                             margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
+                            barGap={6}
+                            barCategoryGap="20%"
                         >
                             <CartesianGrid vertical={false} strokeDasharray="6 6" />
                             <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                             <YAxis
                                 tick={{ fontSize: 12 }}
+                                domain={tab === 1 ? [0, (dataMax: number) => Math.max(5, Math.ceil(dataMax * 1.15))] : [0, 'auto' as any]}
+                                tickFormatter={(v) => tab === 1 ? `${v}` : Number(v).toLocaleString()}
                                 label={{
-                                    value: "[MW]",
+                                    value: tab === 1 ? "אחוז מכלל הייצור %" : "[MW]",
                                     angle: -90,
                                     position: "insideLeft",
                                     style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
                                 }}
                             />
-                            <Tooltip content={<CustomTooltip />} />
-                            {series.map((s) => (
-                                <Bar
-                                    key={s.key}
-                                    dataKey={s.key}
-                                    fill={s.color}
-                                    barSize={28}
-                                    radius={[4, 4, 0, 0]}
-                                    opacity={opacityForKey(s.key)}
-                                />
-                            ))}
+                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.03)' }} />
+                            {tab === 1
+                                ? legendSeries.map((s) => (
+                                    <Bar
+                                        key={s.key}
+                                        dataKey={s.key}
+                                        fill={s.color}
+                                        barSize={13}
+                                        radius={[2, 2, 0, 0]}
+                                        opacity={opacityForKey(s.key)}
+                                    />
+                                ))
+                                : (
+                                    <Bar
+                                        dataKey="potential"
+                                        fill="#7BC94A"
+                                        barSize={28}
+                                        radius={[4, 4, 0, 0]}
+                                    />
+                                )}
                         </ComposedChart>
                     </ResponsiveContainer>
                 )}
             </div>
-            {!isLoading && !error && chartData.length > 0 && <CustomLegend />}
 
-
+            {/* Legend — matches Figma: year + colored dot, laid out RTL at bottom */}
+            {!isLoading && !error && chartData.length > 0 && tab === 1 && (
+                <div className="flex flex-row-reverse justify-end flex-wrap gap-6 mt-4">
+                    {legendSeries.map((s) => (
+                        <button
+                            key={s.key}
+                            type="button"
+                            onMouseEnter={() => setHoveredYear(s.key)}
+                            onMouseLeave={() => setHoveredYear(null)}
+                            className="flex flex-row-reverse items-center gap-[10px] cursor-pointer select-none transition-opacity"
+                            style={{ opacity: hoveredYear && hoveredYear !== s.key ? 0.5 : 1 }}
+                        >
+                            <span className="text-base font-medium text-[#484C56]">{s.label}</span>
+                            <span className="w-2 h-2 rounded-full" style={{ background: s.color }} />
+                        </button>
+                    ))}
+                </div>
+            )}
+            {!isLoading && !error && chartData.length > 0 && tab === 2 && industryData?.total_potential_mw !== undefined && (
+                <div className="flex justify-end mt-4">
+                    <div className="text-sm text-gray-600">
+                        סה״כ פוטנציאל: {industryData.total_potential_mw.toLocaleString()} MW
+                    </div>
+                </div>
+            )}
 
             {/* Tabs */}
             <div className="flex  gap-1 md:p-[6px] p-1 rounded-full bg-[#F8F8F8] mb-4 w-fit ml-auto mt-4 md:-mt-10" style={{ boxShadow: "inset 0px 4px 10px 0px #0000001A" }}>

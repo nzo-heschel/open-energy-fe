@@ -1,9 +1,10 @@
 "use client";
 
+import { exportRenewablesPotentialByIndustry, exportRenewablesTransition, useRenewablesPotentialByIndustry, useRenewablesTransition } from "@/lib/api";
 import api from '@/public/images/API.png';
 import download from '@/public/images/download_2.png';
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
     Bar,
     CartesianGrid,
@@ -14,8 +15,6 @@ import {
     YAxis,
 } from "recharts";
 import TooltipInfo from "../TooltipInfo";
-import YearMultiSelectDropdown from "../ui/YearMultiSelectDropdown";
-import { exportRenewablesTransition, useRenewablesTransition, exportRenewablesPotentialByIndustry, useRenewablesPotentialByIndustry } from "@/lib/api";
 
 // Hebrew month names
 const hebrewMonths: Record<string, string> = {
@@ -71,8 +70,8 @@ function aggregateMonthlyShare(series: Array<Record<string, unknown>> | undefine
             item.renewable_mwh !== undefined
                 ? toNumber(item.renewable_mwh)
                 : toNumber(item.solar_mwh ?? item.solar) +
-                  toNumber(item.wind_mwh ?? item.wind) +
-                  toNumber(item.other_mwh ?? item.other);
+                toNumber(item.wind_mwh ?? item.wind) +
+                toNumber(item.other_mwh ?? item.other);
         const total = toNumber(item.total_mwh ?? item.total);
         const bucket = monthly[monthNum] ?? { renewable: 0, total: 0 };
         bucket.renewable += renewable;
@@ -91,14 +90,26 @@ export default function RenewableProduction2() {
     const [showTooltip, setShowTooltip] = useState(false);
     const currentYear = new Date().getFullYear();
 
-    // Multi-year selection — default to the four Figma years plus current year when available.
-    const defaultSelection = useMemo(
-        () => SUPPORTED_YEARS.filter((y) => ["2021", "2022", "2023", "2024"].includes(y)),
-        []
-    );
-    const [selectedYears, setSelectedYears] = useState<string[]>(defaultSelection);
-    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
+    // Multi-year selection — default to all supported years.
+    const [selectedYears] = useState<string[]>(SUPPORTED_YEARS);
     const [hoveredYear, setHoveredYear] = useState<string | null>(null);
+    const [pinnedYear, setPinnedYear] = useState<string | null>(null);
+    const legendRef = useRef<HTMLDivElement>(null);
+
+    // Clicking outside the legend unpins the highlighted year.
+    useEffect(() => {
+        if (!pinnedYear) return;
+        const handleClickOutside = (e: MouseEvent) => {
+            if (legendRef.current && !legendRef.current.contains(e.target as Node)) {
+                setPinnedYear(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [pinnedYear]);
+
+    // Pin wins over hover; once pinned, hover is ignored until unpinned.
+    const activeYear = pinnedYear ?? hoveredYear;
 
     // One query per supported year — stable hook order.
     const q2021 = useRenewablesTransition("2021");
@@ -178,7 +189,7 @@ export default function RenewableProduction2() {
             }
             return row;
         }).filter((row) => visibleYears.some((y) => typeof row[y] === 'number'));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tab, industryData, visibleYears, q2021.data, q2022.data, q2023.data, q2024.data, q2025.data, q2026.data]);
 
     // Series metadata for the legend (reversed so the most recent year sits first in RTL).
@@ -204,7 +215,7 @@ export default function RenewableProduction2() {
         }
     };
 
-    const opacityForKey = (key: string) => (hoveredYear && hoveredYear !== key ? 0.25 : 1);
+    const opacityForKey = (key: string) => (activeYear && activeYear !== key ? 0.25 : 1);
 
     // Tooltip: month header + total of shown percentages + per-year rows (Figma layout).
     const CustomTooltip = ({ active, payload, label }: any) => {
@@ -294,18 +305,7 @@ export default function RenewableProduction2() {
                             )}
                         </div>
                     </h2>
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-600">בחר שנה:</span>
-                        <div className="relative w-[140px]">
-                            <YearMultiSelectDropdown
-                                selectedYears={selectedYears}
-                                onChange={setSelectedYears}
-                                options={SUPPORTED_YEARS.slice().sort((a, b) => Number(b) - Number(a))}
-                                isOpen={isYearDropdownOpen}
-                                setIsOpen={setIsYearDropdownOpen}
-                            />
-                        </div>
-                    </div>
+
                 </div>
                 <div className="flex items-start md:gap-4 gap-2">
                     <a
@@ -344,7 +344,7 @@ export default function RenewableProduction2() {
                             data={chartData}
                             margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
                             barGap={6}
-                            barCategoryGap="20%"
+                            barCategoryGap="30%"
                         >
                             <CartesianGrid vertical={false} strokeDasharray="6 6" />
                             <XAxis dataKey="month" tick={{ fontSize: 12 }} />
@@ -353,7 +353,7 @@ export default function RenewableProduction2() {
                                 domain={tab === 1 ? [0, (dataMax: number) => Math.max(5, Math.ceil(dataMax * 1.15))] : [0, 'auto' as any]}
                                 tickFormatter={(v) => tab === 1 ? `${v}` : Number(v).toLocaleString()}
                                 label={{
-                                    value: tab === 1 ? "אחוז מכלל הייצור %" : "[MW]",
+                                    value: tab === 1 ? "אחוז מכלל הייצור [%]" : "[MW]",
                                     angle: -90,
                                     position: "insideLeft",
                                     style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
@@ -366,7 +366,7 @@ export default function RenewableProduction2() {
                                         key={s.key}
                                         dataKey={s.key}
                                         fill={s.color}
-                                        barSize={13}
+                                        barSize={10}
                                         radius={[2, 2, 0, 0]}
                                         opacity={opacityForKey(s.key)}
                                     />
@@ -386,15 +386,23 @@ export default function RenewableProduction2() {
 
             {/* Legend — matches Figma: year + colored dot, laid out RTL at bottom */}
             {!isLoading && !error && chartData.length > 0 && tab === 1 && (
-                <div className="flex flex-row-reverse justify-end flex-wrap gap-6 mt-4">
+                <div ref={legendRef} className="flex flex-row-reverse justify-end flex-wrap gap-6 mt-4">
                     {legendSeries.map((s) => (
                         <button
                             key={s.key}
                             type="button"
-                            onMouseEnter={() => setHoveredYear(s.key)}
-                            onMouseLeave={() => setHoveredYear(null)}
+                            onMouseEnter={() => {
+                                if (!pinnedYear) setHoveredYear(s.key);
+                            }}
+                            onMouseLeave={() => {
+                                if (!pinnedYear) setHoveredYear(null);
+                            }}
+                            onClick={() => {
+                                setHoveredYear(null);
+                                setPinnedYear((prev) => (prev === s.key ? null : s.key));
+                            }}
                             className="flex flex-row-reverse items-center gap-[10px] cursor-pointer select-none transition-opacity"
-                            style={{ opacity: hoveredYear && hoveredYear !== s.key ? 0.5 : 1 }}
+                            style={{ opacity: activeYear && activeYear !== s.key ? 0.5 : 1 }}
                         >
                             <span className="text-base font-medium text-[#484C56]">{s.label}</span>
                             <span className="w-2 h-2 rounded-full" style={{ background: s.color }} />

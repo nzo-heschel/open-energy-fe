@@ -1,22 +1,22 @@
 "use client";
 
+import { exportRenewablesProductionMix, useRenewablesProductionMix } from "@/lib/api";
+import api from '@/public/images/API.png';
+import download from '@/public/images/download_2.png';
+import { format, subDays } from "date-fns";
 import Image from "next/image";
-import React, { useMemo, useState } from "react";
-import download from '@/public/images/download_2.png'
-import api from '@/public/images/API.png'
+import { useMemo, useState } from "react";
 import {
-    ResponsiveContainer,
+    Bar,
+    CartesianGrid,
     ComposedChart,
+    LabelList,
+    ResponsiveContainer,
+    Tooltip,
     XAxis,
     YAxis,
-    CartesianGrid,
-    Tooltip,
-    Bar,
-    LabelList,
 } from "recharts";
 import TooltipInfo from "../TooltipInfo";
-import { exportRenewablesProductionMix, useRenewablesProductionMix } from "@/lib/api";
-import { format, subDays } from "date-fns";
 import DateRangePicker from "../ui/DateRangePicker";
 
 type DataPoint = {
@@ -247,7 +247,7 @@ export default function RenewableProduction() {
                                 <Tooltip content={<CustomTooltip />} />
                                 {/* Bars (stacked): order matters for stack visual */}
                                 <Bar
-                                    dataKey="other"
+                                    dataKey="otherMW"
                                     stackId="a"
                                     fill={series[0].color}
                                     radius={[0, 0, 0, 0]}
@@ -255,7 +255,7 @@ export default function RenewableProduction() {
                                     opacity={opacityForKey("other")}
                                 />
                                 <Bar
-                                    dataKey="solar"
+                                    dataKey="solarMW"
                                     stackId="a"
                                     fill={series[1].color}
                                     radius={[0, 0, 0, 0]}
@@ -263,7 +263,7 @@ export default function RenewableProduction() {
                                     opacity={opacityForKey("solar")}
                                 />
                                 <Bar
-                                    dataKey="wind"
+                                    dataKey="windMW"
                                     stackId="a"
                                     fill={series[2].color}
                                     radius={[4, 4, 0, 0]}

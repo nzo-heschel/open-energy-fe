@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: 'פלטפורמת נתוני אנרגיה פתוחה - NZO',
   description: 'פלטפורמה ציבורית לחקר וניתוח נתוני אנרגיה ופליטות בישראל',
   keywords: 'אנרגיה, פליטות, CO2, אנרגיה מתחדשת, ישראל, נתונים',
-}; // TODO: delete this comment (needed for redeployment)
+};
 
 export default function RootLayout({
   children,

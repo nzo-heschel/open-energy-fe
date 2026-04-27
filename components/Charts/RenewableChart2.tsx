@@ -119,16 +119,6 @@ function rowStackSum(r: ChartRow): number {
         .reduce((a, b) => a + b, 0);
 }
 
-/** Country name above the outer end of the stacked bar (Figma) */
-type RechartsLabelProps = {
-    x?: number | string;
-    y?: number | string;
-    width?: number | string;
-    height?: number | string;
-    value?: number | string;
-    payload?: ChartRow;
-};
-
 function makeCumulativeSegmentLabel(dataKey: keyof ChartRow, chartData: ChartRow[]) {
     /** Recharts strips non-SVG fields from `content` props — use `index` + `chartData` for row labels */
     function CumulativeSegmentLabel(props: any) {
@@ -196,18 +186,18 @@ function CountryNameLabel(props: {
     const wNum = typeof props.width === "number" ? props.width : Number(props.width) || 0;
     const label = props.value ?? props.payload?.country;
     if (!label) return null;
-    const barRight = xNum + wNum;
+    const barEnd = xNum + wNum;
     const ty = yNum - 14;
     return (
         <text
-            x={barRight}
+            x={barEnd}
             y={ty}
             dominantBaseline="hanging"
             textAnchor="end"
-            style={{ direction: "rtl" }}
+            style={{ direction: "ltr" }}
             fill="#484C56"
-            fontSize={13}
-            fontWeight={700}
+            fontSize={14}
+            fontWeight={400}
         >
             {label}
         </text>
@@ -279,7 +269,7 @@ export default function RenewableChart2() {
             dataKey: "target2030Pct",
             color: colors.target2030Pct,
             label: labels?.renewable_target_2030?.he ?? "יעדים ל-2030",
-            toggleable: false,
+            toggleable: true,
             enabled: true,
         });
         rows.push({
@@ -436,13 +426,46 @@ export default function RenewableChart2() {
                 </div>
             </div>
 
-            {/* dir=ltr: chart on the left, legend column on the physical right */}
+            {/* Legend at top */}
+            <nav className="flex flex-row gap-6 items-center text-right mb-6 justify-start" aria-label="מקרא" dir="rtl">
+                {legendRows.map((row) => (
+                    <button
+                        key={row.dataKey}
+                        type="button"
+                        disabled={!row.toggleable}
+                        className={`flex items-center gap-2.5 transition-opacity duration-200 border-0 bg-transparent p-0 ${row.toggleable ? "cursor-pointer" : "cursor-default"
+                            }`}
+                        style={{ opacity: legendRowOpacity(row) }}
+                        onClick={() => handleLegendRowClick(row)}
+                        onMouseEnter={() => handleLegendMouseEnter(row)}
+                        onMouseLeave={handleLegendMouseLeave}
+                    >
+                        <span
+                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{ backgroundColor: row.color }}
+                        />
+                        <span
+                            className={`text-sm leading-tight ${row.toggleable && row.enabled
+                                ? "font-medium text-[#484C56]"
+                                : row.toggleable
+                                    ? "font-medium text-gray-400"
+                                    : "font-medium text-[#484C56]"
+                                }`}
+                        >
+                            {row.label}
+                        </span>
+
+                    </button>
+                ))}
+            </nav>
+
+            {/* Chart area */}
             <div
-                className="flex flex-col md:flex-row md:items-start gap-6 md:gap-8"
+                className="flex flex-col md:flex-row md:items-start gap-6 md:gap-8 relative"
                 dir="ltr"
             >
                 <div className="w-full min-w-0 flex-1 h-[320px] md:h-[500px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="70%" height="100%">
                         <BarChart
                             data={chartData}
                             layout="vertical"
@@ -499,56 +522,23 @@ export default function RenewableChart2() {
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
-
-                <div className="flex flex-col gap-5 shrink-0 w-full md:w-[220px] md:pt-1" dir="rtl">
-                    <nav className="flex flex-col gap-2.5 items-stretch text-right" aria-label="מקרא">
-                        {legendRows.map((row) => (
-                            <button
-                                key={row.dataKey}
-                                type="button"
-                                disabled={!row.toggleable}
-                                className={`flex items-center justify-end gap-2.5 transition-opacity duration-200 border-0 bg-transparent p-0 w-full ${row.toggleable ? "cursor-pointer" : "cursor-default"
-                                    }`}
-                                style={{ opacity: legendRowOpacity(row) }}
-                                onClick={() => handleLegendRowClick(row)}
-                                onMouseEnter={() => handleLegendMouseEnter(row)}
-                                onMouseLeave={handleLegendMouseLeave}
-                            >
-                                <span
-                                    className={`text-sm leading-tight ${row.toggleable && row.enabled
-                                        ? "font-medium text-[#484C56]"
-                                        : row.toggleable
-                                            ? "font-medium text-gray-400"
-                                            : "font-medium text-[#484C56]"
-                                        }`}
-                                >
-                                    {row.label}
-                                </span>
-                                <span
-                                    className="w-2.5 h-2.5 rounded-full shrink-0 mt-0.5"
-                                    style={{ backgroundColor: row.color }}
-                                />
-                            </button>
-                        ))}
-                    </nav>
-
-                    {missingSolarSide ? (
-                        <aside className="w-full">
-                            <div className="w-full bg-[#F8F8F8] text-[#484C56] text-sm border border-dashed border-[#BDBDBD] rounded-[10px] p-3 relative text-right">
-                                <div className="absolute -top-2 end-3 text-xl font-extrabold text-[#59687D]">
-                                    *
-                                </div>
-                                <h4 className="font-bold mb-1">נתוני אנרגיה סולארית חסרים עבור:</h4>
-                                <ul className="list-none font-normal space-y-0.5">
-                                    {data?.regions_without_solar_data?.map((name) => (
-                                        <li key={name}>{name}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </aside>
-                    ) : null}
-                </div>
             </div>
+
+            {missingSolarSide ? (
+                <div className="absolute bottom-[30px] translate-y-[-100%] start-[100px]  w-[280px]">
+                    <div className="bg-[#F8F8F8] text-[#484C56] text-sm border border-dashed border-[#BDBDBD] rounded-[10px] p-3 relative text-right">
+                        <div className="absolute -top-2 end-3 text-xl font-extrabold text-[#59687D]">
+                            *
+                        </div>
+                        <h4 className="font-bold mb-1">נתוני אנרגיה סולארית חסרים עבור:</h4>
+                        <ul className="list-none font-normal space-y-0.5">
+                            {data?.regions_without_solar_data?.map((name) => (
+                                <li key={name}>{name}</li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 }

@@ -17,7 +17,6 @@ import {
     Legend,
     ResponsiveContainer,
     LabelList,
-    ReferenceLine,
 } from "recharts";
 import {
     exportRenewablesDelivery4RenewableForecastIsrael,
@@ -83,7 +82,6 @@ export default function RenewableChart() {
     const [exporting, setExporting] = useState(false);
 
     const { data, isLoading, error } = useRenewablesDelivery4();
-
     const { chartData, lastYearWithActual } = useMemo(
         () => buildChartRows(data?.data ?? [], selectedPrediction),
         [data?.data, selectedPrediction]
@@ -110,6 +108,40 @@ export default function RenewableChart() {
             setExporting(false);
         }
     };
+
+    const getLineMetrics = () => {
+        if (chartData.length < 2) return { actual: { end: 0, angle: 0 }, ministry: { end: 0, angle: 0 }, nzo: { end: 0, angle: 0 }, historical: { end: 0, angle: 0 } };
+
+        const firstYear = chartData[0];
+        const lastYear = chartData[chartData.length - 1];
+
+        const calculateAngle = (startVal: number, endVal: number) => {
+            const rise = endVal - startVal;
+            const run = (chartData.length - 1) * 8;
+            return -Math.atan(rise / run) * (180 / Math.PI);
+        };
+
+        return {
+            actual: {
+                end: lastYear.actualLinePct,
+                angle: calculateAngle(firstYear.actualLinePct, lastYear.actualLinePct),
+            },
+            ministry: {
+                end: lastYear.ministryPct,
+                angle: calculateAngle(firstYear.ministryPct, lastYear.ministryPct),
+            },
+            nzo: {
+                end: lastYear.nzoPct,
+                angle: calculateAngle(firstYear.nzoPct, lastYear.nzoPct),
+            },
+            historical: {
+                end: lastYear.historicalActualPct,
+                angle: calculateAngle(firstYear.historicalActualPct, lastYear.historicalActualPct),
+            },
+        };
+    };
+
+    const lineMetrics = getLineMetrics();
 
     const CustomTooltip = ({
         active,
@@ -197,7 +229,26 @@ export default function RenewableChart() {
                     onMouseLeave={() => setHovered(null)}
                 >
                     <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#1E8025" }} />
-                    <span className="md:text-sm text-xs text-gray-800">ייצור בפועל / תחזית ריאלית</span>
+                    <span className="md:text-sm text-xs text-gray-800">
+                        לפי ייצור בפועל
+                    </span>
+                </div>
+
+
+
+                <div
+                    className="flex items-center gap-2 cursor-pointer transition-opacity duration-200"
+                    onClick={() => togglePrediction("ministry")}
+                    onMouseEnter={() => setHovered("ministry")}
+                    onMouseLeave={() => setHovered(null)}
+                    style={{ opacity: selectedPrediction === "ministry" ? 1 : 0.5 }}
+                >
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#957669" }} />
+                    <span
+                        className={`md:text-sm text-xs ${selectedPrediction === "ministry" ? "text-gray-800" : "text-gray-400"}`}
+                    >
+                        לפי יעד משרד האנרגיה
+                    </span>
                 </div>
 
                 <div
@@ -207,57 +258,29 @@ export default function RenewableChart() {
                     onMouseLeave={() => setHovered(null)}
                     style={{ opacity: selectedPrediction === "nzo" ? 1 : 0.5 }}
                 >
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#957669" }} />
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#8BBFE1" }} />
                     <span
                         className={`md:text-sm text-xs ${selectedPrediction === "nzo" ? "text-gray-800" : "text-gray-400"}`}
                     >
                         יעד NZO
                     </span>
                 </div>
-
-                <div
-                    className="flex items-center gap-2 cursor-pointer transition-opacity duration-200"
-                    onClick={() => togglePrediction("ministry")}
-                    onMouseEnter={() => setHovered("ministry")}
-                    onMouseLeave={() => setHovered(null)}
-                    style={{ opacity: selectedPrediction === "ministry" ? 1 : 0.5 }}
-                >
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#8BBFE1" }} />
-                    <span
-                        className={`md:text-sm text-xs ${selectedPrediction === "ministry" ? "text-gray-800" : "text-gray-400"}`}
-                    >
-                        יעד משרד האנרגיה
-                    </span>
+            </div>
+            <div className="flex justify-end items-center my-4">
+                <div className=" text-[14px] w-[70px] text-sm text-gray-700" style={{ fontFamily: "Heebo, sans-serif" }}>
+                    אחוז אנרגיה מתחדשת
                 </div>
             </div>
-
-            <div className="md:h-[500px] h-[300px]">
+            <div className="md:h-[500px] h-[300px] relative">
                 <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
+                        <CartesianGrid vertical={false} />
                         <XAxis dataKey="year" />
                         <YAxis
-                            label={{
-                                value: "[%]",
-                                angle: -90,
-                                position: "insideLeft",
-                                style: { textAnchor: "middle", fontFamily: "Heebo, sans-serif" },
-                            }}
+                            tickFormatter={(value) => `${value}%`}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Legend content={() => null} />
-                        <ReferenceLine
-                            x={2030}
-                            stroke="#C4C4C4"
-                            strokeDasharray="4 4"
-                            label={{ value: "2030", position: "top", fill: "#59687D", fontSize: 11 }}
-                        />
-                        <ReferenceLine
-                            x={2050}
-                            stroke="#C4C4C4"
-                            strokeDasharray="4 4"
-                            label={{ value: "2050", position: "top", fill: "#59687D", fontSize: 11 }}
-                        />
 
                         <Bar
                             dataKey="actualBar"
@@ -278,7 +301,7 @@ export default function RenewableChart() {
 
                         <Bar
                             dataKey="ministryBar"
-                            fill="#8BBFE1"
+                            fill="#957669"
                             barSize={28}
                             stackId="stack"
                             name="יעד משרד האנרגיה"
@@ -287,7 +310,7 @@ export default function RenewableChart() {
 
                         <Bar
                             dataKey="nzoBar"
-                            fill="#957669"
+                            fill="#8BBFE1"
                             barSize={28}
                             stackId="stack"
                             name="יעד NZO"
@@ -306,7 +329,7 @@ export default function RenewableChart() {
                         <Line
                             type="monotone"
                             dataKey="ministryPct"
-                            stroke="#8BBFE1"
+                            stroke="#957669"
                             strokeWidth={2}
                             dot={false}
                             name="יעד משרד האנרגיה"
@@ -315,7 +338,7 @@ export default function RenewableChart() {
                         <Line
                             type="monotone"
                             dataKey="nzoPct"
-                            stroke="#957669"
+                            stroke="#8BBFE1"
                             strokeWidth={2}
                             dot={false}
                             name="יעד NZO"
@@ -323,6 +346,45 @@ export default function RenewableChart() {
                         />
                     </ComposedChart>
                 </ResponsiveContainer>
+
+                <div className="absolute inset-0 pointer-events-none">
+                    <div
+                        className="absolute text-sm font-medium whitespace-nowrap"
+                        style={{
+                            color: "#1E8025",
+                            right: "20px",
+                            top: `${100 - lineMetrics.actual.end}%`,
+                            transform: `rotate(${lineMetrics.actual.angle}deg)`,
+                            transformOrigin: "left center",
+                        }}
+                    >
+                        צפי ריאלי לפי יצור בפועל
+                    </div>
+                    <div
+                        className="absolute text-sm font-medium whitespace-nowrap"
+                        style={{
+                            color: "#8BBFE1",
+                            right: "20px",
+                            top: `${100 - lineMetrics.nzo.end}%`,
+                            transform: `rotate(${lineMetrics.nzo.angle}deg)`,
+                            transformOrigin: "left center",
+                        }}
+                    >
+                        לפי יעד NZO
+                    </div>
+                    <div
+                        className="absolute text-sm font-medium whitespace-nowrap"
+                        style={{
+                            color: "#957669",
+                            right: "20px",
+                            top: `${100 - lineMetrics.ministry.end}%`,
+                            transform: `rotate(${lineMetrics.ministry.angle}deg)`,
+                            transformOrigin: "left center",
+                        }}
+                    >
+                        יעד אנרגיות מתחדשות לפי משרד האנרגיה
+                    </div>
+                </div>
             </div>
         </div>
     );

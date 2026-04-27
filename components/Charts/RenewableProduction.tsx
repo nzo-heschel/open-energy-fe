@@ -99,7 +99,31 @@ export default function RenewableProduction() {
             return [];
         }
 
-        return apiData.series.map((item) => {
+        // For year filter (this year / last 12 months / multi-year ranges), use the
+        // monthly_series breakdown so each month appears as its own bar.
+        const sourceSeries =
+            apiData.filter === 'year' && apiData.monthly_series && apiData.monthly_series.length > 0
+                ? apiData.monthly_series
+                : apiData.series;
+
+        const monthLabels = ['ינו׳', 'פבר׳', 'מרץ', 'אפר׳', 'מאי', 'יוני', 'יולי', 'אוג׳', 'ספט׳', 'אוק׳', 'נוב׳', 'דצמ׳'];
+
+        const formatLabel = (period: string, fallback?: string) => {
+            // YYYY-MM → localized short month (with year suffix when multi-year range)
+            const monthMatch = /^(\d{4})-(\d{2})$/.exec(period);
+            if (monthMatch) {
+                const monthIdx = parseInt(monthMatch[2], 10) - 1;
+                const year = monthMatch[1];
+                const monthName = monthLabels[monthIdx] ?? monthMatch[2];
+                const spansMultipleYears = (apiData.monthly_series ?? []).some(
+                    (m) => /^(\d{4})-/.exec(m.period)?.[1] !== year
+                );
+                return spansMultipleYears ? `${monthName} ${year.slice(2)}'` : monthName;
+            }
+            return fallback || period;
+        };
+
+        return sourceSeries.map((item) => {
             const totalMW =
                 item.total_mwh ??
                 ((item.solar_mwh || 0) + (item.wind_mwh || 0) + (item.other_mwh || 0));
@@ -110,7 +134,7 @@ export default function RenewableProduction() {
 
             return {
                 period: item.period,
-                label: item.label || item.period,
+                label: formatLabel(item.period, item.label),
                 total: Math.round(totalMW),
                 solar: Math.round(solarPercent),
                 wind: Math.round(windPercent),

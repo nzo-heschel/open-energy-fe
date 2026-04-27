@@ -39,13 +39,9 @@ const yearColors: Record<string, string> = {
     "2022": "#3A7C2F",
     "2023": "#A7BF56",
     "2024": "#DACF61",
-    "2025": "#E57373",
-    "2026": "#64B5F6",
+    "2025": "#8BBFE1",
+    "2026": "#3A7C2F",
 };
-
-// Fixed set of years we support. Hooks must be called in a stable order, so we
-// fetch this list unconditionally and let the dropdown filter which to render.
-const SUPPORTED_YEARS = ["2021", "2022", "2023", "2024", "2025", "2026"];
 
 const toNumber = (v: unknown): number => {
     if (typeof v === 'number') return v;
@@ -106,10 +102,6 @@ function bucketByYearMonth(
 export default function RenewableProduction2() {
     const [tab, setTab] = useState(1);
     const [showTooltip, setShowTooltip] = useState(false);
-    const currentYear = new Date().getFullYear();
-
-    // Multi-year selection — default to all supported years.
-    const [selectedYears] = useState<string[]>(SUPPORTED_YEARS);
     const [hoveredYear, setHoveredYear] = useState<string | null>(null);
     const [pinnedYear, setPinnedYear] = useState<string | null>(null);
     const legendRef = useRef<HTMLDivElement>(null);
@@ -129,14 +121,22 @@ export default function RenewableProduction2() {
     // Pin wins over hover; once pinned, hover is ignored until unpinned.
     const activeYear = pinnedYear ?? hoveredYear;
 
-    // Single query for both tabs — the backend's potential-by-industry endpoint
-    // currently returns a rolling 12-month daily renewable-generation series
-    // (start_date .. end_date with one row per date), and may also include
-    // industry_breakdown when available. Both tabs read from this one response.
-    const industryYear = selectedYears.length > 0
-        ? selectedYears.slice().sort().slice(-1)[0]
-        : currentYear.toString();
-    const { data: industryData, isLoading, error } = useRenewablesPotentialByIndustry(industryYear);
+    // Single date-ranged query — the backend's daily data starts at 2024 (per
+    // its own data_availability_note), so we anchor start_date there and end at
+    // today. One call covers every year that actually has data, avoiding the
+    // fan-out of one request per supported year.
+    const dateRange = useMemo(() => {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        return { start: '2021-01-01', end: `${yyyy}-${mm}-${dd}` };
+    }, []);
+    const { data: industryData, isLoading, error } = useRenewablesPotentialByIndustry(
+        undefined,
+        dateRange.start,
+        dateRange.end,
+    );
 
     // Per-(year, month) renewable-share % derived from the daily series.
     const perYearMonth = useMemo(
@@ -198,7 +198,7 @@ export default function RenewableProduction2() {
 
     const handleExport = async () => {
         try {
-            await exportRenewablesPotentialByIndustry(industryYear);
+            await exportRenewablesPotentialByIndustry(undefined, dateRange.start, dateRange.end);
         } catch (err) {
             console.error('Failed to export data:', err);
         }

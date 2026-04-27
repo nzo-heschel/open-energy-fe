@@ -1,9 +1,10 @@
 "use client";
 
+import { exportRenewablesPotentialByIndustry, useRenewablesPotentialByIndustry } from "@/lib/api";
 import api from '@/public/images/API.png';
 import download from '@/public/images/download_2.png';
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
     Bar,
     CartesianGrid,
@@ -14,8 +15,6 @@ import {
     YAxis,
 } from "recharts";
 import TooltipInfo from "../TooltipInfo";
-import YearMultiSelectDropdown from "../ui/YearMultiSelectDropdown";
-import { exportRenewablesTransition, useRenewablesTransition, exportRenewablesPotentialByIndustry, useRenewablesPotentialByIndustry } from "@/lib/api";
 
 // Hebrew month names
 const hebrewMonths: Record<string, string> = {
@@ -40,13 +39,9 @@ const yearColors: Record<string, string> = {
     "2022": "#3A7C2F",
     "2023": "#A7BF56",
     "2024": "#DACF61",
-    "2025": "#E57373",
-    "2026": "#64B5F6",
+    "2025": "#8BBFE1",
+    "2026": "#3A7C2F",
 };
-
-// Fixed set of years we support. Hooks must be called in a stable order, so we
-// fetch this list unconditionally and let the dropdown filter which to render.
-const SUPPORTED_YEARS = ["2021", "2022", "2023", "2024", "2025", "2026"];
 
 const toNumber = (v: unknown): number => {
     if (typeof v === 'number') return v;
@@ -57,31 +52,49 @@ const toNumber = (v: unknown): number => {
     return 0;
 };
 
-// Aggregate a daily renewables-transition series into a per-month share %.
-// Returns { "01": 12.3, "02": 14.1, ... } — keys are two-digit months.
-function aggregateMonthlyShare(series: Array<Record<string, unknown>> | undefined): Record<string, number> {
+// Bucket a renewables-transition series into per-(year, month) share %.
+// Accepts both daily ({ date: "YYYY-MM-DD", ... }) and monthly ({ period: "YYYY-MM", ... }) shapes.
+// Returns { "2025": { "05": 8.1, ... }, "2026": { "01": 7.4, ... } }
+function bucketByYearMonth(
+    series: Array<Record<string, unknown>> | undefined
+): Record<string, Record<string, number>> {
     if (!series?.length) return {};
-    const monthly: Record<string, { renewable: number; total: number }> = {};
+    const totals: Record<string, Record<string, { renewable: number; total: number }>> = {};
     for (const raw of series) {
         const item = raw as Record<string, unknown>;
         const dateStr = (item.date ?? item.period ?? item.month) as string | undefined;
-        const monthNum = dateStr?.split('-')[1];
-        if (!monthNum) continue;
+        const parts = dateStr?.split('-');
+        const year = parts?.[0];
+        const monthNum = parts?.[1];
+        if (!year || !monthNum) continue;
         const renewable =
             item.renewable_mwh !== undefined
                 ? toNumber(item.renewable_mwh)
                 : toNumber(item.solar_mwh ?? item.solar) +
-                  toNumber(item.wind_mwh ?? item.wind) +
-                  toNumber(item.other_mwh ?? item.other);
+                toNumber(item.wind_mwh ?? item.wind) +
+                toNumber(item.other_mwh ?? item.other);
         const total = toNumber(item.total_mwh ?? item.total);
-        const bucket = monthly[monthNum] ?? { renewable: 0, total: 0 };
+        if (!totals[year]) totals[year] = {};
+        const bucket = totals[year][monthNum] ?? { renewable: 0, total: 0 };
         bucket.renewable += renewable;
         bucket.total += total;
-        monthly[monthNum] = bucket;
+        totals[year][monthNum] = bucket;
     }
-    const result: Record<string, number> = {};
-    for (const [m, { renewable, total }] of Object.entries(monthly)) {
-        result[m] = total > 0 ? (renewable / total) * 100 : 0;
+    const result: Record<string, Record<string, number>> = {};
+    for (const [y, months] of Object.entries(totals)) {
+        result[y] = {};
+        for (const [m, { renewable, total }] of Object.entries(months)) {
+            // Guard: when the backend emits total = renewable (only sums solar+wind+other),
+            // share would always be 100 %; surface the renewable MWh instead so the chart
+            // still has something to draw. Otherwise compute the real share %.
+            if (total <= 0) {
+                result[y][m] = 0;
+            } else if (Math.abs(total - renewable) / Math.max(total, 1) < 0.01) {
+                result[y][m] = renewable;
+            } else {
+                result[y][m] = (renewable / total) * 100;
+            }
+        }
     }
     return result;
 }
@@ -89,97 +102,89 @@ function aggregateMonthlyShare(series: Array<Record<string, unknown>> | undefine
 export default function RenewableProduction2() {
     const [tab, setTab] = useState(1);
     const [showTooltip, setShowTooltip] = useState(false);
-    const currentYear = new Date().getFullYear();
-
-    // Multi-year selection — default to the four Figma years plus current year when available.
-    const defaultSelection = useMemo(
-        () => SUPPORTED_YEARS.filter((y) => ["2021", "2022", "2023", "2024"].includes(y)),
-        []
-    );
-    const [selectedYears, setSelectedYears] = useState<string[]>(defaultSelection);
-    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
     const [hoveredYear, setHoveredYear] = useState<string | null>(null);
+    const [pinnedYear, setPinnedYear] = useState<string | null>(null);
+    const legendRef = useRef<HTMLDivElement>(null);
 
-    // One query per supported year — stable hook order.
-    const q2021 = useRenewablesTransition("2021");
-    const q2022 = useRenewablesTransition("2022");
-    const q2023 = useRenewablesTransition("2023");
-    const q2024 = useRenewablesTransition("2024");
-    const q2025 = useRenewablesTransition("2025");
-    const q2026 = useRenewablesTransition("2026");
-    const yearData: Record<string, any> = {
-        "2021": q2021.data,
-        "2022": q2022.data,
-        "2023": q2023.data,
-        "2024": q2024.data,
-        "2025": q2025.data,
-        "2026": q2026.data,
-    };
-    const yearLoading: Record<string, boolean> = {
-        "2021": q2021.isLoading,
-        "2022": q2022.isLoading,
-        "2023": q2023.isLoading,
-        "2024": q2024.isLoading,
-        "2025": q2025.isLoading,
-        "2026": q2026.isLoading,
-    };
-    const yearError: Record<string, unknown> = {
-        "2021": q2021.error,
-        "2022": q2022.error,
-        "2023": q2023.error,
-        "2024": q2024.error,
-        "2025": q2025.error,
-        "2026": q2026.error,
-    };
+    // Clicking outside the legend unpins the highlighted year.
+    useEffect(() => {
+        if (!pinnedYear) return;
+        const handleClickOutside = (e: MouseEvent) => {
+            if (legendRef.current && !legendRef.current.contains(e.target as Node)) {
+                setPinnedYear(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [pinnedYear]);
 
-    // Tab 2: Potential by industry — use the newest selected year (or current) to drive it.
-    const industryYear = selectedYears.length > 0
-        ? selectedYears.slice().sort().slice(-1)[0]
-        : currentYear.toString();
-    const { data: industryData, isLoading: industryLoading, error: industryError } = useRenewablesPotentialByIndustry(industryYear);
+    // Pin wins over hover; once pinned, hover is ignored until unpinned.
+    const activeYear = pinnedYear ?? hoveredYear;
 
-    // Years the user actually wants to see; fall back to "all" when the selection is empty.
-    const visibleYears = useMemo(() => {
-        const pool = selectedYears.length > 0 ? selectedYears : SUPPORTED_YEARS;
-        return pool.filter((y) => SUPPORTED_YEARS.includes(y)).sort();
-    }, [selectedYears]);
+    // Single date-ranged query — the backend's daily data starts at 2024 (per
+    // its own data_availability_note), so we anchor start_date there and end at
+    // today. One call covers every year that actually has data, avoiding the
+    // fan-out of one request per supported year.
+    const dateRange = useMemo(() => {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        return { start: '2021-01-01', end: `${yyyy}-${mm}-${dd}` };
+    }, []);
+    const { data: industryData, isLoading, error } = useRenewablesPotentialByIndustry(
+        undefined,
+        dateRange.start,
+        dateRange.end,
+    );
 
-    // Loading/error for Tab 1 is the union of the visible years' queries.
-    const transitionLoading = visibleYears.some((y) => yearLoading[y]);
-    const transitionError = visibleYears.some((y) => yearError[y]);
+    // Per-(year, month) renewable-share % derived from the daily series.
+    const perYearMonth = useMemo(
+        () => bucketByYearMonth(industryData?.series as Array<Record<string, unknown>> | undefined),
+        [industryData]
+    );
 
-    const isLoading = tab === 1 ? transitionLoading : industryLoading;
-    const error = tab === 1 ? transitionError : industryError;
+    // Years actually present in the response, sorted ascending. The legend and
+    // bar series follow this — so we never try to render years with no data.
+    const visibleYears = useMemo(() => Object.keys(perYearMonth).sort(), [perYearMonth]);
 
     // Build the monthly grouped-bar data: one row per month, one key per visible year.
     const chartData = useMemo(() => {
         if (tab !== 1) {
-            if (!industryData?.industry_breakdown) return [] as any[];
-            return industryData.industry_breakdown.map((item) => ({
-                month: item.industry_type,
-                potential: item.renewable_potential_mw,
-                renewableMW: item.renewable_potential_mw,
-                solarShare: item.solar_share_percent,
-            }));
-        }
-
-        const perYear: Record<string, Record<string, number>> = {};
-        for (const y of visibleYears) {
-            perYear[y] = aggregateMonthlyShare(yearData[y]?.series);
+            // Preferred: backend provides industry breakdown — use it as-is.
+            if (industryData?.industry_breakdown?.length) {
+                return industryData.industry_breakdown.map((item) => ({
+                    month: item.industry_type,
+                    potential: item.renewable_potential_mw,
+                    renewableMW: item.renewable_potential_mw,
+                    solarShare: item.solar_share_percent,
+                }));
+            }
+            // Fallback: when only a daily series is returned, summarize by tech.
+            const totals = industryData?.totals;
+            const solar = totals?.solar ?? 0;
+            const wind = totals?.wind ?? 0;
+            const other = totals?.other ?? 0;
+            const grandTotal = solar + wind + other;
+            if (grandTotal <= 0) return [] as any[];
+            return [
+                { month: "סולארי", potential: Math.round(solar), renewableMW: Math.round(solar), solarShare: 100 },
+                { month: "רוח", potential: Math.round(wind), renewableMW: Math.round(wind), solarShare: 0 },
+                { month: "אחר", potential: Math.round(other), renewableMW: Math.round(other), solarShare: 0 },
+            ];
         }
 
         return MONTH_ORDER.map((monthNum) => {
             const row: Record<string, unknown> = { month: hebrewMonths[monthNum] };
             for (const y of visibleYears) {
-                const pct = perYear[y]?.[monthNum];
+                const pct = perYearMonth[y]?.[monthNum];
                 if (typeof pct === 'number' && pct > 0) {
                     row[y] = Number(pct.toFixed(2));
                 }
             }
             return row;
         }).filter((row) => visibleYears.some((y) => typeof row[y] === 'number'));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tab, industryData, visibleYears, q2021.data, q2022.data, q2023.data, q2024.data, q2025.data, q2026.data]);
+    }, [tab, industryData, perYearMonth, visibleYears]);
 
     // Series metadata for the legend (reversed so the most recent year sits first in RTL).
     const legendSeries = useMemo(
@@ -193,18 +198,13 @@ export default function RenewableProduction2() {
 
     const handleExport = async () => {
         try {
-            if (tab === 1) {
-                // Export the most recent selected year (server endpoint is single-year).
-                await exportRenewablesTransition(visibleYears[visibleYears.length - 1]);
-            } else {
-                await exportRenewablesPotentialByIndustry(industryYear);
-            }
+            await exportRenewablesPotentialByIndustry(undefined, dateRange.start, dateRange.end);
         } catch (err) {
             console.error('Failed to export data:', err);
         }
     };
 
-    const opacityForKey = (key: string) => (hoveredYear && hoveredYear !== key ? 0.25 : 1);
+    const opacityForKey = (key: string) => (activeYear && activeYear !== key ? 0.25 : 1);
 
     // Tooltip: month header + total of shown percentages + per-year rows (Figma layout).
     const CustomTooltip = ({ active, payload, label }: any) => {
@@ -294,18 +294,7 @@ export default function RenewableProduction2() {
                             )}
                         </div>
                     </h2>
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-600">בחר שנה:</span>
-                        <div className="relative w-[140px]">
-                            <YearMultiSelectDropdown
-                                selectedYears={selectedYears}
-                                onChange={setSelectedYears}
-                                options={SUPPORTED_YEARS.slice().sort((a, b) => Number(b) - Number(a))}
-                                isOpen={isYearDropdownOpen}
-                                setIsOpen={setIsYearDropdownOpen}
-                            />
-                        </div>
-                    </div>
+
                 </div>
                 <div className="flex items-start md:gap-4 gap-2">
                     <a
@@ -344,7 +333,7 @@ export default function RenewableProduction2() {
                             data={chartData}
                             margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
                             barGap={6}
-                            barCategoryGap="20%"
+                            barCategoryGap="30%"
                         >
                             <CartesianGrid vertical={false} strokeDasharray="6 6" />
                             <XAxis dataKey="month" tick={{ fontSize: 12 }} />
@@ -353,7 +342,7 @@ export default function RenewableProduction2() {
                                 domain={tab === 1 ? [0, (dataMax: number) => Math.max(5, Math.ceil(dataMax * 1.15))] : [0, 'auto' as any]}
                                 tickFormatter={(v) => tab === 1 ? `${v}` : Number(v).toLocaleString()}
                                 label={{
-                                    value: tab === 1 ? "אחוז מכלל הייצור %" : "[MW]",
+                                    value: tab === 1 ? "אחוז מכלל הייצור [%]" : "[MW]",
                                     angle: -90,
                                     position: "insideLeft",
                                     style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
@@ -366,7 +355,7 @@ export default function RenewableProduction2() {
                                         key={s.key}
                                         dataKey={s.key}
                                         fill={s.color}
-                                        barSize={13}
+                                        barSize={10}
                                         radius={[2, 2, 0, 0]}
                                         opacity={opacityForKey(s.key)}
                                     />
@@ -386,15 +375,23 @@ export default function RenewableProduction2() {
 
             {/* Legend — matches Figma: year + colored dot, laid out RTL at bottom */}
             {!isLoading && !error && chartData.length > 0 && tab === 1 && (
-                <div className="flex flex-row-reverse justify-end flex-wrap gap-6 mt-4">
+                <div ref={legendRef} className="flex flex-row-reverse justify-end flex-wrap gap-6 mt-4">
                     {legendSeries.map((s) => (
                         <button
                             key={s.key}
                             type="button"
-                            onMouseEnter={() => setHoveredYear(s.key)}
-                            onMouseLeave={() => setHoveredYear(null)}
+                            onMouseEnter={() => {
+                                if (!pinnedYear) setHoveredYear(s.key);
+                            }}
+                            onMouseLeave={() => {
+                                if (!pinnedYear) setHoveredYear(null);
+                            }}
+                            onClick={() => {
+                                setHoveredYear(null);
+                                setPinnedYear((prev) => (prev === s.key ? null : s.key));
+                            }}
                             className="flex flex-row-reverse items-center gap-[10px] cursor-pointer select-none transition-opacity"
-                            style={{ opacity: hoveredYear && hoveredYear !== s.key ? 0.5 : 1 }}
+                            style={{ opacity: activeYear && activeYear !== s.key ? 0.5 : 1 }}
                         >
                             <span className="text-base font-medium text-[#484C56]">{s.label}</span>
                             <span className="w-2 h-2 rounded-full" style={{ background: s.color }} />
@@ -402,13 +399,25 @@ export default function RenewableProduction2() {
                     ))}
                 </div>
             )}
-            {!isLoading && !error && chartData.length > 0 && tab === 2 && industryData?.total_potential_mw !== undefined && (
-                <div className="flex justify-end mt-4">
-                    <div className="text-sm text-gray-600">
-                        סה״כ פוטנציאל: {industryData.total_potential_mw.toLocaleString()} MW
+            {!isLoading && !error && chartData.length > 0 && tab === 2 && (() => {
+                // Prefer the explicit total_potential_mw when the backend returns
+                // industry_breakdown; otherwise fall back to the rolled-up totals
+                // we already display as bars so the badge (and the bottom-tab
+                // anchor it provides) is always present.
+                const explicit = industryData?.total_potential_mw;
+                const rolled = (industryData?.totals?.solar ?? 0)
+                    + (industryData?.totals?.wind ?? 0)
+                    + (industryData?.totals?.other ?? 0);
+                const value = explicit !== undefined ? explicit : rolled;
+                if (value <= 0) return null;
+                return (
+                    <div className="flex justify-end mt-4">
+                        <div className="text-sm text-gray-600">
+                            סה״כ פוטנציאל: {Math.round(value).toLocaleString()} MW
+                        </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
 
             {/* Tabs */}
             <div className="flex  gap-1 md:p-[6px] p-1 rounded-full bg-[#F8F8F8] mb-4 w-fit ml-auto mt-4 md:-mt-10" style={{ boxShadow: "inset 0px 4px 10px 0px #0000001A" }}>

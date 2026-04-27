@@ -1259,14 +1259,23 @@ export const exportRenewablesTransition = async (year?: string) => {
 };
 
 //++ Renewables Potential by Industry data
-export const useRenewablesPotentialByIndustry = (year?: string) => {
+// Pass `year` to anchor a single-year request, or `startDate`/`endDate` for a
+// wider date_range fetch. When both are supplied the date range wins.
+export const useRenewablesPotentialByIndustry = (
+  year?: string,
+  startDate?: string,
+  endDate?: string,
+) => {
   const params = new URLSearchParams();
-  if (year) {
+  if (startDate && endDate) {
+    params.set('start_date', startDate);
+    params.set('end_date', endDate);
+  } else if (year) {
     params.set('year', year);
   }
 
   return useQuery<RenewablesPotentialByIndustryResponse>({
-    queryKey: ['renewables-potential-by-industry', year],
+    queryKey: ['renewables-potential-by-industry', year, startDate, endDate],
     queryFn: async () => {
       try {
         const url = params.toString()
@@ -1285,9 +1294,16 @@ export const useRenewablesPotentialByIndustry = (year?: string) => {
 };
 
 //++ Export Renewables Potential by Industry data
-export const exportRenewablesPotentialByIndustry = async (year?: string) => {
+export const exportRenewablesPotentialByIndustry = async (
+  year?: string,
+  startDate?: string,
+  endDate?: string,
+) => {
   const params = new URLSearchParams();
-  if (year) {
+  if (startDate && endDate) {
+    params.set('start_date', startDate);
+    params.set('end_date', endDate);
+  } else if (year) {
     params.set('year', year);
   }
 

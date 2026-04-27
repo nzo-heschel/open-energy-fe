@@ -575,6 +575,14 @@ export type RenewablesProductionMixResponse = {
     other?: string;
   };
   tooltip?: string;
+  monthly_series?: Array<{
+    period: string;
+    label?: string;
+    solar_mwh: number;
+    wind_mwh: number;
+    other_mwh: number;
+    total_mwh: number;
+  }>;
 };
 
 // Renewables delivery-4 — forecast vs targets (fractions in [0, 1])
@@ -685,14 +693,34 @@ export type RenewablesTransitionResponse = {
 
 // Renewables Potential by Industry API response
 export type RenewablesPotentialByIndustryResponse = {
-  year: string;
-  total_potential_mw: number;
-  industry_breakdown: Array<{
+  year?: string;
+  total_potential_mw?: number;
+  industry_breakdown?: Array<{
     industry_type: string;
     renewable_potential_mw: number;
     solar_share_percent: number;
   }>;
   notes?: string;
+  // Newer responses return a daily renewable-generation series spanning a rolling
+  // 12-month window. Either this or `industry_breakdown` will be populated.
+  start_date?: string;
+  end_date?: string;
+  filter?: string;
+  series?: Array<{
+    date?: string;
+    period?: string;
+    solar_mwh: number;
+    wind_mwh: number;
+    other_mwh: number;
+    total_mwh: number;
+  }>;
+  totals?: {
+    solar?: number;
+    wind?: number;
+    other?: number;
+    total?: number;
+    total_mwh?: number;
+  };
 };
 
 // Installed Capacity Cumulative API response

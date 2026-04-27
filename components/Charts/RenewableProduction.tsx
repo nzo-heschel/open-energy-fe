@@ -1,22 +1,22 @@
 "use client";
 
+import { exportRenewablesProductionMix, useRenewablesProductionMix } from "@/lib/api";
+import api from '@/public/images/API.png';
+import download from '@/public/images/download_2.png';
+import { format, subDays } from "date-fns";
 import Image from "next/image";
-import React, { useMemo, useState } from "react";
-import download from '@/public/images/download_2.png'
-import api from '@/public/images/API.png'
+import { useMemo, useState } from "react";
 import {
-    ResponsiveContainer,
+    Bar,
+    CartesianGrid,
     ComposedChart,
+    LabelList,
+    ResponsiveContainer,
+    Tooltip,
     XAxis,
     YAxis,
-    CartesianGrid,
-    Tooltip,
-    Bar,
-    LabelList,
 } from "recharts";
 import TooltipInfo from "../TooltipInfo";
-import { exportRenewablesProductionMix, useRenewablesProductionMix } from "@/lib/api";
-import { format, subDays } from "date-fns";
 import DateRangePicker from "../ui/DateRangePicker";
 
 type DataPoint = {
@@ -99,7 +99,31 @@ export default function RenewableProduction() {
             return [];
         }
 
-        return apiData.series.map((item) => {
+        // For year filter (this year / last 12 months / multi-year ranges), use the
+        // monthly_series breakdown so each month appears as its own bar.
+        const sourceSeries =
+            apiData.filter === 'year' && apiData.monthly_series && apiData.monthly_series.length > 0
+                ? apiData.monthly_series
+                : apiData.series;
+
+        const monthLabels = ['ינו׳', 'פבר׳', 'מרץ', 'אפר׳', 'מאי', 'יוני', 'יולי', 'אוג׳', 'ספט׳', 'אוק׳', 'נוב׳', 'דצמ׳'];
+
+        const formatLabel = (period: string, fallback?: string) => {
+            // YYYY-MM → localized short month (with year suffix when multi-year range)
+            const monthMatch = /^(\d{4})-(\d{2})$/.exec(period);
+            if (monthMatch) {
+                const monthIdx = parseInt(monthMatch[2], 10) - 1;
+                const year = monthMatch[1];
+                const monthName = monthLabels[monthIdx] ?? monthMatch[2];
+                const spansMultipleYears = (apiData.monthly_series ?? []).some(
+                    (m) => /^(\d{4})-/.exec(m.period)?.[1] !== year
+                );
+                return spansMultipleYears ? `${monthName} ${year.slice(2)}'` : monthName;
+            }
+            return fallback || period;
+        };
+
+        return sourceSeries.map((item) => {
             const totalMW =
                 item.total_mwh ??
                 ((item.solar_mwh || 0) + (item.wind_mwh || 0) + (item.other_mwh || 0));
@@ -110,7 +134,7 @@ export default function RenewableProduction() {
 
             return {
                 period: item.period,
-                label: item.label || item.period,
+                label: formatLabel(item.period, item.label),
                 total: Math.round(totalMW),
                 solar: Math.round(solarPercent),
                 wind: Math.round(windPercent),
@@ -247,7 +271,7 @@ export default function RenewableProduction() {
                                 <Tooltip content={<CustomTooltip />} />
                                 {/* Bars (stacked): order matters for stack visual */}
                                 <Bar
-                                    dataKey="other"
+                                    dataKey="otherMW"
                                     stackId="a"
                                     fill={series[0].color}
                                     radius={[0, 0, 0, 0]}
@@ -255,7 +279,7 @@ export default function RenewableProduction() {
                                     opacity={opacityForKey("other")}
                                 />
                                 <Bar
-                                    dataKey="solar"
+                                    dataKey="solarMW"
                                     stackId="a"
                                     fill={series[1].color}
                                     radius={[0, 0, 0, 0]}
@@ -263,7 +287,7 @@ export default function RenewableProduction() {
                                     opacity={opacityForKey("solar")}
                                 />
                                 <Bar
-                                    dataKey="wind"
+                                    dataKey="windMW"
                                     stackId="a"
                                     fill={series[2].color}
                                     radius={[4, 4, 0, 0]}

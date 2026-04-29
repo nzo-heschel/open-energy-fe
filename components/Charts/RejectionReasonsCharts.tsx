@@ -53,10 +53,10 @@ const rejectionReasonLabelMap: Record<string, string> = {
 
 // Color mapping for rejection reasons
 const rejectionReasonColorMap: Record<string, string> = {
-    "missing_power_of_attorney": "#3D843F",
-    "meter_issues": "#E0B441",
-    "request_form_issues": "#9AC348",
-    "other": "#7DB2CE",
+    "missing_power_of_attorney": "#8B0000",
+    "meter_issues": "#DC143C",
+    "request_form_issues": "#FF6347",
+    "other": "#FFB6C1",
 };
 
 // -------------------------
@@ -144,10 +144,10 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
     const pieData = useMemo<PieDataItem[]>(() => {
         if (!switchingData?.charts?.requests_by_rejection_reason?.data) {
             return [
-                { name: "ייפוי כח חסר", value: 0, color: "#3D843F" },
-                { name: "בעיות במונה", value: 0, color: "#E0B441" },
-                { name: "בעיות במילוי הבקשה", value: 0, color: "#9AC348" },
-                { name: "אחר", value: 0, color: "#7DB2CE" },
+                { name: "ייפוי כח חסר", value: 0, color: "#8B0000" },
+                { name: "בעיות במונה", value: 0, color: "#DC143C" },
+                { name: "בעיות במילוי הבקשה", value: 0, color: "#FF6347" },
+                { name: "אחר", value: 0, color: "#FFB6C1" },
             ];
         }
 
@@ -373,7 +373,7 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                                     barSize={28}
                                     dataKey="missingDocs"
                                     name="ייפוי כח חסר"
-                                    fill="#3D843F"
+                                    fill="#8B0000"
                                     stackId="a"
                                     opacity={getOpacity("ייפוי כח חסר")}
                                 />
@@ -384,7 +384,7 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                                     barSize={28}
                                     dataKey="photoIssues"
                                     name="בעיות במונה"
-                                    fill="#E0B441"
+                                    fill="#DC143C"
                                     stackId="a"
                                     opacity={getOpacity("בעיות במונה")}
                                 />
@@ -395,7 +395,7 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                                     barSize={28}
                                     dataKey="formErrors"
                                     name="בעיות במילוי הבקשה"
-                                    fill="#9AC348"
+                                    fill="#FF6347"
                                     stackId="a"
                                     opacity={getOpacity("בעיות במילוי הבקשה")}
                                 />
@@ -407,7 +407,7 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                                     radius={[4, 4, 0, 0]}
                                     dataKey="other"
                                     name="אחר"
-                                    fill="#7DB2CE"
+                                    fill="#FFB6C1"
                                     stackId="a"
                                     opacity={getOpacity("אחר")}
                                 >

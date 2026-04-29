@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import Logo from './Logo';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 const navItems = [
   { id: 'about', label: 'אודותינו' },
@@ -103,10 +104,19 @@ export default function Header() {
       <div className="container mx-auto px-6 py-3">
         <div className="flex items-center justify-between w-full">
           {/* Logo */}
-          <Link href={'/'} className="flex items-center">
-            <Logo />
-          </Link>
-
+          <div className="flex items-center md:gap-6 gap-3">
+            <Link href={'/'} className="flex items-center">
+              <Logo />
+            </Link>
+            <Image
+              src="/hetchel.png"
+              alt="NZO Logo"
+              width={47}
+              height={40}
+              className="md:w-[76px] w-[47px]"
+              priority
+            />
+          </div>
           <div className="flex flex-col items-end space-y-0">
             <div className="flex justify-between items-center gap-8">
               {/* Desktop Navigation - Always visible */}

@@ -28,7 +28,7 @@ const statusColorMap: Record<string, string> = {
     "approved": "#648AA3",
     "rejected": "#DACF61",
     "pending": "#957669",
-    "אושרו": "#648AA3",
+    "הושלמו": "#648AA3",
     "נדחו": "#DACF61",
     "ממתין": "#957669",
 };
@@ -73,7 +73,10 @@ const BarChartTooltip = ({ active, payload, label }: any) => {
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "#648AA3" }}></div>
-                        <span className="text-[#59687D] text-sm">אושרו</span>
+                        <span className="text-[#59687D] text-sm"
+                        >
+                            הושלמו
+                        </span>
                         <span className="text-[#59687D] font-semibold text-sm mr-auto">{approved.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -100,7 +103,7 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
     const pieData = useMemo(() => {
         if (!switchingData?.charts?.requests_by_status?.data) {
             return [
-                { name: "אושרו", value: 0, color: "#648AA3" },
+                { name: "הושלמו", value: 0, color: "#648AA3" },
                 { name: "נדחו", value: 0, color: "#DACF61" },
             ];
         }
@@ -123,7 +126,7 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
         return switchingData.charts.requests_by_status.data.map((item) => {
             // Map English labels to Hebrew
             const labelMap: Record<string, string> = {
-                "approved": "אושרו",
+                "approved": "הושלמו",
                 "rejected": "נדחו",
                 "pending": "ממתין",
             };
@@ -364,10 +367,10 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
                         <Bar
                             barSize={28}
                             dataKey="approved"
-                            name="אושרו"
+                            name="הושלמו"
                             fill="#648AA3"
                             stackId="status"
-                            opacity={getOpacity("אושרו")}
+                            opacity={getOpacity("הושלמו")}
                         />
                         {/* Rejected bar (top of stack) */}
                         <Bar

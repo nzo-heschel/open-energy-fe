@@ -11,12 +11,12 @@ export default function ContactSection() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
+    organization: '',
     message: ''
   });
   const [errors, setErrors] = useState({
     name: '',
-    phone: '',
+    organization: '',
     email: '',
     message: ''
   });
@@ -25,7 +25,7 @@ export default function ContactSection() {
   const validateForm = () => {
     const newErrors = {
       name: '',
-      phone: '',
+      organization: '',
       email: '',
       message: ''
     };
@@ -33,10 +33,6 @@ export default function ContactSection() {
 
     if (!formData.name.trim()) {
       newErrors.name = 'יש למלא את השדה המבוקש';
-      isValid = false;
-    }
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'יש למלא את השדה המבוקש';
       isValid = false;
     }
 
@@ -57,28 +53,28 @@ export default function ContactSection() {
     return isValid;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (validateForm()) {
-      console.log('Form submitted:', formData);
-      // Show congratulatory message
-      setIsSubmitted(true);
-      // Reset form and errors
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        message: ''
-      });
-      setErrors({
-        name: '',
-        email: '',
-        phone: '',
-        message: ''
-      });
+      try {
+        const response = await fetch('/api/submit-contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+
+        if (response.ok) {
+          setIsSubmitted(true);
+          setFormData({ name: '', email: '', organization: '', message: '' });
+          setErrors({ name: '', email: '', organization: '', message: '' });
+        }
+      } catch (error) {
+        console.error('Submission error:', error);
+      }
     }
   };
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -207,16 +203,15 @@ export default function ContactSection() {
 
                   <div className="relative">
                     <input
-                      name="phone"
-                      type="tel"
-                      value={formData.phone}
+                      name="organization"
+                      value={formData.organization}
                       onChange={handleChange}
-                      className={`${getInputClassName('phone')}`}
+                      className={`${getInputClassName('organization')}`}
                       placeholder="ארגון (אם יש)"
                     />
-                    {errors.phone && (
+                    {errors.organization && (
                       <p className="text-right text-[#CEA073] text-sm mt-1 absolute bottom-[-20px] right-0">
-                        {errors.phone}
+                        {errors.organization}
                       </p>
                     )}
                   </div>

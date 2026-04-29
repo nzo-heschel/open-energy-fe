@@ -71,12 +71,12 @@ const Market = () => {
                                     {showTooltip && (
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 mb-2 z-50">
                                             <TooltipInfo
-                                                content="נתונים על צרכנים פרטיים המחוברים לספקי חשמל שונים"
+                                                content="נתונים על צרכנים פרטיים המחוברים למספקיי חשמל שונים"
                                             />
                                         </div>
                                     )}
                                 </div>
-                                צרכנים המחוברים לספקי חשמל פרטיים                            </CardTitle>
+                                צרכנים המחוברים למספקיי חשמל פרטיים                            </CardTitle>
                             <div className="flex items-start md:gap-4 gap-2">
                                 <a
                                     href="/api#private-supplier-connected-consumers"

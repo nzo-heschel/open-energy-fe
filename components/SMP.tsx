@@ -99,9 +99,6 @@ const SMP = () => {
                                 </button>
                             </div>
                         </div>
-                        <div className="md:text-sm text-xs text-slate-600 mr-[90px]">
-                            פרק זמן: {selectedPreset || 'שנה זו'}
-                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>

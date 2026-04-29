@@ -228,7 +228,7 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
       },
       yAxis: {
         type: 'value',
-        name: "[MW]",
+        name: "[MWh]",
         nameLocation: 'middle',
         nameGap: 50,
         nameRotate: 90,
@@ -280,106 +280,106 @@ export default function Chart2({ data, title, startDate, endDate, showLevel2 = f
 
       {/* Custom Legend - aligned to bottom of card */}
       <div className="mt-auto pt-6">
-      {showLevel2 ? (
-        (() => {
-          // Map series names to categories
-          const categoryMap: Record<string, { name: string; color: string }> = {
-            'פחם': { name: 'אנרגיות פוסיליות', color: LEVEL1_COLORS['אנרגיות פוסיליות'] },
-            'גז טבעי': { name: 'אנרגיות פוסיליות', color: LEVEL1_COLORS['אנרגיות פוסיליות'] },
-            'סולר': { name: 'אנרגיות פוסיליות', color: LEVEL1_COLORS['אנרגיות פוסיליות'] },
-            'פוטו וולטאי': { name: 'אנרגיות מתחדשות', color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
-            'ביו גז': { name: 'אנרגיות מתחדשות', color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
-            'רוח': { name: 'אנרגיות מתחדשות', color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
-            'תרמו סולרי': { name: 'אנרגיות מתחדשות', color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
-            'פוטו וולטאי משולב אגירה': { name: 'אנרגיות מתחדשות', color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
-            'אחר': { name: 'אחר', color: LEVEL1_COLORS['אחר'] },
-            'אגירה שאובה': { name: 'אחר', color: LEVEL1_COLORS['אחר'] }
-          };
+        {showLevel2 ? (
+          (() => {
+            // Map series names to categories
+            const categoryMap: Record<string, { name: string; color: string }> = {
+              'פחם': { name: "אנרגיה פוסילית", color: LEVEL1_COLORS['אנרגיות פוסיליות'] },
+              'גז טבעי': { name: "אנרגיה פוסילית", color: LEVEL1_COLORS['אנרגיות פוסיליות'] },
+              'סולר': { name: "אנרגיה פוסילית", color: LEVEL1_COLORS['אנרגיות פוסיליות'] },
+              'פוטו וולטאי': { name: "אנרגיה מתחדשת", color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
+              'ביו גז': { name: "אנרגיה מתחדשת", color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
+              'רוח': { name: "אנרגיה מתחדשת", color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
+              'תרמו סולרי': { name: "אנרגיה מתחדשת", color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
+              'פוטו וולטאי משולב אגירה': { name: "אנרגיה מתחדשת", color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
+              'אחר': { name: 'אחר', color: LEVEL1_COLORS['אחר'] },
+              'אגירה שאובה': { name: 'אחר', color: LEVEL1_COLORS['אחר'] }
+            };
 
-          // Group series by category
-          const grouped: Record<string, typeof data.series> = {};
-          data.series.forEach(series => {
-            const category = categoryMap[series.name]?.name || 'אחר';
-            if (!grouped[category]) {
-              grouped[category] = [];
-            }
-            grouped[category].push(series);
-          });
+            // Group series by category
+            const grouped: Record<string, typeof data.series> = {};
+            data.series.forEach(series => {
+              const category = categoryMap[series.name]?.name || 'אחר';
+              if (!grouped[category]) {
+                grouped[category] = [];
+              }
+              grouped[category].push(series);
+            });
 
-          // Order: Fossil, Renewable, Other, Total
-          const categoryOrder = ['אנרגיות פוסיליות', 'אנרגיות מתחדשות', 'אחר', 'סה"כ'];
-          const orderedGroups = categoryOrder
-            .filter(cat => grouped[cat] && grouped[cat].length > 0)
-            .map(cat => ({
-              category: { name: cat, color: LEVEL1_COLORS[cat] || ENERGY_MIX_FIGMA_FALLBACK },
-              items: grouped[cat]
-            }));
+            // Order: Fossil, Renewable, Other, Total
+            const categoryOrder = ["אנרגיה פוסילית", "אנרגיה מתחדשת", 'אחר', 'סה"כ'];
+            const orderedGroups = categoryOrder
+              .filter(cat => grouped[cat] && grouped[cat].length > 0)
+              .map(cat => ({
+                category: { name: cat, color: LEVEL1_COLORS[cat] || ENERGY_MIX_FIGMA_FALLBACK },
+                items: grouped[cat]
+              }));
 
-          return (
-            <div className="mt-5 space-y-5">
-              {orderedGroups.map((group, groupIndex) => (
-                <div key={groupIndex} className="space-y-1.5">
-                  {/* Category title row with colored right border */}
-                  <div
-                    className="flex items-center gap-2 pr-2 border-r-2"
-                    style={{
-                      borderRightColor: group.category.color || ENERGY_MIX_FIGMA_FALLBACK,
-                    }}
-                  >
-                    <span className="md:text-sm text-xs font-medium">{group.category.name}</span>
-                  </div>
-                  {/* Detailed items row */}
-                  <div className="flex flex-wrap justify-start md:gap-x-6 gap-x-3 gap-y-1 text-xs font-medium mr-2">
-                    {group.items.map((series, itemIndex) => {
-                      const isSelected = selectedLegends[series.name] !== false;
-                      return (
-                        <div
-                          key={itemIndex}
-                          className="flex items-center gap-2 cursor-pointer"
-                          onClick={() => handleLegendClick(series.name)}
-                          style={{
-                            opacity: isSelected ? 1 : 0.4,
-                            transition: 'opacity 0.2s ease'
-                          }}
-                        >
-                          <div
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: series.color || ENERGY_MIX_FIGMA_FALLBACK }}
-                          ></div>
-                          <span className="md:text-sm text-xs">{series.name}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          );
-        })()
-      ) : (
-        <div className="flex flex-wrap justify-start md:gap-6 gap-3 text-xs font-medium mt-5">
-          {data.series.map((series, index) => {
-            const isSelected = selectedLegends[series.name] !== false;
             return (
-              <div
-                key={index}
-                className="flex items-center gap-2 cursor-pointer"
-                onClick={() => handleLegendClick(series.name)}
-                style={{
-                  opacity: isSelected ? 1 : 0.4,
-                  transition: 'opacity 0.2s ease'
-                }}
-              >
-                <div
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: series.color || ENERGY_MIX_FIGMA_FALLBACK }}
-                ></div>
-                <span className="md:text-sm text-xs">{series.name}</span>
+              <div className="mt-5 space-y-5">
+                {orderedGroups.map((group, groupIndex) => (
+                  <div key={groupIndex} className="space-y-1.5">
+                    {/* Category title row with colored right border */}
+                    <div
+                      className="flex items-center gap-2 pr-2 border-r-2"
+                      style={{
+                        borderRightColor: group.category.color || ENERGY_MIX_FIGMA_FALLBACK,
+                      }}
+                    >
+                      <span className="md:text-sm text-xs font-medium">{group.category.name}</span>
+                    </div>
+                    {/* Detailed items row */}
+                    <div className="flex flex-wrap justify-start md:gap-x-6 gap-x-3 gap-y-1 text-xs font-medium mr-2">
+                      {group.items.map((series, itemIndex) => {
+                        const isSelected = selectedLegends[series.name] !== false;
+                        return (
+                          <div
+                            key={itemIndex}
+                            className="flex items-center gap-2 cursor-pointer"
+                            onClick={() => handleLegendClick(series.name)}
+                            style={{
+                              opacity: isSelected ? 1 : 0.4,
+                              transition: 'opacity 0.2s ease'
+                            }}
+                          >
+                            <div
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: series.color || ENERGY_MIX_FIGMA_FALLBACK }}
+                            ></div>
+                            <span className="md:text-sm text-xs">{series.name}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             );
-          })}
-        </div>
-      )}
+          })()
+        ) : (
+          <div className="flex flex-wrap justify-start md:gap-6 gap-3 text-xs font-medium mt-5">
+            {data.series.map((series, index) => {
+              const isSelected = selectedLegends[series.name] !== false;
+              return (
+                <div
+                  key={index}
+                  className="flex items-center gap-2 cursor-pointer"
+                  onClick={() => handleLegendClick(series.name)}
+                  style={{
+                    opacity: isSelected ? 1 : 0.4,
+                    transition: 'opacity 0.2s ease'
+                  }}
+                >
+                  <div
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: series.color || ENERGY_MIX_FIGMA_FALLBACK }}
+                  ></div>
+                  <span className="md:text-sm text-xs">{series.name}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

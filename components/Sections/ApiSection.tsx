@@ -187,7 +187,7 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
     // Private Suppliers Endpoints
     {
       id: 'private-supplier-connected-consumers',
-      title: 'צרכנים מחוברים לספקים פרטיים',
+      title: 'צרכנים מחוברים למספקיים פרטיים',
       description: 'Monthly time series of consumers connected to private electricity suppliers',
       endpoint: 'GET /api/v1/private-supplier-connected-consumers',
       method: 'GET',

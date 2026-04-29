@@ -247,7 +247,7 @@ export const exportEnergyOverview = async (startDate: string, endDate: string) =
 
     // Get the filename from Content-Disposition header or use a default
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'energy-overview-export.xlsx'; // default filename
+    let filename = `energy-overview-${startDate}-${endDate}.xlsx`; // default filename
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -324,7 +324,7 @@ export const exportSMP = async (startDate: string, endDate: string) => {
 
     // Get the filename from Content-Disposition header or use a default
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'smp-data.xlsx'; // default filename
+    let filename = params.toString() ? `smp-data-${startDate}-${endDate}.xlsx` : 'smp-data.xlsx'; // default filename
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -395,7 +395,7 @@ export const exportSMPProductionVsMarginalPrice = async (startDate: string, endD
 
     // Get the filename from Content-Disposition header or use a default
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'smp-production-vs-marginal-price.xlsx'; // default filename
+    let filename = params.toString() ? `smp-production-vs-marginal-price-${startDate}-${endDate}.xlsx` : 'smp-production-vs-marginal-price.xlsx'; // default filename
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -473,7 +473,7 @@ export const exportPrivateSupplierConnectedConsumers = async (startDate?: string
 
     // Get the filename from Content-Disposition header or use a default
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'private_suppliers_consumers.xlsx'; // default filename
+    let filename = `private_suppliers_consumers-${startDate}-${endDate}.xlsx`; // default filename
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -561,7 +561,7 @@ export const exportSwitchingRequests = async (year?: string, customerType?: 'res
 
     // Get the filename from Content-Disposition header or use a default
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'switching_requests.xlsx'; // default filename
+    let filename = params.toString() ? `switching_requests-${year}.xlsx` : 'switching_requests.xlsx'; // default filename
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -635,7 +635,7 @@ export const exportCO2EmissionsMix = async (startDate: string, endDate: string) 
 
     // Get the filename from Content-Disposition header or use a default
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'co2-emissions-mix.xlsx'; // default filename
+    let filename = params.toString() ? `co2-emissions-mix-${startDate}-${endDate}.xlsx` : 'co2-emissions-mix.xlsx'; // default filename
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -774,7 +774,7 @@ export const exportCO2EmissionsOverTime = async (startDate: string, endDate: str
 
     // Get the filename from Content-Disposition header or use a default
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'co2-emissions-over-time.xlsx'; // default filename
+    let filename = params.toString() ? `co2-emissions-over-time-${startDate}-${endDate}.xlsx` : 'co2-emissions-over-time.xlsx'; // default filename
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -847,7 +847,7 @@ export const exportCO2TotalVsRatio = async (startDate: string, endDate: string) 
 
     // Get the filename from Content-Disposition header or use a default
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'co2-total-vs-ratio.xlsx'; // default filename
+    let filename = params.toString() ? `co2-total-vs-ratio-${startDate}-${endDate}.xlsx` : 'co2-total-vs-ratio.xlsx'; // default filename
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -944,7 +944,7 @@ export const exportHeatLoadVsGeneration = async (startDate?: string, endDate?: s
 
     // Get the filename from Content-Disposition header or use a default
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'heat_load_vs_generation.xlsx'; // default filename
+    let filename = params.toString() ? `heat_load_vs_generation-${startDate}-${endDate}-${view}.xlsx` : 'heat_load_vs_generation.xlsx'; // default filename
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -1023,7 +1023,7 @@ export const exportRenewablesProductionMix = async (startDate: string, endDate: 
 
     // Get the filename from Content-Disposition header or use a default
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'renewables-production-mix.xlsx'; // default filename
+    let filename = `renewables-production-mix-${startDate}-${endDate}.xlsx`; // default filename
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -1227,7 +1227,7 @@ export const exportRenewablesTransition = async (year?: string) => {
 
     // Get the filename from Content-Disposition header or use a default
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'renewables-transition.xlsx'; // default filename
+    let filename = params.toString() ? `renewables-transition-${year}.xlsx` : 'renewables-transition.xlsx'; // default filename
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -1324,7 +1324,7 @@ export const exportRenewablesPotentialByIndustry = async (
 
     // Get the filename from Content-Disposition header or use a default
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'renewables-potential-by-industry.xlsx'; // default filename
+    let filename = params.toString() ? `renewables-potential-by-industry-${year}.xlsx` : 'renewables-potential-by-industry.xlsx'; // default filename
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -1422,7 +1422,7 @@ export const exportInstalledCapacityCumulative = async (filters?: InstalledCapac
     }
 
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'installed-capacity-cumulative.xlsx';
+    let filename = params.toString() ? `installed-capacity-cumulative-${filters?.year}.xlsx` : 'installed-capacity-cumulative.xlsx';
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -1585,7 +1585,7 @@ export const exportInstalledCapacityByFacilitySize = async (filters?: InstalledC
     }
 
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'installed-capacity-by-facility-size.xlsx';
+    let filename = params.toString() ? `installed-capacity-by-facility-size-${filters?.year}.xlsx` : 'installed-capacity-by-facility-size.xlsx';
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -1690,7 +1690,7 @@ export const exportResponseCapacityByPeriod = async (filters?: ResponseCapacityB
     }
 
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'response-capacity-by-period.xlsx';
+    let filename = params.toString() ? `response-capacity-by-period-${filters?.year}.xlsx` : 'response-capacity-by-period.xlsx';
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -1781,7 +1781,7 @@ export const exportResponseCapacityBySize = async (filters?: ResponseCapacityByS
     }
 
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'response-capacity-by-size.xlsx';
+    let filename = params.toString() ? `response-capacity-by-size-${filters?.year}.xlsx` : 'response-capacity-by-size.xlsx';
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -1872,7 +1872,7 @@ export const exportResponseCapacityByDistrict = async (filters?: ResponseCapacit
     }
 
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'response-capacity-by-district.xlsx';
+    let filename = params.toString() ? `response-capacity-by-district-${filters?.year}.xlsx` : 'response-capacity-by-district.xlsx';
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);

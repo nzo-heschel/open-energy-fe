@@ -52,7 +52,7 @@ const CustomLineTooltip = ({ active, payload, label }: any) => {
                                     <>
                                         <span className="text-gray-600 mx-1">|</span>
                                         <span className="text-sm text-[#484C56] ml-1">
-                                            {Math.round(entry.value).toLocaleString()} MW
+                                            {Math.round(entry.value).toLocaleString()} MWh
                                         </span>
                                     </>
                                 )}
@@ -62,7 +62,7 @@ const CustomLineTooltip = ({ active, payload, label }: any) => {
                     {/* Show net_demand separately if price line is shown */}
                     {dataPoint && dataPoint.net_demand && payload.some((p: any) => p.dataKey === 'price_with_constraints' || p.dataKey === 'price_without_constraints') && !payload.some((p: any) => p.dataKey === 'net_demand') && (
                         <div className="text-xs text-[#484C56] mr-4 mt-1 pt-1 border-t border-gray-200">
-                            {Math.round(dataPoint.net_demand).toLocaleString()} MW
+                            {Math.round(dataPoint.net_demand).toLocaleString()} MWh
                         </div>
                     )}
                 </div>
@@ -81,6 +81,7 @@ interface ElectricityLineGraphProps {
 }
 
 const ElectricityLineGraph = ({ data, startDate, endDate, selectedPreset }: ElectricityLineGraphProps) => {
+
     const [activeSeries, setActiveSeries] = useState<string[]>([]);
     const [hoveredSeries, setHoveredSeries] = useState<string | null>(null);
 
@@ -448,7 +449,7 @@ const ElectricityLineGraph = ({ data, startDate, endDate, selectedPreset }: Elec
                 style={{ fontFamily: 'Heebo, sans-serif' }}
                 transform={`rotate(-90 ${rightX} ${centerY})`}
             >
-                [MW]
+                [MWh]
             </text>
         );
     };
@@ -546,7 +547,7 @@ const ElectricityLineGraph = ({ data, startDate, endDate, selectedPreset }: Elec
                         strokeWidth={2}
                         strokeOpacity={getLineOpacity("net_demand")}
                         dot={false}
-                        name="דוֹר"
+                        name="ביקוש משקי"
                     />
                 </LineChart>
             </ResponsiveContainer>

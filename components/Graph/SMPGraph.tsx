@@ -346,7 +346,7 @@ export default function SMPGraph({ data, startDate, endDate }: SMPGraphProps) {
                         strokeWidth={2}
                         strokeOpacity={hoveredSeries ? (hoveredSeries === "withoutExc" ? 1 : 0.3) : 1}
                         dot={false}
-                        name="מחיר שולים כולל אילוצים"
+                        name="מחיר שולי כולל אילוצים"
                     />
                     <Line
                         type="linear"
@@ -355,7 +355,7 @@ export default function SMPGraph({ data, startDate, endDate }: SMPGraphProps) {
                         strokeWidth={2}
                         strokeOpacity={hoveredSeries ? (hoveredSeries === "withExc" ? 1 : 0.3) : 1}
                         dot={false}
-                        name="מחיר שולים ללא אילוצים"
+                        name="מחיר שולי ללא אילוצים"
                     />
                 </LineChart>
             </ResponsiveContainer>

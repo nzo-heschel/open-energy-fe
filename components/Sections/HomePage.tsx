@@ -486,10 +486,6 @@ export default function HomePage() {
                       </button>
                     </div>
                   </div>
-                  {/* Date label */}
-                  <div className="md:text-sm text-xs text-slate-600 w-full mr-14">
-                    פרק זמן:
-                  </div>
                 </div>
               </CardHeader>
               <CardContent className="flex flex-col min-h-[520px]">
@@ -578,10 +574,6 @@ export default function HomePage() {
                         <Image src={download} width={32} height={32} className='w-[32px] h-[32px]' alt='download' />
                       </button>
                     </div>
-                  </div>
-                  {/* Date label */}
-                  <div className="md:text-sm text-xs text-slate-600 w-full mr-14">
-                    פרק זמן:
                   </div>
                 </div>
               </CardHeader>

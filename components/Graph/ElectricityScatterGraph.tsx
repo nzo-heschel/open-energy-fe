@@ -37,7 +37,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                 </span>
               </div>
               <span className="text-sm text-[#484C56] leading-3">
-                {entry.value.toLocaleString()} MW
+                {entry.value.toLocaleString()} MWh
               </span>
             </div>
           ))}
@@ -109,7 +109,23 @@ const CustomYAxisLabel = (props: any) => {
       style={{ fontFamily: 'Heebo, sans-serif', color: '#707585' }}
       transform={`rotate(-90 ${viewBox.x} ${centerY})`}
     >
-      [MW]
+      [MWh]
+    </text>
+  );
+};
+const CustomXAxisLabel = (props: any) => {
+  const { viewBox } = props;
+  const centerX = (viewBox.x + viewBox.width) / 2;
+  return (
+    <text
+      x={centerX}
+      y={viewBox.y + viewBox.height}
+      textAnchor="end"
+      fill="#707585"
+      className="text-sm font-normal"
+      style={{ fontFamily: 'Heebo, sans-serif', color: '#707585' }}
+    >
+      [₪]
     </text>
   );
 };
@@ -146,7 +162,7 @@ export function ElectricityScatterGraph({ data, isLoading, error, startDate, end
         return data.correlation.map((item, i) => ({
           price: item.smp || 0,
           demand: item.net_demand || 0,
-          type: i % 2 === 0 ? "דוֹר" : "מחיר שוליי כולל אילוצים",
+          type: i % 2 === 0 ? "ביקוש משקי" : "מחיר שוליי כולל אילוצים",
         }));
       }
       return [];
@@ -237,15 +253,17 @@ export function ElectricityScatterGraph({ data, isLoading, error, startDate, end
           <XAxis
             type="number"
             dataKey="price"
-            name="מחיר שוליי"
+            name="מחיר שולי"
             domain={priceDomain}
             tick={{ fontSize: 12 }}
             allowDecimals={false}
+            label={<CustomXAxisLabel />}
+
           />
           <YAxis
             type="number"
             dataKey="demand"
-            name="MW"
+            name="MWh"
             domain={demandDomain}
             tick={{ fontSize: 12 }}
             label={<CustomYAxisLabel />}

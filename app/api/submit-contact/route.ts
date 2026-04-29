@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
-  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx2L11x5F890mnUV5MNR45DgfqmjxtlLiu4vnpgMqnahMeZFsrzLNSwZD2kqJQOHg23/exec';
+  const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNBHl9TV7EIoI-mRqKHFE-UcjJp6bDiP6Tk5B4DDaBS7bQ9gf9NuJD3mN_kkRj__sflA/exec';
 
   if (!GOOGLE_APPS_SCRIPT_URL) {
     return NextResponse.json({ ok: false }, { status: 503 });

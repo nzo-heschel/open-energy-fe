@@ -1,316 +1,416 @@
 "use client";
 
-import DateRangePicker from '@/components/ui/DateRangePicker';
-import { exportCO2EmissionsMix, useCO2EmissionsMix, useCO2EmissionsRatio, useCO2EmissionsSavings, useCO2TotalProduction } from '@/lib/api';
+import DateRangePicker from "@/components/ui/DateRangePicker";
+import {
+  exportCO2EmissionsMix,
+  useCO2EmissionsMix,
+  useCO2EmissionsRatio,
+  useCO2EmissionsSavings,
+  useCO2TotalProduction,
+} from "@/lib/api";
 import api from "@/public/images/API.png";
 import download from "@/public/images/download_2.png";
-import { format, subDays } from 'date-fns';
+import { format, subDays } from "date-fns";
 import Image from "next/image";
 import { useState } from "react";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import {
-    Cell,
-    Pie,
-    PieChart,
-    ResponsiveContainer,
-    Tooltip,
-} from "recharts";
-import { TooltipContent, TooltipProvider, TooltipTrigger, Tooltip as UITooltip } from "../ui/tooltip";
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  Tooltip as UITooltip,
+} from "../ui/tooltip";
 
 type EnergyData = {
-    name: string;
-    value: number;
-    percent: number;
-    color: string;
-    rawValue: number;
+  name: string;
+  value: number;
+  percent: number;
+  color: string;
+  rawValue: number;
 };
 
 const CO2DonutChart = () => {
-    // Initialize with default date range (last 7 days)
-    const [dateRange, setDateRange] = useState(() => {
-        const endDate = new Date();
-        const startDate = subDays(endDate, 7);
-        return {
-            startDate: format(startDate, 'yyyy-MM-dd'),
-            endDate: format(endDate, 'yyyy-MM-dd')
-        };
+  // Initialize with default date range (last 7 days)
+  const [dateRange, setDateRange] = useState(() => {
+    const endDate = new Date();
+    const startDate = subDays(endDate, 7);
+    return {
+      startDate: format(startDate, "yyyy-MM-dd"),
+      endDate: format(endDate, "yyyy-MM-dd"),
+    };
+  });
+  const [hovered, setHovered] = useState<string | null>(null);
+
+  // Fetch data from APIs
+  const { data: emissionsMixData, isLoading: isLoadingMix } =
+    useCO2EmissionsMix(dateRange.startDate, dateRange.endDate);
+  const { isLoading: isLoadingSavings } = useCO2EmissionsSavings(
+    dateRange.startDate,
+    dateRange.endDate,
+  );
+  const { data: emissionsRatioData, isLoading: isLoadingRatio } =
+    useCO2EmissionsRatio(dateRange.startDate, dateRange.endDate);
+  const { data: totalProductionData, isLoading: isLoadingProduction } =
+    useCO2TotalProduction(dateRange.startDate, dateRange.endDate);
+
+  // Transform API data to chart format
+  const chartData: EnergyData[] = emissionsMixData?.pie_chart
+    ? [
+        {
+          name: "פחם",
+          value: emissionsMixData.pie_chart.coal.percentage,
+          percent: emissionsMixData.pie_chart.coal.percentage,
+          color: "#6B707C",
+          rawValue: emissionsMixData.pie_chart.coal.value,
+        },
+        {
+          name: "סולר",
+          value: emissionsMixData.pie_chart.diesel.percentage,
+          percent: emissionsMixData.pie_chart.diesel.percentage,
+          color: "#1C1A17",
+          rawValue: emissionsMixData.pie_chart.diesel.value,
+        },
+        {
+          name: "גז טבעי",
+          value: emissionsMixData.pie_chart.natural_gas.percentage,
+          percent: emissionsMixData.pie_chart.natural_gas.percentage,
+          color: "#957669",
+          rawValue: emissionsMixData.pie_chart.natural_gas.value,
+        },
+      ]
+    : [];
+
+  const totalEmissions = emissionsMixData?.total_emissions || 0;
+
+  const handleDateRangeChange = (startDate: string, endDate: string) => {
+    setDateRange({ startDate, endDate });
+  };
+
+  const getOpacity = (name: string) => {
+    if (!hovered) return 1;
+    return hovered === name ? 1 : 0.3;
+  };
+
+  // Format large numbers with commas
+  const formatNumber = (num: number, decimals: number = 2) => {
+    return num.toLocaleString("en-US", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
     });
-    const [hovered, setHovered] = useState<string | null>(null);
+  };
 
-    // Fetch data from APIs
-    const { data: emissionsMixData, isLoading: isLoadingMix } = useCO2EmissionsMix(
-        dateRange.startDate,
-        dateRange.endDate
-    );
-    const { isLoading: isLoadingSavings } = useCO2EmissionsSavings(
-        dateRange.startDate,
-        dateRange.endDate
-    );
-    const { data: emissionsRatioData, isLoading: isLoadingRatio } = useCO2EmissionsRatio(
-        dateRange.startDate,
-        dateRange.endDate
-    );
-    const { data: totalProductionData, isLoading: isLoadingProduction } = useCO2TotalProduction(
-        dateRange.startDate,
-        dateRange.endDate
-    );
+  // Handle export to Excel
+  const handleExport = async () => {
+    try {
+      await exportCO2EmissionsMix(dateRange.startDate, dateRange.endDate);
+    } catch (error) {
+      console.error("Failed to export CO2 emissions data:", error);
+    }
+  };
 
-    // Transform API data to chart format
-    const chartData: EnergyData[] = emissionsMixData?.pie_chart ? [
-        {
-            name: "פחם",
-            value: emissionsMixData.pie_chart.coal.percentage,
-            percent: emissionsMixData.pie_chart.coal.percentage,
-            color: "#6B707C",
-            rawValue: emissionsMixData.pie_chart.coal.value
-        },
-        {
-            name: "סולר",
-            value: emissionsMixData.pie_chart.diesel.percentage,
-            percent: emissionsMixData.pie_chart.diesel.percentage,
-            color: "#1C1A17",
-            rawValue: emissionsMixData.pie_chart.diesel.value
-        },
-        {
-            name: "גז טבעי",
-            value: emissionsMixData.pie_chart.natural_gas.percentage,
-            percent: emissionsMixData.pie_chart.natural_gas.percentage,
-            color: "#957669",
-            rawValue: emissionsMixData.pie_chart.natural_gas.value
-        },
-    ] : [];
+  // Calculate emissions savings percentage
+  const emissionsSavingsPercentage = emissionsMixData?.infographics
+    ?.emissions_avoided_through_renewables
+    ? (emissionsMixData.infographics.emissions_avoided_through_renewables
+        .value /
+        (emissionsMixData.total_emissions +
+          emissionsMixData.infographics.emissions_avoided_through_renewables
+            .value)) *
+      100
+    : 0;
 
-    const totalEmissions = emissionsMixData?.total_emissions || 0;
-
-    const handleDateRangeChange = (startDate: string, endDate: string) => {
-        setDateRange({ startDate, endDate });
-    };
-
-    const getOpacity = (name: string) => {
-        if (!hovered) return 1;
-        return hovered === name ? 1 : 0.3;
-    };
-
-    // Format large numbers with commas
-    const formatNumber = (num: number, decimals: number = 2) => {
-        return num.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-    };
-
-    // Handle export to Excel
-    const handleExport = async () => {
-        try {
-            await exportCO2EmissionsMix(dateRange.startDate, dateRange.endDate);
-        } catch (error) {
-            console.error('Failed to export CO2 emissions data:', error);
-        }
-    };
-
-    // Calculate emissions savings percentage
-    const emissionsSavingsPercentage = emissionsMixData?.infographics?.emissions_avoided_through_renewables
-        ? ((emissionsMixData.infographics.emissions_avoided_through_renewables.value /
-            (emissionsMixData.total_emissions + emissionsMixData.infographics.emissions_avoided_through_renewables.value)) * 100)
-        : 0;
-
-    return (
-        <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[16px] py-4 md:py-6 overflow-hidden">
-            <div className="flex flex-col px-4 md:px-6 gap-1">
-                {/* Header row with title and buttons - same structure as SMP */}
-                <div className="flex items-center gap-2 justify-between">
-                    {/* Title FIRST - goes to RIGHT in RTL */}
-                    <h2 className="md:text-lg text-base md:text-right text-left flex flex-row-reverse items-center gap-2 text-[#484C56] font-extrabold">
-                        <TooltipProvider>
-                            <UITooltip>
-                                <TooltipTrigger asChild>
-                                    <button type="button" className="inline-flex items-center shrink-0">
-                                        <svg
-                                            width="21"
-                                            height="21"
-                                            viewBox="0 0 21 21"
-                                            fill="none"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="cursor-help"
-                                        >
-                                            <g opacity="0.5">
-                                                <path d="M10.5 0.545898C4.98 0.545898 0.5 5.0259 0.5 10.5459C0.5 16.0659 4.98 20.5459 10.5 20.5459C16.02 20.5459 20.5 16.0659 20.5 10.5459C20.5 5.0259 16.02 0.545898 10.5 0.545898ZM10.5 18.5459C6.09 18.5459 2.5 14.9559 2.5 10.5459C2.5 6.1359 6.09 2.5459 10.5 2.5459C14.91 2.5459 18.5 6.1359 18.5 10.5459C18.5 14.9559 14.91 18.5459 10.5 18.5459Z" fill="#A1A1A1" />
-                                                <path d="M9.5 5.5459H11.5V7.5459H9.5V5.5459ZM9.5 9.5459H11.5V15.5459H9.5V9.5459Z" fill="#A1A1A1" />
-                                            </g>
-                                        </svg>
-                                    </button>
-                                </TooltipTrigger>
-                                <TooltipContent className="max-w-sm">
-                                    <p>תמהיל פליטות CO2 מאנרגיה פוסילית</p>
-                                </TooltipContent>
-                            </UITooltip>
-                        </TooltipProvider>
-                        תמהיל פליטות CO2
-                    </h2>
-                    {/* Buttons SECOND - goes to LEFT in RTL */}
-                    <div className="flex items-start md:gap-4 gap-2">
-                        <a
-                            href="/api#co2-emissions-mix"
-                            className="cursor-pointer hover:opacity-80 transition-opacity"
-                            aria-label="View API Documentation"
-                        >
-                            <Image src={api} width={32} height={32} className="w-[32px] h-[32px]" alt="API" />
-                        </a>
-                        <button
-                            onClick={handleExport}
-                            className="cursor-pointer hover:opacity-80 transition-opacity"
-                            aria-label="Export to Excel"
-                        >
-                            <Image src={download} width={32} height={32} className="w-[32px] h-[32px]" alt="Download" />
-                        </button>
-                    </div>
-                </div>
-                {/* Subtitle */}
-                <div className="md:text-sm text-xs text-slate-600">מאנרגיה פוסילית</div>
-                {/* Time period label */}
-                <div className="md:text-sm text-xs text-slate-600 w-full mr-14">פרק זמן:</div>
-
-                {/* Date controls row - same as SMP */}
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-600">מיון לפי:</span>
-                    <DateRangePicker
-                        onDateRangeChange={handleDateRangeChange}
-                        defaultPreset="last7Days"
-                    />
-                </div>
-            </div>
-
-            <div className="flex flex-col justify-between md:flex-row-reverse px-6">
-                {/* Donut Chart */}
-                <div className="relative w-full md:h-[350px] h-[300px] flex justify-center items-center">
-                    {isLoadingMix ? (
-                        <div className="flex items-center justify-center h-full">
-                            <div className="text-slate-500">Loading...</div>
-                        </div>
-                    ) : (
-                        <>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={chartData}
-                                        dataKey="value"
-                                        nameKey="name"
-                                        innerRadius={90}
-                                        outerRadius={155}
-                                        paddingAngle={0}
-                                        minAngle={5}
-                                        startAngle={90}
-                                        endAngle={-270}
-                                    >
-                                        {chartData.map((entry) => (
-                                            <Cell
-                                                key={`cell-${entry.name}`}
-                                                fill={entry.color}
-                                                opacity={getOpacity(entry.name)}
-                                                onMouseEnter={() => setHovered(entry.name)}
-                                                onMouseLeave={() => setHovered(null)}
-                                            />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip
-                                        formatter={(value: number, name: string) => [
-                                            `${value.toFixed(1)}% | ${name}`
-                                        ]}
-                                        contentStyle={{
-                                            backgroundColor: "white",
-                                            borderRadius: "8px",
-                                            border: "1px solid #e5e7eb",
-                                            fontSize: "12px",
-                                        }}
-                                    />
-                                </PieChart>
-                            </ResponsiveContainer>
-
-                            {/* Center Text */}
-                            <div className="absolute text-center">
-                                <p className="text-center text-sm text-gray-500">סה״כ</p>
-                                <p className="text-center text-xl font-bold text-gray-800">
-                                    {formatNumber(totalEmissions, 0)} {'mTCO₂'}
-                                </p>
-                            </div>
-                        </>
-                    )}
-                </div>
-
-                {/* Legend */}
-                <div className="flex flex-col gap-6 mt-6 w-[200px]">
-                    {chartData.map((item) => (
-                        <div
-                            key={item.name}
-                            className="flex items-center gap-2 cursor-pointer transition-opacity duration-200"
-                            onMouseEnter={() => setHovered(item.name)}
-                            onMouseLeave={() => setHovered(null)}
-                            style={{ opacity: getOpacity(item.name) }}
-                        >
-                            <span
-                                className="w-2 h-2 rounded-full -mt-2"
-                                style={{ backgroundColor: item.color }}
-                            />
-                            <div className="flex flex-col">
-                                <span className="text-sm text-gray-700">
-                                    {item.name} | ({item.percent.toFixed(1)}%)
-                                </span>
-                                <span className="text-sm text-gray-700 flex items-center gap-1">
-                                    <span>mTCO₂</span>{formatNumber(item.rawValue, 0)}
-                                </span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Bottom Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 text-center mt-8 border-t border-[#C3C3C3] pt-3">
-                {/* Emissions Savings */}
-                <div className="flex flex-col gap-3 items-center justify-between">
-                    <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M8.12691 19.4933C8.45828 19.4933 8.72691 19.2246 8.72691 18.8933C8.72691 18.5619 8.45828 18.2933 8.12691 18.2933V19.4933ZM7.82176 8.96359C7.74988 8.64011 7.42937 8.43615 7.10589 8.50804L1.83448 9.67946C1.511 9.75135 1.30704 10.0719 1.37893 10.3953C1.45081 10.7188 1.77132 10.9228 2.0948 10.8509L6.7805 9.80962L7.82176 14.4953C7.89365 14.8188 8.21415 15.0228 8.53763 14.9509C8.86111 14.879 9.06507 14.5585 8.99319 14.235L7.82176 8.96359ZM8.12691 18.2933H3.73251V19.4933H8.12691V18.2933ZM2.97321 16.9101L7.74225 9.41588L6.72985 8.77162L1.96082 16.2658L2.97321 16.9101ZM3.73251 18.2933C3.02233 18.2933 2.59194 17.5092 2.97321 16.9101L1.96082 16.2658C1.07117 17.6638 2.07542 19.4933 3.73251 19.4933V18.2933Z" fill="#484C56" />
-                        <path d="M9.9637 18.6908C9.72941 18.9252 9.72943 19.3051 9.96376 19.5394L13.7824 23.3575C14.0167 23.5918 14.3966 23.5918 14.6309 23.3574C14.8652 23.1231 14.8652 22.7432 14.6309 22.5089L11.2365 19.115L14.6304 15.7207C14.8647 15.4864 14.8647 15.1065 14.6304 14.8722C14.396 14.6379 14.0161 14.6379 13.7818 14.8722L9.9637 18.6908ZM17.6706 13.424L20.0301 17.1313L21.0424 16.4869L18.683 12.7797L17.6706 13.424ZM19.2709 18.5145L10.388 18.5151L10.388 19.7151L19.271 19.7145L19.2709 18.5145ZM20.0301 17.1313C20.4114 17.7304 19.9811 18.5144 19.2709 18.5145L19.271 19.7145C20.9281 19.7144 21.9322 17.8849 21.0424 16.4869L20.0301 17.1313Z" fill="#484C56" />
-                        <path d="M8.50195 6.9997L10.3093 3.73972C10.8625 2.74193 12.2829 2.70246 12.8906 3.66799L15.0012 7.02118" stroke="#484C56" strokeWidth="1.2" strokeLinecap="round" />
-                        <circle cx="16.5907" cy="9.98424" r="3.11802" stroke="#59687D" strokeWidth="1.2" />
+  return (
+    <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[16px] py-4 md:py-6 overflow-hidden">
+      <div className="flex flex-col px-4 md:px-6 gap-1">
+        {/* Header row with title and buttons - same structure as SMP */}
+        <div className="flex items-center gap-2 justify-between">
+          {/* Title FIRST - goes to RIGHT in RTL */}
+          <h2 className="md:text-lg text-base md:text-right text-left flex flex-row-reverse items-center gap-2 text-[#484C56] font-extrabold">
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center shrink-0"
+                  >
+                    <svg
+                      width="21"
+                      height="21"
+                      viewBox="0 0 21 21"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="cursor-help"
+                    >
+                      <g opacity="0.5">
+                        <path
+                          d="M10.5 0.545898C4.98 0.545898 0.5 5.0259 0.5 10.5459C0.5 16.0659 4.98 20.5459 10.5 20.5459C16.02 20.5459 20.5 16.0659 20.5 10.5459C20.5 5.0259 16.02 0.545898 10.5 0.545898ZM10.5 18.5459C6.09 18.5459 2.5 14.9559 2.5 10.5459C2.5 6.1359 6.09 2.5459 10.5 2.5459C14.91 2.5459 18.5 6.1359 18.5 10.5459C18.5 14.9559 14.91 18.5459 10.5 18.5459Z"
+                          fill="#A1A1A1"
+                        />
+                        <path
+                          d="M9.5 5.5459H11.5V7.5459H9.5V5.5459ZM9.5 9.5459H11.5V15.5459H9.5V9.5459Z"
+                          fill="#A1A1A1"
+                        />
+                      </g>
                     </svg>
-                    <div>
-                        <p className="text-center text-sm font-normal text-[#59687D]">חסכון בפליטות CO₂ בייצור אנרגיות מתחדשות</p>
-                        <p className="text-center text-lg font-normal text-[#484C56]">
-                            {isLoadingSavings ? '...' : `${emissionsSavingsPercentage.toFixed(2)}%`}
-                        </p>
-                    </div>
-                </div>
-
-                {/* Emissions Ratio */}
-                <div className="border-x border-[#C3C3C3] flex flex-col gap-3 items-center justify-between">
-                    <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M14.6026 2.50033C12.5806 2.47405 10.6258 4.03857 10.6718 6.6045C10.3371 6.64809 10.0115 6.73188 9.69869 6.85868C8.13361 4.96809 5.53705 6.08379 5.53675 8.22331C3.97659 8.28269 3.26359 9.53136 3.54564 10.735C2.66584 10.9394 2.00046 11.6975 2 12.6285C1.99979 13.7177 2.88971 14.6079 3.97891 14.6081C4.42334 14.6144 4.42334 13.9445 3.97891 13.9508C3.24493 13.9507 2.65714 13.3625 2.65728 12.6285C2.65763 11.9249 3.20071 11.3498 3.90317 11.3095C4.11147 11.2978 4.25637 11.0976 4.20228 10.8961C3.87265 9.66587 4.65513 8.73669 5.80313 8.87931C6.01931 8.90953 6.20435 8.72449 6.17413 8.50831C6.06424 6.3903 8.41931 5.86521 9.29751 7.3863C9.38387 7.53578 9.57116 7.59298 9.72629 7.51725C10.12 7.32517 10.5477 7.21342 10.985 7.18861C11.1685 7.17799 11.3077 7.01889 11.2938 6.83557C11.2938 2.58113 16.12 1.99755 17.5867 5.14486C17.3791 5.21945 17.1775 5.30587 16.9898 5.41574C16.5981 5.63382 16.9406 6.21826 17.3223 5.98316C17.7546 5.73007 18.2563 5.58519 18.7947 5.58519C20.4111 5.58519 21.7127 6.88747 21.7127 8.50381C21.7127 10.1202 20.4111 11.4224 18.7947 11.4224C17.405 11.4224 16.2466 10.456 15.9487 9.1611C15.8624 8.71472 15.1899 8.87053 15.3087 9.30937C15.3544 9.50794 15.4163 9.70015 15.4936 9.88449H14.9685C14.0983 9.88449 13.3869 10.5933 13.3869 11.4635V16.026C12.1601 15.9103 11.0949 15.1176 10.6358 13.9604V13.0451C10.6358 12.8236 10.5868 12.6139 10.5042 12.4218C11.0673 11.9959 11.4343 11.3231 11.4343 10.5662C11.4343 10.1276 10.7764 10.1276 10.7764 10.5662C10.7764 11.4927 10.0315 12.2376 9.10495 12.2376C8.20524 12.2376 7.44724 11.5077 7.43607 10.5662C7.43827 10.3806 7.28653 10.2301 7.10101 10.2337C6.92051 10.2372 6.77665 10.3857 6.77878 10.5662C6.77878 10.8849 6.84301 11.1889 6.95979 11.4661H6.46555C5.59538 11.4661 4.88396 12.1749 4.88396 13.0451C4.87108 14.8118 4.88396 16.5503 4.88396 18.3047C4.88396 20.1956 4.26986 21.2647 3.56169 22.3562C3.41761 22.5746 3.57411 22.8656 3.83577 22.8658C9.43436 22.8428 14.9419 22.8658 20.5362 22.8658C20.8302 22.8657 20.9762 22.5092 20.7666 22.3029C19.6953 21.187 19.159 19.7136 19.1388 18.1814V12.0624C20.9493 11.8884 22.3707 10.3591 22.3707 8.50381C22.3707 6.53225 20.7663 4.92791 18.7947 4.92791C18.6016 4.92791 18.4132 4.94778 18.228 4.97733C17.4011 3.28092 15.9861 2.5183 14.6026 2.50033ZM14.9685 10.5418H15.8588C16.4495 11.39 17.396 11.9719 18.4815 12.0662C18.4798 12.3055 18.4823 12.5442 18.4815 12.7832H14.0442V11.4635C14.0442 10.9461 14.4511 10.5418 14.9685 10.5418ZM6.46555 12.1208H7.37894C8.23188 12.9656 8.97676 13.014 9.92656 12.7421C9.95939 12.8366 9.97855 12.9373 9.97855 13.0451C9.97883 13.3374 9.97847 13.6435 9.97791 13.9309H5.54124V13.0451C5.54124 12.469 5.94332 12.1208 6.46555 12.1208ZM14.0442 13.4405H18.4815C18.4813 15.0677 18.4924 16.6935 18.4924 18.3342H14.0429C14.0457 17.5732 14.0442 16.8049 14.0442 16.0414H17.5912C18.0394 16.0515 18.0394 15.374 17.5912 15.3841H14.0442V13.4405ZM5.54124 14.5856H10.0427V18.3342H5.53996C5.54288 17.7956 5.54124 17.2495 5.54124 16.7083H9.0857C9.53383 16.7184 9.53383 16.041 9.0857 16.051H5.54124V14.5856ZM10.6358 15.2429C11.3095 16.0677 12.2986 16.6012 13.3869 16.6871C13.3835 17.3511 13.4021 18.0741 13.3683 18.7071C13.2823 20.1814 12.7442 21.2881 12.1661 22.1957C11.1629 21.0904 10.6565 19.6617 10.6358 18.1814V15.2429ZM5.53418 18.9915H10.0883C10.2425 19.7961 10.5191 21.062 11.4048 22.2086H4.45904C4.97262 21.3482 5.40522 20.3214 5.53418 18.9915ZM14.0089 18.9915H18.563C18.7172 19.7961 18.9162 21.062 19.8019 22.2086H12.8798C13.3934 21.3482 13.8799 20.3214 14.0089 18.9915Z" fill="#484C56" stroke="#484C56" strokeWidth="0.3" />
-                    </svg>
-                    <div>
-                        <p className="text-center text-sm font-normal text-[#59687D]">יחס פליטות CO₂</p>
-                        <p className="text-center text-lg font-normal text-[#484C56]">
-                            {isLoadingRatio ? '...' : `${formatNumber(emissionsRatioData?.total || 0, 4)}${emissionsRatioData?.unit || 'tons CO2/MWh'}`}
-                        </p>
-                    </div>
-                </div>
-
-                {/* Total Production */}
-                <div className="flex flex-col gap-3 items-center justify-between">
-                    <svg width="22" height="20" viewBox="0 0 22 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9.44601 10.9268C8.06117 9.05928 6.76758 7.12793 6.76758 7.12793C6.76758 7.12793 9.47571 8.17888 11.3909 9.05379C13.3061 9.92869 10.8309 12.7944 9.44601 10.9268Z" fill="#59687D" />
-                        <path d="M21.6834 19.9417H19.8646V19.5089L20.6929 18.7848C20.7914 18.7002 20.8638 18.6175 20.9101 18.5367C20.9584 18.4559 20.9825 18.3973 20.9825 18.3607C20.9825 18.2934 20.9613 18.2405 20.9188 18.2021C20.8783 18.1636 20.8175 18.1444 20.7364 18.1444C20.6437 18.1444 20.5742 18.1742 20.5278 18.2338C20.4815 18.2934 20.4583 18.3617 20.4583 18.4386H19.8125C19.8125 18.2905 19.8492 18.1559 19.9226 18.0347C19.9959 17.9117 20.0992 17.8136 20.2324 17.7405C20.3657 17.6674 20.523 17.6309 20.7045 17.6309C20.998 17.6309 21.2249 17.6943 21.3851 17.8213C21.5454 17.9463 21.6255 18.1261 21.6255 18.3607C21.6255 18.4761 21.6023 18.579 21.556 18.6694C21.5096 18.7598 21.4382 18.8492 21.3417 18.9377C21.2451 19.0281 21.1216 19.1291 20.971 19.2406L20.7161 19.431H21.6834V19.9417Z" fill="#484C56" />
-                        <path d="M19.4429 16.8784C19.4429 17.3092 19.3647 17.6804 19.2083 17.9919C19.0539 18.3016 18.8386 18.5401 18.5625 18.7074C18.2883 18.8747 17.9726 18.9584 17.6155 18.9584C17.2583 18.9584 16.9407 18.8747 16.6626 18.7074C16.3865 18.5401 16.1703 18.3016 16.0139 17.9919C15.8575 17.6804 15.7793 17.3092 15.7793 16.8784V16.7255C15.7793 16.2947 15.8565 15.9244 16.011 15.6148C16.1674 15.3032 16.3836 15.0638 16.6597 14.8964C16.9358 14.7272 17.2525 14.6426 17.6097 14.6426C17.9669 14.6426 18.2835 14.7272 18.5596 14.8964C18.8357 15.0638 19.0519 15.3032 19.2083 15.6148C19.3647 15.9244 19.4429 16.2947 19.4429 16.7255V16.8784ZM18.4466 16.7197C18.4466 16.4408 18.4138 16.2071 18.3482 16.0187C18.2845 15.8283 18.1899 15.685 18.0644 15.5888C17.9389 15.4927 17.7873 15.4446 17.6097 15.4446C17.4282 15.4446 17.2756 15.4927 17.1521 15.5888C17.0285 15.685 16.9349 15.8283 16.8711 16.0187C16.8074 16.2071 16.7756 16.4408 16.7756 16.7197V16.8784C16.7756 17.1534 16.8074 17.3861 16.8711 17.5765C16.9368 17.7669 17.0314 17.9121 17.155 18.0121C17.2805 18.1102 17.434 18.1593 17.6155 18.1593C17.7931 18.1593 17.9437 18.1102 18.0673 18.0121C18.1928 17.9121 18.2874 17.7669 18.3511 17.5765C18.4148 17.3861 18.4466 17.1534 18.4466 16.8784V16.7197Z" fill="#484C56" />
-                        <path d="M15.394 17.4784C15.3785 17.7669 15.2993 18.0227 15.1565 18.2458C15.0155 18.4688 14.8186 18.6439 14.5657 18.7708C14.3127 18.8958 14.0115 18.9583 13.6621 18.9583C13.2914 18.9583 12.9728 18.8756 12.7063 18.7102C12.4418 18.5448 12.2391 18.3092 12.0981 18.0034C11.9572 17.6976 11.8867 17.3341 11.8867 16.9129V16.6908C11.8867 16.2677 11.9601 15.9032 12.1068 15.5974C12.2536 15.2916 12.4592 15.056 12.7237 14.8906C12.9882 14.7233 13.3 14.6396 13.6592 14.6396C14.0221 14.6396 14.3282 14.706 14.5772 14.8387C14.8263 14.9695 15.0184 15.1493 15.1536 15.3782C15.2907 15.6051 15.3718 15.8638 15.3969 16.1542H14.418C14.4064 15.9196 14.3446 15.7426 14.2326 15.6234C14.1225 15.5022 13.9314 15.4416 13.6592 15.4416C13.4835 15.4416 13.3377 15.484 13.2218 15.5686C13.1079 15.6513 13.023 15.784 12.967 15.9667C12.911 16.1494 12.883 16.3888 12.883 16.685V16.9129C12.883 17.2053 12.9081 17.4438 12.9583 17.6284C13.0085 17.8111 13.0906 17.9448 13.2045 18.0294C13.3184 18.114 13.4709 18.1563 13.6621 18.1563C13.8262 18.1563 13.9623 18.1323 14.0704 18.0842C14.1785 18.0361 14.2606 17.9621 14.3166 17.8621C14.3745 17.7601 14.4073 17.6322 14.4151 17.4784H15.394Z" fill="#484C56" />
-                        <path d="M10.3154 0.191406C15.6264 0.191515 19.9372 4.48093 19.9375 9.77832C19.9375 11.0765 19.677 12.3135 19.208 13.4424C18.6987 13.368 18.1672 13.3252 17.6201 13.3164C18.1434 12.2473 18.4375 11.047 18.4375 9.77832C18.4372 5.31486 14.8035 1.69151 10.3154 1.69141C5.82747 1.69164 2.19365 5.31494 2.19336 9.77832C2.19336 14.2419 5.82729 17.866 10.3154 17.8662C10.3401 17.8662 10.3651 17.8645 10.3896 17.8643C10.5248 18.3882 10.8422 18.8785 11.3047 19.3154C10.9796 19.3485 10.6493 19.3662 10.3154 19.3662C5.00438 19.366 0.693359 15.0759 0.693359 9.77832C0.693654 4.48101 5.00456 0.191641 10.3154 0.191406Z" fill="#484C56" />
-                    </svg>
-                    <div>
-                        <p className="text-center text-sm font-normal text-[#59687D]">סך יצור חשמלי</p>
-                        <p className="text-center text-lg font-normal text-[#484C56] flex flex-row-reverse items-center">
-                            {isLoadingProduction ? '...' : formatNumber(totalProductionData?.total || 0, 0)}
-                            <span>{totalProductionData?.unit || 'MWh'}/</span>
-                        </p>
-                    </div>
-                </div>
-            </div>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm">
+                  <p>תמהיל פליטות CO2 מאנרגיה פוסילית</p>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
+            תמהיל פליטות CO2
+          </h2>
+          {/* Buttons SECOND - goes to LEFT in RTL */}
+          <div className="flex items-start md:gap-4 gap-2">
+            <a
+              href="/api#co2-emissions-mix"
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+              aria-label="View API Documentation"
+            >
+              <Image
+                src={api}
+                width={32}
+                height={32}
+                className="w-[32px] h-[32px]"
+                alt="API"
+              />
+            </a>
+            <button
+              onClick={handleExport}
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+              aria-label="Export to Excel"
+            >
+              <Image
+                src={download}
+                width={32}
+                height={32}
+                className="w-[32px] h-[32px]"
+                alt="Download"
+              />
+            </button>
+          </div>
         </div>
-    );
+        {/* Subtitle */}
+        <div className="md:text-sm text-xs text-slate-600">מאנרגיה פוסילית</div>
+        {/* Time period label */}
+        <div className="md:text-sm text-xs text-slate-600 w-full mr-14">
+          פרק זמן:
+        </div>
+
+        {/* Date controls row - same as SMP */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-slate-600">מיון לפי:</span>
+          <DateRangePicker
+            onDateRangeChange={handleDateRangeChange}
+            defaultPreset="last7Days"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col justify-between md:flex-row-reverse px-6">
+        {/* Donut Chart */}
+        <div className="relative w-full md:h-[350px] h-[300px] flex justify-center items-center">
+          {isLoadingMix ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-slate-500">Loading...</div>
+            </div>
+          ) : (
+            <>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={90}
+                    outerRadius={150}
+                    paddingAngle={0}
+                    minAngle={5}
+                    startAngle={90}
+                    endAngle={-270}
+                  >
+                    {chartData.map((entry) => (
+                      <Cell
+                        key={`cell-${entry.name}`}
+                        fill={entry.color}
+                        opacity={getOpacity(entry.name)}
+                        onMouseEnter={() => setHovered(entry.name)}
+                        onMouseLeave={() => setHovered(null)}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: number, name: string) => [
+                      `${value.toFixed(1)}% | ${name}`,
+                    ]}
+                    contentStyle={{
+                      backgroundColor: "white",
+                      borderRadius: "8px",
+                      border: "1px solid #e5e7eb",
+                      fontSize: "12px",
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+
+              {/* Center Text */}
+              <div className="absolute text-center">
+                <p className="text-center text-sm text-gray-500">סה״כ</p>
+                <p className="text-center text-xl font-bold text-gray-800">
+                  {formatNumber(totalEmissions, 0)} {"mTCO₂/h"}
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Legend */}
+        <div className="flex flex-col gap-6 mt-6 w-[200px]">
+          {chartData.map((item) => (
+            <div
+              key={item.name}
+              className="flex items-center gap-2 cursor-pointer transition-opacity duration-200"
+              onMouseEnter={() => setHovered(item.name)}
+              onMouseLeave={() => setHovered(null)}
+              style={{ opacity: getOpacity(item.name) }}
+            >
+              <span
+                className="w-2 h-2 rounded-full -mt-2"
+                style={{ backgroundColor: item.color }}
+              />
+              <div className="flex flex-col">
+                <span className="text-sm text-gray-700">
+                  {item.name} | ({item.percent.toFixed(1)}%)
+                </span>
+                <span className="text-sm text-gray-700 flex items-center gap-1">
+                  <span>mTCO₂/h</span>
+                  {formatNumber(item.rawValue, 0)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Bottom Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 text-center mt-8 border-t border-[#C3C3C3] pt-3">
+        {/* Emissions Savings */}
+        <div className="flex flex-col gap-3 items-center justify-between">
+          <svg
+            width="24"
+            height="25"
+            viewBox="0 0 24 25"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M8.12691 19.4933C8.45828 19.4933 8.72691 19.2246 8.72691 18.8933C8.72691 18.5619 8.45828 18.2933 8.12691 18.2933V19.4933ZM7.82176 8.96359C7.74988 8.64011 7.42937 8.43615 7.10589 8.50804L1.83448 9.67946C1.511 9.75135 1.30704 10.0719 1.37893 10.3953C1.45081 10.7188 1.77132 10.9228 2.0948 10.8509L6.7805 9.80962L7.82176 14.4953C7.89365 14.8188 8.21415 15.0228 8.53763 14.9509C8.86111 14.879 9.06507 14.5585 8.99319 14.235L7.82176 8.96359ZM8.12691 18.2933H3.73251V19.4933H8.12691V18.2933ZM2.97321 16.9101L7.74225 9.41588L6.72985 8.77162L1.96082 16.2658L2.97321 16.9101ZM3.73251 18.2933C3.02233 18.2933 2.59194 17.5092 2.97321 16.9101L1.96082 16.2658C1.07117 17.6638 2.07542 19.4933 3.73251 19.4933V18.2933Z"
+              fill="#484C56"
+            />
+            <path
+              d="M9.9637 18.6908C9.72941 18.9252 9.72943 19.3051 9.96376 19.5394L13.7824 23.3575C14.0167 23.5918 14.3966 23.5918 14.6309 23.3574C14.8652 23.1231 14.8652 22.7432 14.6309 22.5089L11.2365 19.115L14.6304 15.7207C14.8647 15.4864 14.8647 15.1065 14.6304 14.8722C14.396 14.6379 14.0161 14.6379 13.7818 14.8722L9.9637 18.6908ZM17.6706 13.424L20.0301 17.1313L21.0424 16.4869L18.683 12.7797L17.6706 13.424ZM19.2709 18.5145L10.388 18.5151L10.388 19.7151L19.271 19.7145L19.2709 18.5145ZM20.0301 17.1313C20.4114 17.7304 19.9811 18.5144 19.2709 18.5145L19.271 19.7145C20.9281 19.7144 21.9322 17.8849 21.0424 16.4869L20.0301 17.1313Z"
+              fill="#484C56"
+            />
+            <path
+              d="M8.50195 6.9997L10.3093 3.73972C10.8625 2.74193 12.2829 2.70246 12.8906 3.66799L15.0012 7.02118"
+              stroke="#484C56"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+            />
+            <circle
+              cx="16.5907"
+              cy="9.98424"
+              r="3.11802"
+              stroke="#59687D"
+              strokeWidth="1.2"
+            />
+          </svg>
+          <div>
+            <p className="text-center text-sm font-normal text-[#59687D]">
+              חסכון בפליטות CO₂ בייצור אנרגיות מתחדשות
+            </p>
+            <p className="text-center text-lg font-normal text-[#484C56]">
+              {isLoadingSavings
+                ? "..."
+                : `${emissionsSavingsPercentage.toFixed(2)}%`}
+            </p>
+          </div>
+        </div>
+
+        {/* Emissions Ratio */}
+        <div className="border-x border-[#C3C3C3] flex flex-col gap-3 items-center justify-between">
+          <svg
+            width="24"
+            height="25"
+            viewBox="0 0 24 25"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M14.6026 2.50033C12.5806 2.47405 10.6258 4.03857 10.6718 6.6045C10.3371 6.64809 10.0115 6.73188 9.69869 6.85868C8.13361 4.96809 5.53705 6.08379 5.53675 8.22331C3.97659 8.28269 3.26359 9.53136 3.54564 10.735C2.66584 10.9394 2.00046 11.6975 2 12.6285C1.99979 13.7177 2.88971 14.6079 3.97891 14.6081C4.42334 14.6144 4.42334 13.9445 3.97891 13.9508C3.24493 13.9507 2.65714 13.3625 2.65728 12.6285C2.65763 11.9249 3.20071 11.3498 3.90317 11.3095C4.11147 11.2978 4.25637 11.0976 4.20228 10.8961C3.87265 9.66587 4.65513 8.73669 5.80313 8.87931C6.01931 8.90953 6.20435 8.72449 6.17413 8.50831C6.06424 6.3903 8.41931 5.86521 9.29751 7.3863C9.38387 7.53578 9.57116 7.59298 9.72629 7.51725C10.12 7.32517 10.5477 7.21342 10.985 7.18861C11.1685 7.17799 11.3077 7.01889 11.2938 6.83557C11.2938 2.58113 16.12 1.99755 17.5867 5.14486C17.3791 5.21945 17.1775 5.30587 16.9898 5.41574C16.5981 5.63382 16.9406 6.21826 17.3223 5.98316C17.7546 5.73007 18.2563 5.58519 18.7947 5.58519C20.4111 5.58519 21.7127 6.88747 21.7127 8.50381C21.7127 10.1202 20.4111 11.4224 18.7947 11.4224C17.405 11.4224 16.2466 10.456 15.9487 9.1611C15.8624 8.71472 15.1899 8.87053 15.3087 9.30937C15.3544 9.50794 15.4163 9.70015 15.4936 9.88449H14.9685C14.0983 9.88449 13.3869 10.5933 13.3869 11.4635V16.026C12.1601 15.9103 11.0949 15.1176 10.6358 13.9604V13.0451C10.6358 12.8236 10.5868 12.6139 10.5042 12.4218C11.0673 11.9959 11.4343 11.3231 11.4343 10.5662C11.4343 10.1276 10.7764 10.1276 10.7764 10.5662C10.7764 11.4927 10.0315 12.2376 9.10495 12.2376C8.20524 12.2376 7.44724 11.5077 7.43607 10.5662C7.43827 10.3806 7.28653 10.2301 7.10101 10.2337C6.92051 10.2372 6.77665 10.3857 6.77878 10.5662C6.77878 10.8849 6.84301 11.1889 6.95979 11.4661H6.46555C5.59538 11.4661 4.88396 12.1749 4.88396 13.0451C4.87108 14.8118 4.88396 16.5503 4.88396 18.3047C4.88396 20.1956 4.26986 21.2647 3.56169 22.3562C3.41761 22.5746 3.57411 22.8656 3.83577 22.8658C9.43436 22.8428 14.9419 22.8658 20.5362 22.8658C20.8302 22.8657 20.9762 22.5092 20.7666 22.3029C19.6953 21.187 19.159 19.7136 19.1388 18.1814V12.0624C20.9493 11.8884 22.3707 10.3591 22.3707 8.50381C22.3707 6.53225 20.7663 4.92791 18.7947 4.92791C18.6016 4.92791 18.4132 4.94778 18.228 4.97733C17.4011 3.28092 15.9861 2.5183 14.6026 2.50033ZM14.9685 10.5418H15.8588C16.4495 11.39 17.396 11.9719 18.4815 12.0662C18.4798 12.3055 18.4823 12.5442 18.4815 12.7832H14.0442V11.4635C14.0442 10.9461 14.4511 10.5418 14.9685 10.5418ZM6.46555 12.1208H7.37894C8.23188 12.9656 8.97676 13.014 9.92656 12.7421C9.95939 12.8366 9.97855 12.9373 9.97855 13.0451C9.97883 13.3374 9.97847 13.6435 9.97791 13.9309H5.54124V13.0451C5.54124 12.469 5.94332 12.1208 6.46555 12.1208ZM14.0442 13.4405H18.4815C18.4813 15.0677 18.4924 16.6935 18.4924 18.3342H14.0429C14.0457 17.5732 14.0442 16.8049 14.0442 16.0414H17.5912C18.0394 16.0515 18.0394 15.374 17.5912 15.3841H14.0442V13.4405ZM5.54124 14.5856H10.0427V18.3342H5.53996C5.54288 17.7956 5.54124 17.2495 5.54124 16.7083H9.0857C9.53383 16.7184 9.53383 16.041 9.0857 16.051H5.54124V14.5856ZM10.6358 15.2429C11.3095 16.0677 12.2986 16.6012 13.3869 16.6871C13.3835 17.3511 13.4021 18.0741 13.3683 18.7071C13.2823 20.1814 12.7442 21.2881 12.1661 22.1957C11.1629 21.0904 10.6565 19.6617 10.6358 18.1814V15.2429ZM5.53418 18.9915H10.0883C10.2425 19.7961 10.5191 21.062 11.4048 22.2086H4.45904C4.97262 21.3482 5.40522 20.3214 5.53418 18.9915ZM14.0089 18.9915H18.563C18.7172 19.7961 18.9162 21.062 19.8019 22.2086H12.8798C13.3934 21.3482 13.8799 20.3214 14.0089 18.9915Z"
+              fill="#484C56"
+              stroke="#484C56"
+              strokeWidth="0.3"
+            />
+          </svg>
+          <div>
+            <p className="text-center text-sm font-normal text-[#59687D]">
+              יחס פליטות CO₂
+            </p>
+            <p className="text-center text-lg font-normal text-[#484C56]">
+              {isLoadingRatio
+                ? "..."
+                : `${formatNumber(emissionsRatioData?.total || 0, 4)}${emissionsRatioData?.unit || "tons CO2/MWh"}`}
+            </p>
+          </div>
+        </div>
+
+        {/* Total Production */}
+        <div className="flex flex-col gap-3 items-center justify-between">
+          <svg
+            width="22"
+            height="20"
+            viewBox="0 0 22 20"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M9.44601 10.9268C8.06117 9.05928 6.76758 7.12793 6.76758 7.12793C6.76758 7.12793 9.47571 8.17888 11.3909 9.05379C13.3061 9.92869 10.8309 12.7944 9.44601 10.9268Z"
+              fill="#59687D"
+            />
+            <path
+              d="M21.6834 19.9417H19.8646V19.5089L20.6929 18.7848C20.7914 18.7002 20.8638 18.6175 20.9101 18.5367C20.9584 18.4559 20.9825 18.3973 20.9825 18.3607C20.9825 18.2934 20.9613 18.2405 20.9188 18.2021C20.8783 18.1636 20.8175 18.1444 20.7364 18.1444C20.6437 18.1444 20.5742 18.1742 20.5278 18.2338C20.4815 18.2934 20.4583 18.3617 20.4583 18.4386H19.8125C19.8125 18.2905 19.8492 18.1559 19.9226 18.0347C19.9959 17.9117 20.0992 17.8136 20.2324 17.7405C20.3657 17.6674 20.523 17.6309 20.7045 17.6309C20.998 17.6309 21.2249 17.6943 21.3851 17.8213C21.5454 17.9463 21.6255 18.1261 21.6255 18.3607C21.6255 18.4761 21.6023 18.579 21.556 18.6694C21.5096 18.7598 21.4382 18.8492 21.3417 18.9377C21.2451 19.0281 21.1216 19.1291 20.971 19.2406L20.7161 19.431H21.6834V19.9417Z"
+              fill="#484C56"
+            />
+            <path
+              d="M19.4429 16.8784C19.4429 17.3092 19.3647 17.6804 19.2083 17.9919C19.0539 18.3016 18.8386 18.5401 18.5625 18.7074C18.2883 18.8747 17.9726 18.9584 17.6155 18.9584C17.2583 18.9584 16.9407 18.8747 16.6626 18.7074C16.3865 18.5401 16.1703 18.3016 16.0139 17.9919C15.8575 17.6804 15.7793 17.3092 15.7793 16.8784V16.7255C15.7793 16.2947 15.8565 15.9244 16.011 15.6148C16.1674 15.3032 16.3836 15.0638 16.6597 14.8964C16.9358 14.7272 17.2525 14.6426 17.6097 14.6426C17.9669 14.6426 18.2835 14.7272 18.5596 14.8964C18.8357 15.0638 19.0519 15.3032 19.2083 15.6148C19.3647 15.9244 19.4429 16.2947 19.4429 16.7255V16.8784ZM18.4466 16.7197C18.4466 16.4408 18.4138 16.2071 18.3482 16.0187C18.2845 15.8283 18.1899 15.685 18.0644 15.5888C17.9389 15.4927 17.7873 15.4446 17.6097 15.4446C17.4282 15.4446 17.2756 15.4927 17.1521 15.5888C17.0285 15.685 16.9349 15.8283 16.8711 16.0187C16.8074 16.2071 16.7756 16.4408 16.7756 16.7197V16.8784C16.7756 17.1534 16.8074 17.3861 16.8711 17.5765C16.9368 17.7669 17.0314 17.9121 17.155 18.0121C17.2805 18.1102 17.434 18.1593 17.6155 18.1593C17.7931 18.1593 17.9437 18.1102 18.0673 18.0121C18.1928 17.9121 18.2874 17.7669 18.3511 17.5765C18.4148 17.3861 18.4466 17.1534 18.4466 16.8784V16.7197Z"
+              fill="#484C56"
+            />
+            <path
+              d="M15.394 17.4784C15.3785 17.7669 15.2993 18.0227 15.1565 18.2458C15.0155 18.4688 14.8186 18.6439 14.5657 18.7708C14.3127 18.8958 14.0115 18.9583 13.6621 18.9583C13.2914 18.9583 12.9728 18.8756 12.7063 18.7102C12.4418 18.5448 12.2391 18.3092 12.0981 18.0034C11.9572 17.6976 11.8867 17.3341 11.8867 16.9129V16.6908C11.8867 16.2677 11.9601 15.9032 12.1068 15.5974C12.2536 15.2916 12.4592 15.056 12.7237 14.8906C12.9882 14.7233 13.3 14.6396 13.6592 14.6396C14.0221 14.6396 14.3282 14.706 14.5772 14.8387C14.8263 14.9695 15.0184 15.1493 15.1536 15.3782C15.2907 15.6051 15.3718 15.8638 15.3969 16.1542H14.418C14.4064 15.9196 14.3446 15.7426 14.2326 15.6234C14.1225 15.5022 13.9314 15.4416 13.6592 15.4416C13.4835 15.4416 13.3377 15.484 13.2218 15.5686C13.1079 15.6513 13.023 15.784 12.967 15.9667C12.911 16.1494 12.883 16.3888 12.883 16.685V16.9129C12.883 17.2053 12.9081 17.4438 12.9583 17.6284C13.0085 17.8111 13.0906 17.9448 13.2045 18.0294C13.3184 18.114 13.4709 18.1563 13.6621 18.1563C13.8262 18.1563 13.9623 18.1323 14.0704 18.0842C14.1785 18.0361 14.2606 17.9621 14.3166 17.8621C14.3745 17.7601 14.4073 17.6322 14.4151 17.4784H15.394Z"
+              fill="#484C56"
+            />
+            <path
+              d="M10.3154 0.191406C15.6264 0.191515 19.9372 4.48093 19.9375 9.77832C19.9375 11.0765 19.677 12.3135 19.208 13.4424C18.6987 13.368 18.1672 13.3252 17.6201 13.3164C18.1434 12.2473 18.4375 11.047 18.4375 9.77832C18.4372 5.31486 14.8035 1.69151 10.3154 1.69141C5.82747 1.69164 2.19365 5.31494 2.19336 9.77832C2.19336 14.2419 5.82729 17.866 10.3154 17.8662C10.3401 17.8662 10.3651 17.8645 10.3896 17.8643C10.5248 18.3882 10.8422 18.8785 11.3047 19.3154C10.9796 19.3485 10.6493 19.3662 10.3154 19.3662C5.00438 19.366 0.693359 15.0759 0.693359 9.77832C0.693654 4.48101 5.00456 0.191641 10.3154 0.191406Z"
+              fill="#484C56"
+            />
+          </svg>
+          <div>
+            <p className="text-center text-sm font-normal text-[#59687D]">
+              סך יצור חשמלי
+            </p>
+            <p className="text-center text-lg font-normal text-[#484C56] flex flex-row-reverse items-center">
+              {isLoadingProduction
+                ? "..."
+                : formatNumber(totalProductionData?.total || 0, 0)}
+              <span>{totalProductionData?.unit || "MWh"}/</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default CO2DonutChart;

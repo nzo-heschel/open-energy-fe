@@ -60,6 +60,18 @@ const toNumber = (v: unknown): number => {
   return 0;
 };
 
+const getRenewableMwh = (item: Record<string, unknown>): number =>
+  item.renewable_mwh !== undefined
+    ? toNumber(item.renewable_mwh)
+    : toNumber(item.solar_mwh ?? item.solar) +
+      toNumber(item.wind_mwh ?? item.wind) +
+      toNumber(item.other_mwh ?? item.other);
+
+const getTechnologyRenewableMwh = (item: Record<string, unknown>): number =>
+  toNumber(item.solar_mwh ?? item.solar) +
+  toNumber(item.wind_mwh ?? item.wind) +
+  toNumber(item.other_mwh ?? item.other);
+
 // Bucket a renewables-transition series into per-(year, month) share %.
 // Accepts both daily ({ date: "YYYY-MM-DD", ... }) and monthly ({ period: "YYYY-MM", ... }) shapes.
 // Returns { "2025": { "05": 8.1, ... }, "2026": { "01": 7.4, ... } }
@@ -80,12 +92,7 @@ function bucketByYearMonth(
     const year = parts?.[0];
     const monthNum = parts?.[1];
     if (!year || !monthNum) continue;
-    const renewable =
-      item.renewable_mwh !== undefined
-        ? toNumber(item.renewable_mwh)
-        : toNumber(item.solar_mwh ?? item.solar) +
-          toNumber(item.wind_mwh ?? item.wind) +
-          toNumber(item.other_mwh ?? item.other);
+    const renewable = getRenewableMwh(item);
     const total = toNumber(item.total_mwh ?? item.total);
     if (!totals[year]) totals[year] = {};
     const bucket = totals[year][monthNum] ?? { renewable: 0, total: 0 };
@@ -109,6 +116,32 @@ function bucketByYearMonth(
       }
     }
   }
+  return result;
+}
+
+// Bucket the same series into per-(year, month) renewable production MWh.
+// Tab 2 intentionally uses only the technology fields, not renewable_mwh or total_mwh.
+function bucketMwhByYearMonth(
+  series: Array<Record<string, unknown>> | undefined,
+): Record<string, Record<string, number>> {
+  if (!series?.length) return {};
+  const result: Record<string, Record<string, number>> = {};
+
+  for (const raw of series) {
+    const item = raw as Record<string, unknown>;
+    const dateStr = (item.date ?? item.period ?? item.month) as
+      | string
+      | undefined;
+    const parts = dateStr?.split("-");
+    const year = parts?.[0];
+    const monthNum = parts?.[1];
+    if (!year || !monthNum) continue;
+
+    if (!result[year]) result[year] = {};
+    result[year][monthNum] =
+      (result[year][monthNum] ?? 0) + getTechnologyRenewableMwh(item);
+  }
+
   return result;
 }
 
@@ -207,65 +240,42 @@ export default function RenewableProduction2() {
     [industryData],
   );
 
+  // Per-(year, month) renewable MWh derived from the same daily series.
+  const perYearMonthMwh = useMemo(
+    () =>
+      bucketMwhByYearMonth(
+        industryData?.series as Array<Record<string, unknown>> | undefined,
+      ),
+    [industryData],
+  );
+
   // Years actually present in the response, sorted ascending. The legend and
   // bar series follow this — so we never try to render years with no data.
-  const visibleYears = useMemo(
-    () => Object.keys(perYearMonth).sort(),
-    [perYearMonth],
-  );
+  const visibleYears = useMemo(() => {
+    const years = new Set([
+      ...Object.keys(perYearMonth),
+      ...Object.keys(perYearMonthMwh),
+    ]);
+    return Array.from(years).sort();
+  }, [perYearMonth, perYearMonthMwh]);
 
   // Build the monthly grouped-bar data: one row per month, one key per visible year.
   const chartData = useMemo(() => {
-    if (tab !== 1) {
-      // Preferred: backend provides industry breakdown — use it as-is.
-      if (industryData?.industry_breakdown?.length) {
-        return industryData.industry_breakdown.map((item) => ({
-          month: item.industry_type,
-          potential: item.renewable_potential_mw,
-          renewableMW: item.renewable_potential_mw,
-          solarShare: item.solar_share_percent,
-        }));
-      }
-      // Fallback: when only a daily series is returned, summarize by tech.
-      const totals = industryData?.totals;
-      const solar = totals?.solar ?? 0;
-      const wind = totals?.wind ?? 0;
-      const other = totals?.other ?? 0;
-      const grandTotal = solar + wind + other;
-      if (grandTotal <= 0) return [] as any[];
-      return [
-        {
-          month: "סולארי",
-          potential: Math.round(solar),
-          renewableMW: Math.round(solar),
-          solarShare: 100,
-        },
-        {
-          month: "רוח",
-          potential: Math.round(wind),
-          renewableMW: Math.round(wind),
-          solarShare: 0,
-        },
-        {
-          month: "אחר",
-          potential: Math.round(other),
-          renewableMW: Math.round(other),
-          solarShare: 0,
-        },
-      ];
-    }
+    const source = tab === 1 ? perYearMonth : perYearMonthMwh;
 
     return MONTH_ORDER.map((monthNum) => {
-      const row: Record<string, unknown> = { month: hebrewMonths[monthNum] };
+      const row: Record<string, number | string> = {
+        month: hebrewMonths[monthNum],
+      };
       for (const y of visibleYears) {
-        const pct = perYearMonth[y]?.[monthNum];
-        if (typeof pct === "number" && pct > 0) {
-          row[y] = Number(pct.toFixed(2));
+        const value = source[y]?.[monthNum];
+        if (typeof value === "number" && value > 0) {
+          row[y] = tab === 1 ? Number(value.toFixed(2)) : Math.round(value);
         }
       }
       return row;
     }).filter((row) => visibleYears.some((y) => typeof row[y] === "number"));
-  }, [tab, industryData, perYearMonth, visibleYears]);
+  }, [tab, perYearMonth, perYearMonthMwh, visibleYears]);
 
   // Series metadata for the legend (reversed so the most recent year sits first in RTL).
   const legendSeries = useMemo(
@@ -291,14 +301,12 @@ export default function RenewableProduction2() {
   };
 
   const stackedActiveSeries = useMemo(() => {
-    if (tab !== 1) return {} as Record<string, boolean>;
     return Object.fromEntries(
       legendSeries.map((s) => [s.key, !hiddenKeys.has(s.key)]),
     ) as Record<string, boolean>;
-  }, [tab, legendSeries, hiddenKeys]);
+  }, [legendSeries, hiddenKeys]);
 
   const opacityForKey = (key: string) => {
-    if (tab !== 1) return 1;
     if (hiddenKeys.has(key)) return 0;
     if (hoveredKey && hoveredKey !== key) return 0.3;
     return 1;
@@ -319,30 +327,9 @@ export default function RenewableProduction2() {
     setHiddenKeys(next);
   };
 
-  // Tooltip: month header + total of shown percentages + per-year rows (Figma layout).
+  // Tooltip: month header + total of shown values + per-year rows (Figma layout).
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload || payload.length === 0) return null;
-
-    if (tab === 2) {
-      const dataPoint = payload[0]?.payload;
-      return (
-        <div className="rounded-lg shadow-xl border border-[#DEDEDE] bg-white p-3 min-w-[160px] text-sm">
-          <div className="text-sm text-gray-500 mb-2">{label}</div>
-          <div className="text-sm font-medium mb-1">
-            פוטנציאל מתחדשות:{" "}
-            <span className="font-bold">
-              {dataPoint?.renewableMW?.toLocaleString()} MWh
-            </span>
-          </div>
-          <div className="text-sm font-medium border-t border-[#707585] pt-1 mt-1">
-            חלק סולארי:{" "}
-            <span className="font-bold">
-              {dataPoint?.solarShare?.toFixed(1)}%
-            </span>
-          </div>
-        </div>
-      );
-    }
 
     const rows = legendSeries
       .map((s) => {
@@ -358,12 +345,16 @@ export default function RenewableProduction2() {
       );
 
     const total = rows.reduce((sum, r) => sum + r.value, 0);
+    const formatValue = (value: number) =>
+      tab === 1
+        ? `${value.toFixed(0)}%`
+        : `${Math.round(value).toLocaleString()} MWh`;
 
     return (
       <div className="rounded-lg shadow-xl border border-[#DEDEDE] bg-white p-3 min-w-[140px] text-sm">
         <div className="text-sm text-[#707585] mb-1 text-right">{label}</div>
         <div className="text-base font-medium text-[#59687D] border-b border-[#707585] pb-1 mb-2 text-right">
-          סה״כ {total.toFixed(0)}%
+          סה״כ {formatValue(total)}
         </div>
         <div className="flex flex-col gap-1">
           {rows.map((r) => (
@@ -379,7 +370,7 @@ export default function RenewableProduction2() {
                 <span className="text-sm text-[#59687D]">{r.label}</span>
               </div>
               <span className="text-sm font-medium text-[#484C56]">
-                {r.value.toFixed(0)}%
+                {formatValue(r.value)}
               </span>
             </div>
           ))}
@@ -435,11 +426,7 @@ export default function RenewableProduction2() {
         </div>
         <div className="flex items-start md:gap-4 gap-2">
           <a
-            href={
-              tab === 1
-                ? "/api#renewables-transition"
-                : "/api#renewables-potential-by-industry"
-            }
+            href="/api#renewables-transition"
             className="cursor-pointer hover:opacity-80 transition-opacity"
             aria-label="View API Documentation"
           >
@@ -480,19 +467,21 @@ export default function RenewableProduction2() {
           <div className="flex justify-center items-center h-full">
             <p className="text-slate-600">אין נתונים זמינים</p>
           </div>
-        ) : tab === 1 ? (
+        ) : (
           <StackedComposedChart
             barLayout="grouped"
             barGap={6}
             barCategoryGap="30%"
             data={chartData}
             xAxisDataKey="month"
-            yAxisLabel="אחוז מכלל הייצור [%]"
+            yAxisLabel={tab === 1 ? "אחוז מכלל הייצור [%]" : "[MWh]"}
             yAxisDomain={[
               0,
               (dataMax: number) => Math.max(5, Math.ceil(dataMax * 1.15)),
             ]}
-            yAxisTickFormatter={(v) => `${v}`}
+            yAxisTickFormatter={(v) =>
+              tab === 1 ? `${v}` : Number(v).toLocaleString()
+            }
             tooltipContent={<CustomTooltip />}
             tooltipCursor={{ fill: "rgba(0,0,0,0.03)" }}
             sizeBrackets={legendSeries}
@@ -503,26 +492,10 @@ export default function RenewableProduction2() {
             groupedBarRadius={[2, 2, 0, 0]}
             hideLabelList
           />
-        ) : (
-          <StackedComposedChart
-            data={chartData}
-            xAxisDataKey="month"
-            yAxisLabel="[MWh]"
-            yAxisDomain={[0, "auto"]}
-            yAxisTickFormatter={(v) => Number(v).toLocaleString()}
-            tooltipContent={<CustomTooltip />}
-            sizeBrackets={[{ key: "potential", color: "#7BC94A" }]}
-            activeSeries={{ potential: true }}
-            barSize={28}
-            opacityForKey={() => 1}
-            margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
-            lastBarRadius={[4, 4, 0, 0]}
-            hideLabelList
-          />
         )}
       </div>
 
-      {!isLoading && !error && chartData.length > 0 && tab === 1 && (
+      {!isLoading && !error && chartData.length > 0 && (
         <CustomLegend
           items={legendSeries}
           hoveredKey={hoveredKey}
@@ -532,30 +505,6 @@ export default function RenewableProduction2() {
           hiddenKeys={hiddenKeys}
         />
       )}
-      {!isLoading &&
-        !error &&
-        chartData.length > 0 &&
-        tab === 2 &&
-        (() => {
-          // Prefer the explicit total_potential_mw when the backend returns
-          // industry_breakdown; otherwise fall back to the rolled-up totals
-          // we already display as bars so the badge (and the bottom-tab
-          // anchor it provides) is always present.
-          const explicit = industryData?.total_potential_mw;
-          const rolled =
-            (industryData?.totals?.solar ?? 0) +
-            (industryData?.totals?.wind ?? 0) +
-            (industryData?.totals?.other ?? 0);
-          const value = explicit !== undefined ? explicit : rolled;
-          if (value <= 0) return null;
-          return (
-            <div className="flex justify-start mt-4">
-              <div className="text-sm text-gray-600">
-                סה״כ פוטנציאל: {Math.round(value).toLocaleString()} MWh
-              </div>
-            </div>
-          );
-        })()}
 
       {/* Tabs */}
       <div

@@ -20,7 +20,10 @@ import { differenceInDays, differenceInMonths } from "date-fns";
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white p-2 rounded-[10px] shadow-md border-none" style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}>
+      <div
+        className="bg-white p-2 rounded-[10px] shadow-md border-none"
+        style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}
+      >
         {/* <p className="text-gray-700 font-medium mb-2 border-b border-[#59687D]">{label}</p> */}
         <div className="space-y-1">
           {payload.slice(0, 1).map((entry: any, index: number) => (
@@ -55,7 +58,7 @@ const CustomLegend = (props: any) => {
 
   const handleClick = (dataKey: string) => {
     if (activeSeries.includes(dataKey)) {
-      setActiveSeries(activeSeries.filter(key => key !== dataKey));
+      setActiveSeries(activeSeries.filter((key) => key !== dataKey));
     } else {
       setActiveSeries([...activeSeries, dataKey]);
     }
@@ -71,8 +74,9 @@ const CustomLegend = (props: any) => {
             <div
               key={`legend-${index}`}
               onClick={() => handleClick(entry.dataKey)}
-              className={`flex items-center cursor-pointer px-3 py-1 rounded-lg ${isActive ? 'bg-transparent' : 'opacity-50'
-                }`}
+              className={`flex items-center cursor-pointer px-3 py-1 rounded-lg ${
+                isActive ? "bg-transparent" : "opacity-50"
+              }`}
             >
               <div
                 className="w-2 h-2 rounded-full ml-2"
@@ -106,7 +110,7 @@ const CustomYAxisLabel = (props: any) => {
       textAnchor="middle"
       fill="#707585"
       className="text-sm font-normal"
-      style={{ fontFamily: 'Heebo, sans-serif', color: '#707585' }}
+      style={{ fontFamily: "Heebo, sans-serif", color: "#707585" }}
       transform={`rotate(-90 ${viewBox.x} ${centerY})`}
     >
       [MWh]
@@ -123,18 +127,25 @@ const CustomXAxisLabel = (props: any) => {
       textAnchor="end"
       fill="#707585"
       className="text-sm font-normal"
-      style={{ fontFamily: 'Heebo, sans-serif', color: '#707585' }}
+      style={{ fontFamily: "Heebo, sans-serif", color: "#707585" }}
     >
       [₪]
     </text>
   );
 };
 
-export function ElectricityScatterGraph({ data, isLoading, error, startDate, endDate, selectedPreset }: ElectricityScatterGraphProps) {
+export function ElectricityScatterGraph({
+  data,
+  isLoading,
+  error,
+  startDate,
+  endDate,
+  selectedPreset,
+}: ElectricityScatterGraphProps) {
   // Determine date range type based on actual date range duration
   const dateRangeType = useMemo(() => {
     // Always calculate from actual date range, regardless of preset
-    if (!startDate || !endDate) return 'day';
+    if (!startDate || !endDate) return "day";
     const start = new Date(startDate);
     const end = new Date(endDate);
     const days = differenceInDays(end, start);
@@ -145,11 +156,11 @@ export function ElectricityScatterGraph({ data, isLoading, error, startDate, end
     // - 62 days to less than 2 years (730 days): use monthly correlation data
     // - 2 years (730 days) or more: use yearly correlation data
     if (days < 62) {
-      return 'day'; // Use correlation_by_view.day for ranges less than 62 days
+      return "day"; // Use correlation_by_view.day for ranges less than 62 days
     } else if (days < twoYearsInDays) {
-      return 'month'; // Use correlation_by_view.month for ranges 62 days to less than 2 years
+      return "month"; // Use correlation_by_view.month for ranges 62 days to less than 2 years
     } else {
-      return 'year'; // Use correlation_by_view.year for ranges 2 years or more
+      return "year"; // Use correlation_by_view.year for ranges 2 years or more
     }
   }, [startDate, endDate]);
 
@@ -162,7 +173,7 @@ export function ElectricityScatterGraph({ data, isLoading, error, startDate, end
         return data.correlation.map((item, i) => ({
           price: item.smp || 0,
           demand: item.net_demand || 0,
-          type: i % 2 === 0 ? "ביקוש משקי" : "מחיר שוליי כולל אילוצים",
+          type: i % 2 === 0 ? "ביקוש משקי" : "מחיר שולי כולל אילוצים",
         }));
       }
       return [];
@@ -176,11 +187,11 @@ export function ElectricityScatterGraph({ data, isLoading, error, startDate, end
       price_without_constraints: number;
     }> = [];
 
-    if (dateRangeType === 'day' && data.correlation_by_view.day) {
+    if (dateRangeType === "day" && data.correlation_by_view.day) {
       correlationData = data.correlation_by_view.day;
-    } else if (dateRangeType === 'month' && data.correlation_by_view.month) {
+    } else if (dateRangeType === "month" && data.correlation_by_view.month) {
       correlationData = data.correlation_by_view.month;
-    } else if (dateRangeType === 'year' && data.correlation_by_view.year) {
+    } else if (dateRangeType === "year" && data.correlation_by_view.year) {
       correlationData = data.correlation_by_view.year;
     }
 
@@ -192,30 +203,38 @@ export function ElectricityScatterGraph({ data, isLoading, error, startDate, end
     return correlationData.map((item, i) => ({
       price: item.price_with_constraints || 0,
       demand: item.net_demand || 0,
-      type: i % 2 === 0 ? "דוֹר" : "מחיר שוליי כולל אילוצים",
+      type: i % 2 === 0 ? "דוֹר" : "מחיר שולי כולל אילוצים",
     }));
   }, [data, dateRangeType]);
 
   // Calculate X-axis domain based on actual data
   const priceDomain = useMemo(() => {
     if (!scatterData1 || scatterData1.length === 0) return [0, 220];
-    const prices = scatterData1.map(item => item.price).filter(p => p > 0);
+    const prices = scatterData1.map((item) => item.price).filter((p) => p > 0);
     if (prices.length === 0) return [0, 220];
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
     const padding = Math.max((maxPrice - minPrice) * 0.1, maxPrice * 0.05);
-    return [Math.max(0, Math.floor(minPrice - padding)), Math.ceil(maxPrice + padding)];
+    return [
+      Math.max(0, Math.floor(minPrice - padding)),
+      Math.ceil(maxPrice + padding),
+    ];
   }, [scatterData1]);
 
   // Calculate Y-axis domain based on actual data
   const demandDomain = useMemo(() => {
     if (!scatterData1 || scatterData1.length === 0) return [0, 12000];
-    const demands = scatterData1.map(item => item.demand).filter(d => d > 0);
+    const demands = scatterData1
+      .map((item) => item.demand)
+      .filter((d) => d > 0);
     if (demands.length === 0) return [0, 12000];
     const minDemand = Math.min(...demands);
     const maxDemand = Math.max(...demands);
     const padding = Math.max((maxDemand - minDemand) * 0.1, maxDemand * 0.05);
-    return [Math.max(0, Math.floor(minDemand - padding)), Math.ceil(maxDemand + padding)];
+    return [
+      Math.max(0, Math.floor(minDemand - padding)),
+      Math.ceil(maxDemand + padding),
+    ];
   }, [scatterData1]);
 
   if (isLoading) {
@@ -258,7 +277,6 @@ export function ElectricityScatterGraph({ data, isLoading, error, startDate, end
             tick={{ fontSize: 12 }}
             allowDecimals={false}
             label={<CustomXAxisLabel />}
-
           />
           <YAxis
             type="number"
@@ -270,8 +288,16 @@ export function ElectricityScatterGraph({ data, isLoading, error, startDate, end
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend content={<CustomLegend />} />
-          <Scatter name="ביקוש נטו" data={scatterData1.filter((d) => d.type === "דוֹר")} fill="#166534" />
-          <Scatter name="מחיר שולים כולל אילוצים" data={scatterData1.filter((d) => d.type !== "דוֹר")} fill="#eab308" />
+          <Scatter
+            name="ביקוש נטו"
+            data={scatterData1.filter((d) => d.type === "דוֹר")}
+            fill="#166534"
+          />
+          <Scatter
+            name="מחיר שולים כולל אילוצים"
+            data={scatterData1.filter((d) => d.type !== "דוֹר")}
+            fill="#eab308"
+          />
         </ScatterChart>
       </ResponsiveContainer>
     </div>
@@ -280,15 +306,69 @@ export function ElectricityScatterGraph({ data, isLoading, error, startDate, end
 
 // --- Component 2: Line Graph ---
 const lineData2 = [
-  { time: "00:00", withExc: 110, withoutExc: 165, demandWith: 2800, demandWithout: 6300 },
-  { time: "02:00", withExc: 90, withoutExc: 140, demandWith: 2600, demandWithout: 6100 },
-  { time: "04:00", withExc: 85, withoutExc: 135, demandWith: 2500, demandWithout: 6000 },
-  { time: "06:00", withExc: 100, withoutExc: 160, demandWith: 2700, demandWithout: 6200 },
-  { time: "10:00", withExc: 110, withoutExc: 165, demandWith: 2800, demandWithout: 6300 },
-  { time: "14:00", withExc: 95, withoutExc: 140, demandWith: 2600, demandWithout: 6000 },
-  { time: "18:00", withExc: 90, withoutExc: 135, demandWith: 2500, demandWithout: 5900 },
-  { time: "22:00", withExc: 100, withoutExc: 145, demandWith: 2650, demandWithout: 6050 },
-  { time: "24:00", withExc: 105, withoutExc: 150, demandWith: 2700, demandWithout: 6100 },
+  {
+    time: "00:00",
+    withExc: 110,
+    withoutExc: 165,
+    demandWith: 2800,
+    demandWithout: 6300,
+  },
+  {
+    time: "02:00",
+    withExc: 90,
+    withoutExc: 140,
+    demandWith: 2600,
+    demandWithout: 6100,
+  },
+  {
+    time: "04:00",
+    withExc: 85,
+    withoutExc: 135,
+    demandWith: 2500,
+    demandWithout: 6000,
+  },
+  {
+    time: "06:00",
+    withExc: 100,
+    withoutExc: 160,
+    demandWith: 2700,
+    demandWithout: 6200,
+  },
+  {
+    time: "10:00",
+    withExc: 110,
+    withoutExc: 165,
+    demandWith: 2800,
+    demandWithout: 6300,
+  },
+  {
+    time: "14:00",
+    withExc: 95,
+    withoutExc: 140,
+    demandWith: 2600,
+    demandWithout: 6000,
+  },
+  {
+    time: "18:00",
+    withExc: 90,
+    withoutExc: 135,
+    demandWith: 2500,
+    demandWithout: 5900,
+  },
+  {
+    time: "22:00",
+    withExc: 100,
+    withoutExc: 145,
+    demandWith: 2650,
+    demandWithout: 6050,
+  },
+  {
+    time: "24:00",
+    withExc: 105,
+    withoutExc: 150,
+    demandWith: 2700,
+    demandWithout: 6100,
+  },
 ];
 
 export function ElectricityLineGraph() {
@@ -298,11 +378,24 @@ export function ElectricityLineGraph() {
         ייצור חשמל אל מול המחיר השוליי
       </h2> */}
       <ResponsiveContainer width="100%" height="95%">
-        <LineChart data={lineData2} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+        <LineChart
+          data={lineData2}
+          margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis dataKey="time" tick={{ fontSize: 12 }} />
-          <YAxis yAxisId="left" orientation="left" tick={{ fontSize: 12 }} domain={[0, 220]} />
-          <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} domain={[0, 11000]} />
+          <YAxis
+            yAxisId="left"
+            orientation="left"
+            tick={{ fontSize: 12 }}
+            domain={[0, 220]}
+          />
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            tick={{ fontSize: 12 }}
+            domain={[0, 11000]}
+          />
           <Tooltip content={<CustomTooltip />} />
           <Legend content={<CustomLegend />} />
           <Line
@@ -312,7 +405,7 @@ export function ElectricityLineGraph() {
             stroke="#166534"
             strokeWidth={2}
             dot={false}
-            name="מחיר שוליי ללא אילוצים"
+            name="מחיר שולי ללא אילוצים"
           />
           <Line
             yAxisId="left"
@@ -321,7 +414,7 @@ export function ElectricityLineGraph() {
             stroke="#eab308"
             strokeWidth={2}
             dot={false}
-            name="מחיר שוליי כולל אילוצים"
+            name="מחיר שולי כולל אילוצים"
           />
         </LineChart>
       </ResponsiveContainer>

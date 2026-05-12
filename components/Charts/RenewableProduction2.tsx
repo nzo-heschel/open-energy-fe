@@ -331,7 +331,7 @@ export default function RenewableProduction2() {
           <div className="text-sm font-medium mb-1">
             פוטנציאל מתחדשות:{" "}
             <span className="font-bold">
-              {dataPoint?.renewableMW?.toLocaleString()} MW
+              {dataPoint?.renewableMW?.toLocaleString()} MWh
             </span>
           </div>
           <div className="text-sm font-medium border-t border-[#707585] pt-1 mt-1">
@@ -507,7 +507,7 @@ export default function RenewableProduction2() {
           <StackedComposedChart
             data={chartData}
             xAxisDataKey="month"
-            yAxisLabel="[MW]"
+            yAxisLabel="[MWh]"
             yAxisDomain={[0, "auto"]}
             yAxisTickFormatter={(v) => Number(v).toLocaleString()}
             tooltipContent={<CustomTooltip />}
@@ -551,7 +551,7 @@ export default function RenewableProduction2() {
           return (
             <div className="flex justify-start mt-4">
               <div className="text-sm text-gray-600">
-                סה״כ פוטנציאל: {Math.round(value).toLocaleString()} MW
+                סה״כ פוטנציאל: {Math.round(value).toLocaleString()} MWh
               </div>
             </div>
           );

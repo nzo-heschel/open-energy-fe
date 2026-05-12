@@ -1,77 +1,97 @@
-'use client';
+"use client";
 
-import CO2DonutChart from '@/components/Charts/CO2DonutChart';
-import CO2EmissionsChart from '@/components/Charts/CO2EmissionsChart';
-import CO2LineChart from '@/components/Charts/CO2LineChart';
-import InterestPage from '@/components/InterestPage';
-import { Button } from '@/components/ui/button';
-import { useState } from 'react';
-
-
+import CO2DonutChart from "@/components/Charts/CO2DonutChart";
+import CO2EmissionsChart from "@/components/Charts/CO2EmissionsChart";
+import CO2LineChart from "@/components/Charts/CO2LineChart";
+import InterestPage from "@/components/InterestPage";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export default function Emissions() {
-    const [activeTab, setActiveTab] = useState<'market' | 'smp'>();
-    const [smpDetails, setSmpDetails] = useState(false)
-    const [marketDetails, setMarketDetails] = useState(false)
-    const [selectedTimeframe, setSelectedTimeframe] = useState('יומי');
-    const [showMore, setShowMore] = useState(true)
+  const [activeTab, setActiveTab] = useState<"market" | "smp">();
+  const [smpDetails, setSmpDetails] = useState(false);
+  const [marketDetails, setMarketDetails] = useState(false);
+  const [selectedTimeframe, setSelectedTimeframe] = useState("יומי");
+  const [showMore, setShowMore] = useState(true);
 
-    const handleChange = () => {
-        setShowMore(!showMore)
-    }
+  const handleChange = () => {
+    setShowMore(!showMore);
+  };
 
-    const handleSMP = (() => {
-        setSmpDetails(!smpDetails)
-        setActiveTab('smp');
-    })
-    const handleMarket = (() => {
-        setMarketDetails(!marketDetails)
-        setActiveTab('market');
-    })
+  const handleSMP = () => {
+    setSmpDetails(!smpDetails);
+    setActiveTab("smp");
+  };
+  const handleMarket = () => {
+    setMarketDetails(!marketDetails);
+    setActiveTab("market");
+  };
 
-    // Data for electricity consumption line chart - matching Figma design
-    const electricityData = {
-        dates: ['0', '2', '4', '6', '8', '10', '12', '14', '16', '18', '20', '22', '24'],
-        series: [
-            {
-                name: 'אחר',
-                data: [1000, 800, 600, 500, 400, 300, 200, 150, 200, 400, 600, 800, 1000],
-                color: '#64748b'
-            },
-            {
-                name: 'אנרגיות מתחדשות',
-                data: [0, 0, 0, 200, 800, 1200, 1600, 1800, 1600, 1200, 800, 200, 0],
-                color: '#10b981'
-            },
-            {
-                name: 'אנרגיות פוסיליות',
-                data: [7500, 7000, 6500, 6000, 5500, 5000, 4500, 4000, 4500, 5500, 6500, 7000, 7500],
-                color: '#f59e0b'
-            }
-        ]
-    };
+  // Data for electricity consumption line chart - matching Figma design
+  const electricityData = {
+    dates: [
+      "0",
+      "2",
+      "4",
+      "6",
+      "8",
+      "10",
+      "12",
+      "14",
+      "16",
+      "18",
+      "20",
+      "22",
+      "24",
+    ],
+    series: [
+      {
+        name: "אחר",
+        data: [
+          1000, 800, 600, 500, 400, 300, 200, 150, 200, 400, 600, 800, 1000,
+        ],
+        color: "#64748b",
+      },
+      {
+        name: "אנרגיות מתחדשות",
+        data: [0, 0, 0, 200, 800, 1200, 1600, 1800, 1600, 1200, 800, 200, 0],
+        color: "#10b981",
+      },
+      {
+        name: "אנרגיות פוסיליות",
+        data: [
+          7500, 7000, 6500, 6000, 5500, 5000, 4500, 4000, 4500, 5500, 6500,
+          7000, 7500,
+        ],
+        color: "#f59e0b",
+      },
+    ],
+  };
 
-    // Data for energy sources pie chart - matching Figma design
-    const energySourcesData = [
-        { name: 'אנרגיות פוסיליות', value: 48, color: '#CEA073' },
-        { name: 'אנרגיות מתחדשות', value: 98, color: '#2F7A4F' },
-        { name: 'אחר', value: 34, color: '#648AA3' },
-    ];
+  // Data for energy sources pie chart - matching Figma design
+  const energySourcesData = [
+    { name: "אנרגיות פוסיליות", value: 48, color: "#CEA073" },
+    { name: "אנרגיות מתחדשות", value: 98, color: "#2F7A4F" },
+    { name: "אחר", value: 34, color: "#648AA3" },
+  ];
 
-
-    return (
-        <div className="">
-            <div className="container mx-auto px-5 md:py-[52px] py-5 md:space-y-[52px] space-y-5 relative w-full overflow-hidden" >
-                {/* Main Content */}
-                <div className="md:space-y-[52px] space-y-8 bg-[#FDFBF6] border border-[#DEDEDE]/70 md:px-[60px] px-6 md:py-[50px] py-6 md:rounded-[40px] rounded-[20px]">
-                    <div className="">
-                        <h2 className="md:text-3xl text-2xl font-bold text-[#276E4E]">פליטות CO₂</h2>
-                        <div className="w-[46px] h-1 bg-[#276E4E] md:my-5 my-3"></div>
-                        <div className="flex flex-col gap-2 max-w-[1043px] w-full md:text-xl text-base">
-                            <p className="text-[#484C56] max-w-full leading-[120%]">
-                                כאן יהיה הסבר.  לורם איפסום דולור סיט אמט, קונסקטורר אדיפיסינג אלית הועניב היושבב שערש שמחויט - שלושע ותלברו חשלו שעותלשך וחאית נובש ערששף. זותה מנק הבקיץ אפאח דלאמת יבש.
-                            </p>
-                            {!showMore && (
+  return (
+    <div className="">
+      <div className="container mx-auto px-5 md:py-[52px] py-5 md:space-y-[52px] space-y-5 relative w-full overflow-hidden">
+        {/* Main Content */}
+        <div className="md:space-y-[52px] space-y-8 bg-[#FDFBF6] border border-[#DEDEDE]/70 md:px-[60px] px-6 md:py-[50px] py-6 md:rounded-[40px] rounded-[20px]">
+          <div className="">
+            <h2 className="md:text-3xl text-2xl font-bold text-[#276E4E]">
+              פליטות CO₂
+            </h2>
+            <div className="w-[46px] h-1 bg-[#276E4E] md:my-5 my-3"></div>
+            <div className="flex flex-col gap-2 max-w-[1043px] w-full md:text-xl text-base">
+              <p className="text-[#484C56] max-w-full leading-[120%]">
+                ייצור חשמל ממקורות מאובנים גורם לפליטות רבות של גזי חממה, ובראשם
+                CO2. המעבר לאנרגיה מתחדשת צפוי להפחית פליטות גזי חממה, ולמתן את
+                התדרדרות משבר האקלים.
+              </p>
+              {/* {!showMore && (
                                 <>
                                     <p className="text-[#484C56] max-w-full leading-[120%]">
                                         כאן יהיה הסבר.  לורם איפסום דולור סיט אמט, קונסקטורר אדיפיסינג אלית הועניב היושבב שערש שמחויט - שלושע ותלברו חשלו שעותלשך וחאית נובש ערששף. זותה מנק הבקיץ אפאח דלאמת יבש.
@@ -80,9 +100,9 @@ export default function Emissions() {
                                         כאן יהיה הסבר.  לורם איפסום דולור סיט אמט, קונסקטורר אדיפיסינג אלית הועניב היושבב שערש שמחויט - שלושע ותלברו חשלו שעותלשך וחאית נובש ערששף. זותה מנק הבקיץ אפאח דלאמת יבש.
                                     </p>
                                 </>
-                            )}
-                        </div>
-                        <Button variant="link" className="text-[#358BFF] mt-2 mr-0 p-0" onClick={handleChange}>
+                            )} */}
+            </div>
+            {/* <Button variant="link" className="text-[#358BFF] mt-2 mr-0 p-0" onClick={handleChange}>
                             {showMore ? (
                                 <span>
                                     קרא עוד…
@@ -92,24 +112,22 @@ export default function Emissions() {
                                     קרא פחות…
                                 </span>
                             )}
-                        </Button>
-                    </div>
+                        </Button> */}
+          </div>
 
-                    {/* Charts Grid: Figma line chart 649px, donut 532px → ratio ~1 : 1.22, gap 23px */}
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.22fr] gap-[23px]">
-                        <CO2DonutChart />
-                        <CO2LineChart />
-                    </div>
-                    <CO2EmissionsChart />
-                </div>
+          {/* Charts Grid: Figma line chart 649px, donut 532px → ratio ~1 : 1.22, gap 23px */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.22fr] gap-[23px]">
+            <CO2DonutChart />
+            <CO2LineChart />
+          </div>
+          <CO2EmissionsChart />
+        </div>
 
+        {/* <div className="bg-[#FDFBF6] border border-[#E9C863] md:rounded-[40px] rounded-[20px] py-10 px-5 space-y-[30px]"> */}
+        {/* </div> */}
+      </div>
 
-
-                {/* <div className="bg-[#FDFBF6] border border-[#E9C863] md:rounded-[40px] rounded-[20px] py-10 px-5 space-y-[30px]"> */}
-                {/* </div> */}
-            </div>
-
-            <InterestPage />
-        </div >
-    );
+      <InterestPage />
+    </div>
+  );
 }

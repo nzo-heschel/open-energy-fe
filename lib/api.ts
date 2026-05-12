@@ -161,6 +161,7 @@ export const exportEnergyMix = async (startDate: string, endDate: string) => {
   const params = new URLSearchParams();
   params.set('start_date', startDate);
   params.set('end_date', endDate);
+  const dateRange = `${startDate}-${endDate}`;
 
   try {
     const response = await fetch(`${API_BASE}api/v1/energy/overview/export?${params}`, {
@@ -174,13 +175,17 @@ export const exportEnergyMix = async (startDate: string, endDate: string) => {
 
     // Get the filename from Content-Disposition header or use a default
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'energy-mix-export.xlsx'; // default filename
+    let filename = `energy-mix-${dateRange}.xlsx`; // default filename
 
     if (contentDisposition) {
       const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
       if (filenameMatch && filenameMatch[1]) {
         filename = filenameMatch[1].replace(/['"]/g, '');
       }
+    }
+
+    if (!filename.includes(startDate) || !filename.includes(endDate)) {
+      filename = filename.replace(/(\.[^.]+)?$/, `-${dateRange}$1`);
     }
 
     // Get the blob from response

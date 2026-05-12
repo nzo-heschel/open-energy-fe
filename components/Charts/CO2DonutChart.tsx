@@ -192,11 +192,11 @@ const CO2DonutChart = () => {
           </div>
         </div>
         {/* Subtitle */}
-        <div className="md:text-sm text-xs text-slate-600">מאנרגיה פוסילית</div>
+        {/* <div className="md:text-sm text-xs text-slate-600">מאנרגיה פוסילית</div> */}
         {/* Time period label */}
-        <div className="md:text-sm text-xs text-slate-600 w-full mr-14">
+        {/* <div className="md:text-sm text-xs text-slate-600 w-full mr-14">
           פרק זמן:
-        </div>
+        </div> */}
 
         {/* Date controls row - same as SMP */}
         <div className="flex items-center gap-2">

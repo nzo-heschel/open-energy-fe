@@ -201,7 +201,7 @@ const HeatVsProductionChart: React.FC = () => {
             </button>
           </h2>
 
-          <p className="text-sm text-gray-600 mb-2">פרק זמן:</p>
+          {/* <p className="text-sm text-gray-600 mb-2">פרק זמן:</p> */}
 
           <div className="flex items-center gap-3">
             <span className="text-sm text-slate-600">סינון לפי:</span>
@@ -275,12 +275,15 @@ const HeatVsProductionChart: React.FC = () => {
                 <YAxis
                   yAxisId="left"
                   orientation="left"
-                  domain={["dataMin - 5", "dataMax + 5"]}
+                  domain={[
+                    (dataMin: number) => Math.round(dataMin - 5),
+                    (dataMax: number) => Math.round(dataMax + 5),
+                  ]}
                   tickLine={false}
                   axisLine={true}
                   tick={{ fill: "#6b7280", fontSize: 12 }}
                   label={{
-                    value: "עומס חום [מעלות C°]",
+                    value: "עומס חום [THI]",
                     angle: -90,
                     position: "insideLeft",
                     style: {

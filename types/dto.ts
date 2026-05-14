@@ -424,9 +424,30 @@ export type CO2EmissionsOverTimeResponse = {
     coal: number;
     natural_gas: number;
     diesel: number;
+    fuel_oil?: number;
+    methanol?: number;
     total_emissions: number;
     emissions_per_kwh: number;
+    emissions_savings?: number;
+    generation_mwh?: number;
+    emissions_ratio?: number;
     unit: string;
+    level1?: {
+      fossil_emissions?: number;
+      renewable_emissions_savings?: number;
+    };
+    level2?: {
+      fossil_emissions?: {
+        coal?: number;
+        natural_gas?: number;
+        diesel?: number;
+        fuel_oil?: number;
+        methanol?: number;
+      };
+      renewable_emissions_savings?: {
+        renewables?: number;
+      };
+    };
   }>;
 };
 
@@ -588,10 +609,10 @@ export type RenewablesProductionMixResponse = {
 // Renewables delivery-4 — forecast vs targets (fractions in [0, 1])
 export type RenewablesDelivery4DataPoint = {
   year: number;
-  renewable_rate: number;
-  realistic_forecast: number;
-  ministry_target: number;
-  nzo_target: number;
+  renewable_share_percent: number;
+  realistic_forecast_percent: number;
+  ministry_target_percent: number;
+  nzo_target_percent: number;
 };
 
 export type RenewablesDelivery4Response = {
@@ -618,11 +639,11 @@ export type RenewablesDelivery4InternationalRegion = {
   region: string;
   region_he?: string;
   region_key: string;
-  renewable_target_2030: number;
-  renewable_target_2050?: number | null;
-  solar_share_2024?: number | null;
+  renewable_target_percent_2030: number;
+  renewable_target_percent_2050?: number | null;
+  solar_share_percent_2024?: number | null;
   /** Total renewable share in generation (optional); when set with solar, non-solar segment = this minus solar */
-  renewable_share_2024?: number | null;
+  renewable_share_percent_2024?: number | null;
 };
 
 export type RenewablesDelivery4InternationalComparisonResponse = {
@@ -637,11 +658,19 @@ export type RenewablesDelivery4InternationalComparisonResponse = {
     include_solar_share?: boolean;
   };
   column_labels?: Record<string, RenewablesDelivery4InternationalColumnLabel>;
+  /** Plain strings (e.g. EN) or localized objects, keyed like region fields */
+  series_labels?: Record<
+    string,
+    string | RenewablesDelivery4InternationalColumnLabel
+  >;
   regions: RenewablesDelivery4InternationalRegion[];
   regions_without_solar_data?: string[];
   validation?: unknown[];
   source?: {
     csv_path?: string;
+    file_name?: string;
+    encoding?: string;
+    source_type?: string;
     source_notes?: string[];
   };
   prd_notes?: Record<string, string>;
@@ -803,9 +832,9 @@ export type ResponseCapacityByPeriodResponse = {
         'Positive' | 'Negative' | 'Partial Positive' | 'Limited Positive',
         | number
         | {
-            total_mw?: number;
-            count?: number;
-          }
+          total_mw?: number;
+          count?: number;
+        }
       >
     >;
   }>;
@@ -814,9 +843,9 @@ export type ResponseCapacityByPeriodResponse = {
       'Positive' | 'Negative' | 'Partial Positive' | 'Limited Positive',
       | number
       | {
-          total_mw?: number;
-          count?: number;
-        }
+        total_mw?: number;
+        count?: number;
+      }
     >
   >;
 };

@@ -1,10 +1,14 @@
 "use client";
 
 import DateRangePicker from "@/components/ui/DateRangePicker";
+import { Button } from "@/components/ui/button";
 import { exportCO2EmissionsOverTime, useCO2EmissionsOverTime } from "@/lib/api";
+import { LEVEL2_HEBREW_COLORS } from "@/lib/colors";
+import type { CO2EmissionsOverTimeResponse } from "@/types/dto";
 import api from "@/public/images/API.png";
 import download from "@/public/images/download_2.png";
 import { format, subDays } from "date-fns";
+import { ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import {
@@ -23,10 +27,49 @@ import {
   Tooltip as UITooltip,
 } from "../ui/tooltip";
 
-type DataPoint = {
-  date: string;
-  co2: number;
-  saved: number;
+type CO2ChartRow = CO2EmissionsOverTimeResponse["chart_data"][number];
+
+type LineDef = {
+  key: string;
+  label: string;
+  color: string;
+};
+
+type ChartRow = Record<string, string | number>;
+
+const CO2_LEVEL2_EXTRA: Record<string, string> = {
+  fuel_oil: "#9A7B4F",
+  methanol: "#6B8E7D",
+};
+
+const FOSSIL_KEYS = [
+  "coal",
+  "natural_gas",
+  "diesel",
+  "fuel_oil",
+  "methanol",
+] as const;
+
+type FossilKey = (typeof FOSSIL_KEYS)[number];
+
+const getFossilEmission = (item: CO2ChartRow, key: FossilKey): number => {
+  const fromL2 = item.level2?.fossil_emissions?.[key];
+  if (typeof fromL2 === "number") {
+    return fromL2;
+  }
+  const direct = item[key];
+  return typeof direct === "number" ? direct : 0;
+};
+
+const getRenewableSavings = (item: CO2ChartRow): number => {
+  const fromL2 = item.level2?.renewable_emissions_savings?.renewables;
+  if (typeof fromL2 === "number") {
+    return fromL2;
+  }
+  if (typeof item.emissions_savings === "number") {
+    return item.emissions_savings;
+  }
+  return 0;
 };
 
 const formatTooltipNumber = (value: number) =>
@@ -70,10 +113,8 @@ const formatTooltipDateLabel = (label: string | number) =>
 
 const CO2LineChart = () => {
   const [hoveredLegend, setHoveredLegend] = useState<string | null>(null);
-  const [activeLines, setActiveLines] = useState({
-    co2: true,
-    saved: true,
-  });
+  const [showLevel2, setShowLevel2] = useState(false);
+  const [activeLines, setActiveLines] = useState<Record<string, boolean>>({});
   const [startDate, setStartDate] = useState<string>(() => {
     return format(subDays(new Date(), 6), "yyyy-MM-dd");
   });
@@ -86,8 +127,11 @@ const CO2LineChart = () => {
     endDate,
   );
 
-  const toggleLine = (key: keyof typeof activeLines) => {
-    setActiveLines((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggleLine = (key: string) => {
+    setActiveLines((prev) => {
+      const currentlyVisible = prev[key] !== false;
+      return { ...prev, [key]: !currentlyVisible };
+    });
   };
 
   const handleDateRangeChange = (newStartDate: string, newEndDate: string) => {
@@ -104,10 +148,9 @@ const CO2LineChart = () => {
     }
   };
 
-  // Transform API data to chart format
-  const currentData = useMemo<DataPoint[]>(() => {
-    if (!data?.chart_data) {
-      return [];
+  const { chartRows, lineDefs } = useMemo(() => {
+    if (!data?.chart_data?.length) {
+      return { chartRows: [] as ChartRow[], lineDefs: [] as LineDef[] };
     }
 
     const chartData = data.chart_data;
@@ -118,19 +161,90 @@ const CO2LineChart = () => {
       0,
     );
 
-    return chartData.map((item) => {
-      // Calculate saved proportionally based on this period's share of total emissions
-      const emissionsShare =
-        totalEmissions > 0 ? item.total_emissions / totalEmissions : 0;
-      const saved = totalEmissionsAvoided * emissionsShare;
+    if (!showLevel2) {
+      const rows: ChartRow[] = chartData.map((item) => {
+        const emissionsShare =
+          totalEmissions > 0 ? item.total_emissions / totalEmissions : 0;
+        const savedFromInfographic = totalEmissionsAvoided * emissionsShare;
+        const saved =
+          typeof item.emissions_savings === "number"
+            ? item.emissions_savings
+            : savedFromInfographic;
+
+        return {
+          date: item.label || item.period,
+          co2: item.total_emissions,
+          saved,
+        };
+      });
 
       return {
-        date: item.label || item.period,
-        co2: item.total_emissions,
-        saved: saved,
+        chartRows: rows,
+        lineDefs: [
+          { key: "co2", label: "פליטות CO₂", color: "#5D6FFF" },
+          {
+            key: "saved",
+            label: "חיסכון בפליטות על ידי ייצור מאנרגיות מתחדשות",
+            color: "#1E8025",
+          },
+        ],
       };
+    }
+
+    const fossilMeta: { key: FossilKey; label: string; color: string }[] = [
+      { key: "coal", label: "פחם", color: LEVEL2_HEBREW_COLORS["פחם"] },
+      {
+        key: "natural_gas",
+        label: "גז טבעי",
+        color: LEVEL2_HEBREW_COLORS["גז טבעי"],
+      },
+      { key: "diesel", label: "סולר", color: LEVEL2_HEBREW_COLORS["סולר"] },
+      {
+        key: "fuel_oil",
+        label: "שמן הסקה",
+        color: CO2_LEVEL2_EXTRA.fuel_oil,
+      },
+      {
+        key: "methanol",
+        label: "מתנול",
+        color: CO2_LEVEL2_EXTRA.methanol,
+      },
+    ];
+
+    const defs: LineDef[] = [];
+
+    for (const meta of fossilMeta) {
+      if (chartData.some((item) => getFossilEmission(item, meta.key) > 0)) {
+        defs.push({ key: meta.key, label: meta.label, color: meta.color });
+      }
+    }
+
+    if (chartData.some((item) => getRenewableSavings(item) > 0)) {
+      defs.push({
+        key: "renewable_savings",
+        label: "חיסכון בפליטות על ידי ייצור מאנרגיות מתחדשות",
+        color: "#1E8025",
+      });
+    }
+
+    const rows: ChartRow[] = chartData.map((item) => {
+      const row: ChartRow = {
+        date: item.label || item.period,
+      };
+      for (const d of defs) {
+        if (d.key === "renewable_savings") {
+          row[d.key] = getRenewableSavings(item);
+        } else {
+          row[d.key] = getFossilEmission(item, d.key as FossilKey);
+        }
+      }
+      return row;
     });
-  }, [data]);
+
+    return { chartRows: rows, lineDefs: defs };
+  }, [data, showLevel2]);
+
+  const isLineVisible = (key: string) => activeLines[key] !== false;
 
   const getOpacity = (key: string) => {
     if (!hoveredLegend) return 1;
@@ -142,7 +256,6 @@ const CO2LineChart = () => {
     return hoveredLegend === key ? 1 : 0.5;
   };
 
-  console.log(currentData);
   return (
     <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[16px] p-4 md:p-6 pb-4 overflow-hidden h-full flex flex-col">
       <div className="flex flex-col gap-1">
@@ -238,7 +351,7 @@ const CO2LineChart = () => {
           <div className="flex justify-center items-center h-full">
             <p className="text-red-600">שגיאה בטעינת הנתונים</p>
           </div>
-        ) : currentData.length === 0 ? (
+        ) : chartRows.length === 0 ? (
           <div className="flex justify-center items-center h-full">
             <p className="text-slate-600">אין נתונים זמינים</p>
           </div>
@@ -246,7 +359,8 @@ const CO2LineChart = () => {
           <>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
-                data={currentData}
+                key={`co2-line-${showLevel2}-${startDate}-${endDate}`}
+                data={chartRows}
                 margin={{ top: 10, right: 0, left: 10, bottom: 10 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -272,7 +386,7 @@ const CO2LineChart = () => {
                   separator=": "
                   formatter={(value: number, name: string) => [
                     formatTooltipNumber(value),
-                    name === "co2" ? "פליטות CO₂" : "חיסכון",
+                    name,
                   ]}
                   labelFormatter={(label) =>
                     `תאריך: ${formatTooltipDateLabel(label)}`
@@ -283,25 +397,19 @@ const CO2LineChart = () => {
                     fontSize: "12px",
                   }}
                 />
-                {activeLines.co2 && (
-                  <Line
-                    type="linear"
-                    dataKey="co2"
-                    stroke="#5D6FFF"
-                    strokeWidth={1.5}
-                    dot={false}
-                    opacity={getOpacity("co2")}
-                  />
-                )}
-                {activeLines.saved && (
-                  <Line
-                    type="linear"
-                    dataKey="saved"
-                    stroke="#1E8025"
-                    strokeWidth={1.5}
-                    dot={false}
-                    opacity={getOpacity("saved")}
-                  />
+                {lineDefs.map((def) =>
+                  isLineVisible(def.key) ? (
+                    <Line
+                      key={def.key}
+                      type="linear"
+                      name={def.label}
+                      dataKey={def.key}
+                      stroke={def.color}
+                      strokeWidth={1.5}
+                      dot={false}
+                      opacity={getOpacity(def.key)}
+                    />
+                  ) : null,
                 )}
               </LineChart>
             </ResponsiveContainer>
@@ -310,52 +418,44 @@ const CO2LineChart = () => {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-col md:flex-row justify-start gap-6 mt-1">
-        <div
-          className="flex items-center gap-2 cursor-pointer transition-opacity duration-200"
-          onClick={() => toggleLine("co2")}
-          onMouseEnter={() => setHoveredLegend("co2")}
-          onMouseLeave={() => setHoveredLegend(null)}
-          style={{ opacity: getLegendOpacity("co2") }}
-        >
-          <span
-            className="w-2 h-2 rounded-full transition-opacity duration-200"
-            style={{
-              backgroundColor: "#5D6FFF",
-              opacity: activeLines.co2 ? 1 : 0.3,
-            }}
-          ></span>
-          <span
-            className={`text-xs transition-all duration-200 ${
-              activeLines.co2 ? "text-gray-800" : "text-gray-400"
-            }`}
+      <div className="flex flex-col md:flex-row flex-wrap justify-start gap-x-6 gap-y-2 mt-1">
+        {lineDefs.map((def) => (
+          <div
+            key={def.key}
+            className="flex items-center gap-2 cursor-pointer transition-opacity duration-200"
+            onClick={() => toggleLine(def.key)}
+            onMouseEnter={() => setHoveredLegend(def.key)}
+            onMouseLeave={() => setHoveredLegend(null)}
+            style={{ opacity: getLegendOpacity(def.key) }}
           >
-            פליטות CO₂
-          </span>
-        </div>
+            <span
+              className="w-2 h-2 rounded-full shrink-0 transition-opacity duration-200"
+              style={{
+                backgroundColor: def.color,
+                opacity: isLineVisible(def.key) ? 1 : 0.3,
+              }}
+            />
+            <span
+              className={`text-xs transition-all duration-200 ${
+                isLineVisible(def.key) ? "text-gray-800" : "text-gray-400"
+              }`}
+            >
+              {def.label}
+            </span>
+          </div>
+        ))}
+      </div>
 
-        <div
-          className="flex items-center gap-2 cursor-pointer transition-opacity duration-200"
-          onClick={() => toggleLine("saved")}
-          onMouseEnter={() => setHoveredLegend("saved")}
-          onMouseLeave={() => setHoveredLegend(null)}
-          style={{ opacity: getLegendOpacity("saved") }}
+      <div className="flex justify-start mt-3">
+        <Button
+          variant="link"
+          className="text-blue-600 text-sm h-auto p-0 inline-flex items-center gap-1"
+          type="button"
+          onClick={() => setShowLevel2(!showLevel2)}
         >
-          <span
-            className="w-2 h-2 rounded-full transition-opacity duration-200"
-            style={{
-              backgroundColor: "#1E8025",
-              opacity: activeLines.saved ? 1 : 0.3,
-            }}
-          ></span>
-          <span
-            className={`text-xs transition-all duration-200 ${
-              activeLines.saved ? "text-gray-800" : "text-gray-400"
-            }`}
-          >
-            חיסכון בפליטות על ידי ייצור מאנרגיות מתחדשות
-          </span>
-        </div>
+          {showLevel2 ? "הסתר פירוט" : "הצג נתונים"}
+          <ChevronLeft className="w-4 h-4 shrink-0" />
+        </Button>
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import {
   ResponsiveContainer,
   Legend,
   LabelList,
+  Tooltip,
 } from "recharts";
 import TooltipInfo from "../TooltipInfo";
 import {
@@ -22,7 +23,15 @@ import {
 } from "@/lib/api";
 import type { RenewablesDelivery4InternationalRegion } from "@/types/dto";
 
-const pct = (fraction: number) => fraction * 100;
+/** API sends either unitless fractions (legacy) or `value_unit: "percent"` scale */
+function toChartPercent(
+  value: number | null | undefined,
+  valueUnit: string | undefined,
+): number {
+  if (value == null || Number.isNaN(value)) return 0;
+  if (valueUnit === "percent" || valueUnit === "%") return value;
+  return value * 100;
+}
 
 /** Stacked bar palette (design reference) */
 const colors = {
@@ -53,51 +62,171 @@ type ChartRow = {
   /** Stacked segment widths (sum to 2030% or 2050% cumulative target) */
   solarPct: number | null;
   renewableRemainderPct: number | null;
-  /** Width from cumulative baseline up to 2030 target (not full 2030 %) */
+  /** Width from cumulative baseline up to 2030 target (0 when 2030 layer is off) */
   target2030Pct: number;
   /** Width from 2030 target to 2050 target */
   target2050Pct: number | null;
   /** Labels inside bars = cumulative % at end of each segment (Figma) */
   labelCumSolar: number | null;
   labelCumAfterRemainder: number | null;
-  labelCum2030: number;
+  /** null when 2030 target layer is hidden */
+  labelCum2030: number | null;
   labelCum2050: number | null;
 };
+
+const STACK_TOOLTIP_ORDER: (keyof ChartRow)[] = [
+  "solarPct",
+  "renewableRemainderPct",
+  "target2030Pct",
+  "target2050Pct",
+];
+
+type ComparisonChartTooltipProps = {
+  active?: boolean;
+  payload?: Array<{
+    dataKey?: keyof ChartRow | string;
+    name?: string;
+    value?: number;
+    color?: string;
+    payload?: ChartRow;
+  }>;
+  include2050: boolean;
+};
+
+function ComparisonChartTooltip({
+  active,
+  payload,
+  include2050,
+}: ComparisonChartTooltipProps) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload;
+  if (!row) return null;
+
+  const byKey = new Map(payload.map((p) => [String(p.dataKey), p] as const));
+
+  const ordered = STACK_TOOLTIP_ORDER.flatMap((key) => {
+    const p = byKey.get(key);
+    if (!p || typeof p.value !== "number" || p.value <= 0) return [];
+    return [p];
+  });
+
+  if (!ordered.length) return null;
+
+  return (
+    <div
+      className="bg-white shadow-lg rounded-lg p-3 border border-gray-200 text-sm max-w-[min(90vw,280px)]"
+      dir="rtl"
+    >
+      <p className="font-semibold text-[#484C56] mb-2 border-b border-gray-100 pb-1.5">
+        {row.country}
+      </p>
+      <ul className="space-y-1.5 list-none m-0 p-0">
+        {ordered.map((p) => {
+          const key = String(p.dataKey) as keyof typeof colors;
+          const dot =
+            p.color ??
+            (key in colors ? colors[key as keyof typeof colors] : "#59687D");
+          const seg = typeof p.value === "number" ? p.value : 0;
+          return (
+            <li
+              key={String(p.dataKey)}
+              className="flex justify-between items-center gap-3 w-full"
+            >
+              <span className="flex items-center gap-2 min-w-0">
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: dot }}
+                />
+                <span className="text-[#59687D] truncate">{p.name}</span>
+              </span>
+              <span className="font-medium text-[#484C56] tabular-nums shrink-0">
+                {seg.toFixed(1)}%
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-2 pt-2 border-t border-gray-100 text-xs text-[#59687D] leading-snug">
+        {[
+          row.labelCum2030 != null
+            ? `מצטבר עד יעד 2030: ${row.labelCum2030}%`
+            : null,
+          include2050 && row.labelCum2050 != null
+            ? `מצטבר עד יעד 2050: ${row.labelCum2050}%`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+      </p>
+    </div>
+  );
+}
+
+function seriesLegendLabel(
+  seriesLabels:
+    | Record<string, string | { en?: string; he?: string }>
+    | undefined,
+  key: string,
+  fallbackHe: string,
+): string {
+  const raw = seriesLabels?.[key];
+  if (raw == null) return fallbackHe;
+  if (typeof raw === "string") return raw;
+  return raw.he ?? raw.en ?? fallbackHe;
+}
 
 function buildRows(
   regions: RenewablesDelivery4InternationalRegion[],
   include2050: boolean,
   includeSolar: boolean,
+  include2030: boolean,
+  valueUnit: string | undefined,
 ): ChartRow[] {
   return regions.map((r) => {
-    const t30 = pct(r.renewable_target_2030);
+    const t30FromData =
+      r.renewable_target_percent_2030 != null &&
+      r.renewable_target_percent_2030 > 0
+        ? toChartPercent(r.renewable_target_percent_2030, valueUnit)
+        : null;
     const t50 =
       include2050 &&
-      r.renewable_target_2050 != null &&
-      r.renewable_target_2050 > 0
-        ? pct(r.renewable_target_2050)
+      r.renewable_target_percent_2050 != null &&
+      r.renewable_target_percent_2050 > 0
+        ? toChartPercent(r.renewable_target_percent_2050, valueUnit)
         : null;
 
     const solarW =
-      includeSolar && r.solar_share_2024 != null && r.solar_share_2024 > 0
-        ? pct(r.solar_share_2024)
+      includeSolar &&
+      r.solar_share_percent_2024 != null &&
+      r.solar_share_percent_2024 > 0
+        ? toChartPercent(r.solar_share_percent_2024, valueUnit)
         : null;
 
     let renewableRemainderPct: number | null = null;
-    if (r.renewable_share_2024 != null && r.renewable_share_2024 > 0) {
-      const total = pct(r.renewable_share_2024);
+    if (
+      r.renewable_share_percent_2024 != null &&
+      r.renewable_share_percent_2024 > 0
+    ) {
+      const total = toChartPercent(r.renewable_share_percent_2024, valueUnit);
       renewableRemainderPct =
         solarW != null ? Math.max(0, total - solarW) : total;
     }
 
     const afterSolar = (solarW ?? 0) + (renewableRemainderPct ?? 0);
-    const segTo2030 = Math.max(0, t30 - afterSolar);
-    const segTo2050 = t50 != null ? Math.max(0, t50 - t30) : null;
+    const segTo2030 =
+      include2030 && t30FromData != null
+        ? Math.max(0, t30FromData - afterSolar)
+        : null;
+    const segTo2050 =
+      t50 != null && t30FromData != null
+        ? Math.max(0, t50 - t30FromData)
+        : null;
 
     const labelCumSolar = solarW != null ? Math.round(solarW) : null;
     const labelCumAfterRemainder =
       renewableRemainderPct != null ? Math.round(afterSolar) : null;
-    const labelCum2030 = Math.round(t30);
+    const labelCum2030 =
+      include2030 && t30FromData != null ? Math.round(t30FromData) : null;
     const labelCum2050 = t50 != null ? Math.round(t50) : null;
 
     return {
@@ -105,7 +234,7 @@ function buildRows(
       region_key: r.region_key,
       solarPct: solarW,
       renewableRemainderPct,
-      target2030Pct: segTo2030,
+      target2030Pct: segTo2030 ?? 0,
       target2050Pct: segTo2050,
       labelCumSolar,
       labelCumAfterRemainder,
@@ -158,7 +287,7 @@ function makeCumulativeSegmentLabel(
       row.labelCumAfterRemainder != null
     ) {
       text = `${row.labelCumAfterRemainder}%`;
-    } else if (dataKey === "target2030Pct") {
+    } else if (dataKey === "target2030Pct" && row.labelCum2030 != null) {
       text = `${row.labelCum2030}%`;
     } else if (dataKey === "target2050Pct" && row.labelCum2050 != null) {
       text = `${row.labelCum2050}%`;
@@ -231,14 +360,22 @@ export default function RenewableChart2() {
   const [showTooltip, setShowTooltip] = useState(false);
   const [include2050, setInclude2050] = useState(true);
   const [includeSolar, setIncludeSolar] = useState(true);
+  const [include2030, setInclude2030] = useState(true);
   const [exporting, setExporting] = useState(false);
 
   const { data, isLoading, error } =
     useRenewablesDelivery4InternationalComparison(include2050, includeSolar);
 
   const chartData = useMemo(
-    () => buildRows(data?.regions ?? [], include2050, includeSolar),
-    [data?.regions, include2050, includeSolar],
+    () =>
+      buildRows(
+        data?.regions ?? [],
+        include2050,
+        includeSolar,
+        include2030,
+        data?.value_unit,
+      ),
+    [data?.regions, data?.value_unit, include2030, include2050, includeSolar],
   );
 
   const chartMax = useMemo(() => {
@@ -254,20 +391,22 @@ export default function RenewableChart2() {
 
   const hasRenewableShare = useMemo(
     () =>
-      (data?.regions ?? []).some(
-        (r) => r.renewable_share_2024 != null && r.renewable_share_2024 > 0,
-      ),
-    [data?.regions],
+      (data?.regions ?? []).some((r) => {
+        const v = r.renewable_share_percent_2024;
+        return v != null && toChartPercent(v, data?.value_unit) > 0;
+      }),
+    [data?.regions, data?.value_unit],
   );
 
   /** Figma: סולארי → (כיום) → 2030 → 2050 */
   const legendRows: LegendRow[] = useMemo(() => {
-    const labels = data?.column_labels;
+    const labels = data?.series_labels;
     const rows: LegendRow[] = [];
     rows.push({
       dataKey: "solarPct",
       color: colors.solarPct,
-      label: labels?.solar_share_2024?.he ?? "שיעור אנרגיה סולארית בשנת 2024",
+      label: "שיעור אנרגיה סולארית בשנת 2024",
+
       toggleable: true,
       enabled: includeSolar,
     });
@@ -283,28 +422,37 @@ export default function RenewableChart2() {
     rows.push({
       dataKey: "target2030Pct",
       color: colors.target2030Pct,
-      label: labels?.renewable_target_2030?.he ?? "יעדים ל-2030",
+      label: "יעדים ל-2030",
       toggleable: true,
-      enabled: true,
+      enabled: include2030,
     });
     rows.push({
       dataKey: "target2050Pct",
       color: colors.target2050Pct,
-      label: labels?.renewable_target_2050?.he ?? "יעדים ל-2050",
+      label: "יעדים ל-2050",
+
       toggleable: true,
       enabled: include2050,
     });
     return rows;
-  }, [data?.column_labels, include2050, includeSolar, hasRenewableShare]);
+  }, [data?.series_labels, include2030, include2050, includeSolar, hasRenewableShare]);
 
   const barKeys = useMemo(() => {
     const keys: (keyof ChartRow)[] = [];
     if (includeSolar) keys.push("solarPct");
     if (hasRenewableShare) keys.push("renewableRemainderPct");
-    keys.push("target2030Pct");
+    if (include2030) keys.push("target2030Pct");
     if (include2050) keys.push("target2050Pct");
     return keys;
-  }, [include2050, includeSolar, hasRenewableShare]);
+  }, [include2030, include2050, includeSolar, hasRenewableShare]);
+
+  const barDisplayNameByKey = useMemo(() => {
+    const m: Partial<Record<keyof ChartRow, string>> = {};
+    for (const r of legendRows) {
+      m[r.dataKey as keyof ChartRow] = r.label;
+    }
+    return m;
+  }, [legendRows]);
 
   const barOpacity = (key: keyof ChartRow) => {
     if (
@@ -325,6 +473,7 @@ export default function RenewableChart2() {
     if (!row.toggleable) return;
     if (row.dataKey === "solarPct") setIncludeSolar((v) => !v);
     if (row.dataKey === "target2050Pct") setInclude2050((v) => !v);
+    if (row.dataKey === "target2030Pct") setInclude2030((v) => !v);
   };
 
   const title = "השוואה בין לאומית של יעדי מתחדשות וייצור אנרגיה סולארית";
@@ -333,7 +482,7 @@ export default function RenewableChart2() {
     const parts: string[] = [];
     if (data?.value_unit_description) parts.push(data.value_unit_description);
     parts.push(
-      "הגרף משווה בין יעדי אנרגיה מתחדשת לשנים 2030 ו-2050 לבין שיעור סולארי ב-2024. יעד 2030 תמיד מוצג. לחיצה על פריט במקרא מפעילה או מכבה את יעד 2050 ואת שכבת הסולאר.",
+      "הגרף משווה בין יעדי אנרגיה מתחדשת לשנים 2030 ו-2050 לבין שיעור סולארי ב-2024. לחיצה על פריט במקרא מפעילה או מכבה את שכבות הסולאר, יעד 2030 ויעד 2050.",
     );
     if (data?.source?.source_notes?.length) {
       parts.push(`מקורות: ${data.source.source_notes.join(" · ")}`);
@@ -366,8 +515,6 @@ export default function RenewableChart2() {
 
   const missingSolarSide =
     includeSolar && (data?.regions_without_solar_data?.length ?? 0) > 0;
-
-  console.log(chartData);
 
   if (isLoading) {
     return (
@@ -529,10 +676,23 @@ export default function RenewableChart2() {
                 tick={false}
               />
               <Legend content={() => null} />
+              <Tooltip
+                cursor={{ fill: "rgba(89, 104, 125, 0.07)" }}
+                content={(props) => (
+                  <ComparisonChartTooltip
+                    active={props.active}
+                    payload={
+                      props.payload as ComparisonChartTooltipProps["payload"]
+                    }
+                    include2050={include2050}
+                  />
+                )}
+              />
               {barKeys.map((key, barIndex) => (
                 <Bar
                   key={key}
                   dataKey={key}
+                  name={barDisplayNameByKey[key] ?? String(key)}
                   stackId="a"
                   fill={colors[key as keyof typeof colors]}
                   stroke="#ffffff"

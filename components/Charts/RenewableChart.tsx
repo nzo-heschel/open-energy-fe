@@ -23,8 +23,6 @@ import {
   useRenewablesDelivery4,
 } from "@/lib/api";
 
-const pct = (fraction: number) => fraction * 100;
-
 type ChartRow = {
   year: number;
   actualLinePct: number;
@@ -57,12 +55,12 @@ function buildChartRows(
 
   const chartData: ChartRow[] = rows.map((r) => {
     const hasActual = r.renewable_share_percent > 0;
-    const historicalActualPct = pct(r.renewable_share_percent);
+    const historicalActualPct = r.renewable_share_percent;
     const actualLinePct = hasActual
       ? historicalActualPct
-      : pct(r.realistic_forecast_percent);
-    const ministryPct = pct(r.ministry_target_percent);
-    const nzoPct = pct(r.nzo_target_percent);
+      : r.realistic_forecast_percent;
+    const ministryPct = r.ministry_target_percent;
+    const nzoPct = r.nzo_target_percent;
 
     const inBarRange = lastYearWithActual > 0 && r.year <= lastYearWithActual;
     const actualBar = inBarRange ? historicalActualPct : null;
@@ -91,6 +89,7 @@ function buildChartRows(
 
 export default function RenewableChart() {
   const [hovered, setHovered] = useState<string | null>(null);
+  const [isChartHovered, setIsChartHovered] = useState(false);
   const [selectedPrediction, setSelectedPrediction] = useState<
     "ministry" | "nzo"
   >("ministry");
@@ -328,13 +327,23 @@ export default function RenewableChart() {
           אחוז אנרגיה מתחדשת
         </div>
       </div>
-      <div className="md:h-[500px] h-[300px] relative">
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData}>
-            <CartesianGrid vertical={false} />
-            <XAxis dataKey="year" />
-            <YAxis tickFormatter={(value) => `${value}%`} />
-            <Tooltip content={<CustomTooltip />} />
+      <div
+        className="md:h-[500px] h-[300px] relative"
+        onMouseLeave={() => setIsChartHovered(false)}
+      >
+        <div
+          className={`w-full h-full relative ${isChartHovered ? "z-20" : "z-0"}`}
+          onMouseEnter={() => setIsChartHovered(true)}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={chartData}>
+              <CartesianGrid vertical={false} />
+              <XAxis dataKey="year" />
+              <YAxis tickFormatter={(value) => `${value}%`} />
+              <Tooltip
+                content={<CustomTooltip />}
+                wrapperStyle={{ zIndex: 50 }}
+              />
             <Legend content={() => null} />
 
             <Bar
@@ -403,10 +412,11 @@ export default function RenewableChart() {
               name="יעד NZO"
               opacity={opacity("nzo")}
             />
-          </ComposedChart>
-        </ResponsiveContainer>
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
 
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 pointer-events-none z-10">
           <div
             className="absolute text-sm font-medium whitespace-nowrap"
             style={{

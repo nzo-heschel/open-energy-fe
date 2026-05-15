@@ -517,21 +517,23 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
         'district (optional, Jerusalem|North|South|Haifa|Center|Tel Aviv|Judea & Samaria|Other)'
       ],
       responseExample: `{
+  "title": "Installed capacity by facility size",
+  "total_mw": 7500.0,
+  "size_bracket_definitions": [
+    { "label": "0-200 kW", "min_mw": 0, "max_mw": 0.2 },
+    { "label": "201-630 kW", "min_mw": 0.2, "max_mw": 0.63 },
+    { "label": "631-5000 kW", "min_mw": 0.63, "max_mw": 5.0 },
+    { "label": "5001 kW +", "min_mw": 5.0, "max_mw": null }
+  ],
   "series": [
     {
-      "year": 2020,
+      "year": 2024,
       "size_brackets": {
-        "Up to 16 kW": 125000.5,
-        "16–50 kW": 85000.2,
-        "50–200 kW": 45000.1,
-        "200 kW–1 MW": 32000.0,
-        "1–5 MW": 18000.0,
-        "5–50 MW": 12000.0,
-        "50+ MW": 8000.0
+        "0-200 kW": { "total_mw": 120.5, "count": 900 },
+        "201-630 kW": { "total_mw": 80.2, "count": 120 }
       }
     }
-  ],
-  "total_mw": 7500.0
+  ]
 }`
     },
     {
@@ -611,23 +613,31 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
         'include_cancelled (optional, bool)'
       ],
       responseExample: `{
-  "title": "Response Capacity by Facility Size",
+  "title": "Response Capacity Divided by Facility Size (Kilowatt)",
+  "title_he": "הספק תשובת מחולק לפי גודל מתקן (קילוואט)",
+  "total_mw": 5581.228,
+  "total_requests": 59564,
+  "filters_applied": {
+    "year": null,
+    "district": null,
+    "include_cancelled": false
+  },
+  "size_bracket_definitions": [
+    { "label": "0-200 kW", "min_mw": 0, "max_mw": 0.2 },
+    { "label": "201-630 kW", "min_mw": 0.2, "max_mw": 0.63 },
+    { "label": "631-5000 kW", "min_mw": 0.63, "max_mw": 5.0 },
+    { "label": "5001 kW +", "min_mw": 5.0, "max_mw": null }
+  ],
   "series": [
+    { "size_bracket": "0-200 kW", "total_mw": 2185.133, "request_count": 53497 }
+  ],
+  "yearly_series": [
     {
       "year": 2024,
-      "size_bracket": "1–5 MW",
-      "total_mw": 1240.0,
-      "request_count": 220
+      "size_brackets": {
+        "0-200 kW": { "total_mw": 427.761, "count": 10761 }
+      }
     }
-  ],
-  "size_brackets": [
-    "Up to 16 kW",
-    "16–50 kW",
-    "50–200 kW",
-    "200 kW–1 MW",
-    "1–5 MW",
-    "5–50 MW",
-    "50+ MW"
   ]
 }`
     },

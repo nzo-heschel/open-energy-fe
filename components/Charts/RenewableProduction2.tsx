@@ -353,9 +353,9 @@ export default function RenewableProduction2() {
     return (
       <div className="rounded-lg shadow-xl border border-[#DEDEDE] bg-white p-3 min-w-[140px] text-sm">
         <div className="text-sm text-[#707585] mb-1 text-right">{label}</div>
-        <div className="text-base font-medium text-[#59687D] border-b border-[#707585] pb-1 mb-2 text-right">
+        {/* <div className="text-base font-medium text-[#59687D] border-b border-[#707585] pb-1 mb-2 text-right">
           סה״כ {formatValue(total)}
-        </div>
+        </div> */}
         <div className="flex flex-col gap-1">
           {rows.map((r) => (
             <div

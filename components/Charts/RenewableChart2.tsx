@@ -33,6 +33,36 @@ function toChartPercent(
   return value * 100;
 }
 
+/** One decimal when needed; whole numbers without trailing ".0" (Figma labels). */
+function formatPctLabel(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  return Number.isInteger(rounded)
+    ? `${rounded}%`
+    : `${rounded.toFixed(1)}%`;
+}
+
+function formatPctTooltip(value: number): string {
+  return `${(Math.round(value * 10) / 10).toFixed(1)}%`;
+}
+
+function cumulativePctForSegment(
+  row: ChartRow,
+  dataKey: keyof ChartRow,
+): number | null {
+  switch (dataKey) {
+    case "solarPct":
+      return row.labelCumSolar;
+    case "renewableRemainderPct":
+      return row.labelCumAfterRemainder;
+    case "target2030Pct":
+      return row.labelCum2030;
+    case "target2050Pct":
+      return row.labelCum2050;
+    default:
+      return null;
+  }
+}
+
 /** Stacked bar palette (design reference) */
 const colors = {
   solarPct: "#f6cf65",
@@ -126,7 +156,17 @@ function ComparisonChartTooltip({
           const dot =
             p.color ??
             (key in colors ? colors[key as keyof typeof colors] : "#59687D");
-          const seg = typeof p.value === "number" ? p.value : 0;
+          const dataKey = p.dataKey as keyof ChartRow;
+          const cum =
+            dataKey != null
+              ? cumulativePctForSegment(row, dataKey)
+              : null;
+          const display =
+            cum != null
+              ? cum
+              : typeof p.value === "number"
+                ? p.value
+                : 0;
           return (
             <li
               key={String(p.dataKey)}
@@ -140,7 +180,7 @@ function ComparisonChartTooltip({
                 <span className="text-[#59687D] truncate">{p.name}</span>
               </span>
               <span className="font-medium text-[#484C56] tabular-nums shrink-0">
-                {seg.toFixed(1)}%
+                {formatPctTooltip(display)}
               </span>
             </li>
           );
@@ -149,10 +189,10 @@ function ComparisonChartTooltip({
       <p className="mt-2 pt-2 border-t border-gray-100 text-xs text-[#59687D] leading-snug">
         {[
           row.labelCum2030 != null
-            ? `מצטבר עד יעד 2030: ${row.labelCum2030}%`
+            ? `מצטבר עד יעד 2030: ${formatPctLabel(row.labelCum2030)}`
             : null,
           include2050 && row.labelCum2050 != null
-            ? `מצטבר עד יעד 2050: ${row.labelCum2050}%`
+            ? `מצטבר עד יעד 2050: ${formatPctLabel(row.labelCum2050)}`
             : null,
         ]
           .filter(Boolean)
@@ -222,12 +262,12 @@ function buildRows(
         ? Math.max(0, t50 - t30FromData)
         : null;
 
-    const labelCumSolar = solarW != null ? Math.round(solarW) : null;
+    const labelCumSolar = solarW;
     const labelCumAfterRemainder =
-      renewableRemainderPct != null ? Math.round(afterSolar) : null;
+      renewableRemainderPct != null ? afterSolar : null;
     const labelCum2030 =
-      include2030 && t30FromData != null ? Math.round(t30FromData) : null;
-    const labelCum2050 = t50 != null ? Math.round(t50) : null;
+      include2030 && t30FromData != null ? t30FromData : null;
+    const labelCum2050 = t50;
 
     return {
       country: r.region_he || r.region,
@@ -281,16 +321,16 @@ function makeCumulativeSegmentLabel(
 
     let text: string | null = null;
     if (dataKey === "solarPct" && row.labelCumSolar != null) {
-      text = `${row.labelCumSolar}%`;
+      text = formatPctLabel(row.labelCumSolar);
     } else if (
       dataKey === "renewableRemainderPct" &&
       row.labelCumAfterRemainder != null
     ) {
-      text = `${row.labelCumAfterRemainder}%`;
+      text = formatPctLabel(row.labelCumAfterRemainder);
     } else if (dataKey === "target2030Pct" && row.labelCum2030 != null) {
-      text = `${row.labelCum2030}%`;
+      text = formatPctLabel(row.labelCum2030);
     } else if (dataKey === "target2050Pct" && row.labelCum2050 != null) {
-      text = `${row.labelCum2050}%`;
+      text = formatPctLabel(row.labelCum2050);
     }
     if (!text) return null;
 

@@ -3,7 +3,7 @@
 import DateRangePicker from "@/components/ui/DateRangePicker";
 import { Button } from "@/components/ui/button";
 import { exportCO2EmissionsOverTime, useCO2EmissionsOverTime } from "@/lib/api";
-import { LEVEL2_HEBREW_COLORS } from "@/lib/colors";
+import { ENERGY_COLORS, LEVEL2_HEBREW_COLORS } from "@/lib/colors";
 import type { CO2EmissionsOverTimeResponse } from "@/types/dto";
 import api from "@/public/images/API.png";
 import download from "@/public/images/download_2.png";
@@ -70,6 +70,45 @@ const getRenewableSavings = (item: CO2ChartRow): number => {
     return item.emissions_savings;
   }
   return 0;
+};
+
+const getLevel1FossilEmissions = (item: CO2ChartRow): number => {
+  const fromL1 = item.level1?.fossil_emissions;
+  if (typeof fromL1 === "number") {
+    return fromL1;
+  }
+  if (typeof item.total_emissions === "number") {
+    return item.total_emissions;
+  }
+  return FOSSIL_KEYS.reduce(
+    (sum, key) => sum + getFossilEmission(item, key),
+    0,
+  );
+};
+
+const getLevel1RenewableSavings = (item: CO2ChartRow): number => {
+  const fromL1 = item.level1?.renewable_emissions_savings;
+  if (typeof fromL1 === "number") {
+    return fromL1;
+  }
+  return getRenewableSavings(item);
+};
+
+const RENEWABLE_SAVINGS_LABEL = "חיסכון בפליטות על ידי ייצור מאנרגיות מתחדשות";
+
+const CO2_LEVEL2_LEGEND_GROUPS: Record<
+  string,
+  { category: string; categoryColor: string }
+> = {
+  פחם: { category: "פליטות CO₂", categoryColor: ENERGY_COLORS.FOSSIL },
+  "גז טבעי": { category: "פליטות CO₂", categoryColor: ENERGY_COLORS.FOSSIL },
+  סולר: { category: "פליטות CO₂", categoryColor: ENERGY_COLORS.FOSSIL },
+  "שמן הסקה": { category: "פליטות CO₂", categoryColor: ENERGY_COLORS.FOSSIL },
+  מתנול: { category: "פליטות CO₂", categoryColor: ENERGY_COLORS.FOSSIL },
+  [RENEWABLE_SAVINGS_LABEL]: {
+    category: "חיסכון בפליטות",
+    categoryColor: ENERGY_COLORS.RENEWABLE,
+  },
 };
 
 const formatTooltipNumber = (value: number) =>
@@ -154,41 +193,31 @@ const CO2LineChart = () => {
     }
 
     const chartData = data.chart_data;
-    const totalEmissionsAvoided =
-      data.infographics?.emissions_avoided_through_renewables?.value || 0;
-    const totalEmissions = chartData.reduce(
-      (sum, item) => sum + item.total_emissions,
-      0,
-    );
 
     if (!showLevel2) {
-      const rows: ChartRow[] = chartData.map((item) => {
-        const emissionsShare =
-          totalEmissions > 0 ? item.total_emissions / totalEmissions : 0;
-        const savedFromInfographic = totalEmissionsAvoided * emissionsShare;
-        const saved =
-          typeof item.emissions_savings === "number"
-            ? item.emissions_savings
-            : savedFromInfographic;
+      const rows: ChartRow[] = chartData.map((item) => ({
+        date: item.label || item.period,
+        fossil_emissions: getLevel1FossilEmissions(item),
+        renewable_savings: getLevel1RenewableSavings(item),
+      }));
 
-        return {
-          date: item.label || item.period,
-          co2: item.total_emissions,
-          saved,
-        };
-      });
+      const defs: LineDef[] = [
+        {
+          key: "fossil_emissions",
+          label: "פליטות CO₂",
+          color: ENERGY_COLORS.FOSSIL,
+        },
+      ];
 
-      return {
-        chartRows: rows,
-        lineDefs: [
-          { key: "co2", label: "פליטות CO₂", color: "#5D6FFF" },
-          {
-            key: "saved",
-            label: "חיסכון בפליטות על ידי ייצור מאנרגיות מתחדשות",
-            color: "#1E8025",
-          },
-        ],
-      };
+      if (chartData.some((item) => getLevel1RenewableSavings(item) > 0)) {
+        defs.push({
+          key: "renewable_savings",
+          label: RENEWABLE_SAVINGS_LABEL,
+          color: ENERGY_COLORS.RENEWABLE,
+        });
+      }
+
+      return { chartRows: rows, lineDefs: defs };
     }
 
     const fossilMeta: { key: FossilKey; label: string; color: string }[] = [
@@ -222,8 +251,8 @@ const CO2LineChart = () => {
     if (chartData.some((item) => getRenewableSavings(item) > 0)) {
       defs.push({
         key: "renewable_savings",
-        label: "חיסכון בפליטות על ידי ייצור מאנרגיות מתחדשות",
-        color: "#1E8025",
+        label: RENEWABLE_SAVINGS_LABEL,
+        color: ENERGY_COLORS.RENEWABLE,
       });
     }
 
@@ -255,6 +284,32 @@ const CO2LineChart = () => {
     if (!hoveredLegend) return 1;
     return hoveredLegend === key ? 1 : 0.5;
   };
+
+  const groupedLevel2Legend = useMemo(() => {
+    if (!showLevel2 || lineDefs.length === 0) return null;
+
+    const grouped = new Map<string, LineDef[]>();
+    for (const def of lineDefs) {
+      const meta = CO2_LEVEL2_LEGEND_GROUPS[def.label] ?? {
+        category: "פליטות CO₂",
+        categoryColor: ENERGY_COLORS.FOSSIL,
+      };
+      const items = grouped.get(meta.category) ?? [];
+      items.push(def);
+      grouped.set(meta.category, items);
+    }
+
+    const categoryOrder = ["פליטות CO₂", "חיסכון בפליטות"];
+    return categoryOrder
+      .filter((cat) => grouped.has(cat))
+      .map((cat) => ({
+        category: cat,
+        categoryColor:
+          CO2_LEVEL2_LEGEND_GROUPS[grouped.get(cat)![0].label]?.categoryColor ??
+          ENERGY_COLORS.FOSSIL,
+        items: grouped.get(cat)!,
+      }));
+  }, [lineDefs, showLevel2]);
 
   return (
     <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[16px] p-4 md:p-6 pb-4 overflow-hidden h-full flex flex-col">
@@ -418,33 +473,81 @@ const CO2LineChart = () => {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-col md:flex-row flex-wrap justify-start gap-x-6 gap-y-2 mt-1">
-        {lineDefs.map((def) => (
-          <div
-            key={def.key}
-            className="flex items-center gap-2 cursor-pointer transition-opacity duration-200"
-            onClick={() => toggleLine(def.key)}
-            onMouseEnter={() => setHoveredLegend(def.key)}
-            onMouseLeave={() => setHoveredLegend(null)}
-            style={{ opacity: getLegendOpacity(def.key) }}
-          >
-            <span
-              className="w-2 h-2 rounded-full shrink-0 transition-opacity duration-200"
-              style={{
-                backgroundColor: def.color,
-                opacity: isLineVisible(def.key) ? 1 : 0.3,
-              }}
-            />
-            <span
-              className={`text-xs transition-all duration-200 ${
-                isLineVisible(def.key) ? "text-gray-800" : "text-gray-400"
-              }`}
+      {groupedLevel2Legend ? (
+        <div className="mt-1 space-y-4">
+          {groupedLevel2Legend.map((group) => (
+            <div key={group.category} className="space-y-1.5">
+              <div
+                className="flex items-center gap-2 pr-2 border-r-2"
+                style={{ borderRightColor: group.categoryColor }}
+              >
+                {group.category !== "חיסכון בפליטות" && (
+                  <span className="text-xs font-medium text-gray-800">
+                    {group.category}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap justify-start gap-x-6 gap-y-2 mr-2">
+                {group.items.map((def) => (
+                  <div
+                    key={def.key}
+                    className="flex items-center gap-2 cursor-pointer transition-opacity duration-200"
+                    onClick={() => toggleLine(def.key)}
+                    onMouseEnter={() => setHoveredLegend(def.key)}
+                    onMouseLeave={() => setHoveredLegend(null)}
+                    style={{ opacity: getLegendOpacity(def.key) }}
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0 transition-opacity duration-200"
+                      style={{
+                        backgroundColor: def.color,
+                        opacity: isLineVisible(def.key) ? 1 : 0.3,
+                      }}
+                    />
+                    <span
+                      className={`text-xs transition-all duration-200 ${
+                        isLineVisible(def.key)
+                          ? "text-gray-800"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      {def.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col md:flex-row flex-wrap justify-start gap-x-6 gap-y-2 mt-1">
+          {lineDefs.map((def) => (
+            <div
+              key={def.key}
+              className="flex items-center gap-2 cursor-pointer transition-opacity duration-200"
+              onClick={() => toggleLine(def.key)}
+              onMouseEnter={() => setHoveredLegend(def.key)}
+              onMouseLeave={() => setHoveredLegend(null)}
+              style={{ opacity: getLegendOpacity(def.key) }}
             >
-              {def.label}
-            </span>
-          </div>
-        ))}
-      </div>
+              <span
+                className="w-2 h-2 rounded-full shrink-0 transition-opacity duration-200"
+                style={{
+                  backgroundColor: def.color,
+                  opacity: isLineVisible(def.key) ? 1 : 0.3,
+                }}
+              />
+              <span
+                className={`text-xs transition-all duration-200 ${
+                  isLineVisible(def.key) ? "text-gray-800" : "text-gray-400"
+                }`}
+              >
+                {def.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="flex justify-start mt-3">
         <Button

@@ -15,6 +15,7 @@ import {
   ResponseCapacityBySizeFilters,
   useResponseCapacityByPeriod,
 } from "@/lib/api";
+import { accumulateFourSegments } from "@/lib/chartSizeBracketMapping";
 
 // Size bracket configuration with colors and Hebrew labels (matching Figma - 4 categories)
 const SIZE_BRACKETS = [
@@ -166,48 +167,64 @@ export default function RequestTwo() {
     year: periodQueryYear,
   });
 
-  // Transform API data for chart - use yearly_series and map to 4 categories
+  // Transform API data for chart — yearly_series uses kW-range labels + total_mw / count
   const allYearData = useMemo(() => {
-    if (!apiData?.yearly_series) return [];
+    if (!apiData?.yearly_series?.length) return [];
+
+    const pick = (
+      entry: { total_mw?: number; count?: number } | undefined,
+    ) => {
+      if (!entry) return 0;
+      const raw =
+        activeTab === "supply"
+          ? Number(entry.total_mw ?? 0)
+          : Number(entry.count ?? 0);
+      return Number.isFinite(raw) ? raw : 0;
+    };
+
+    const mapLegacyInstalledStyleBrackets = (
+      brackets: Record<string, { total_mw?: number; count?: number }>,
+    ) => {
+      const getValue = (b: { total_mw?: number; count?: number } | undefined) =>
+        pick(b);
+
+      const small =
+        getValue(brackets["Up to 16 kW"]) +
+        getValue(brackets["16–50 kW"]) +
+        getValue(brackets["50–200 kW"]);
+      const medium = getValue(brackets["200 kW–1 MW"]);
+      const large = getValue(brackets["1–5 MW"]);
+      const xlarge =
+        getValue(brackets["5–50 MW"]) + getValue(brackets["50+ MW"]);
+      return { small, medium, large, xlarge };
+    };
+
+    const firstBrackets = apiData.yearly_series[0]?.size_brackets ?? {};
+    const usesLegacyMwBands = "Up to 16 kW" in firstBrackets;
 
     return apiData.yearly_series
-      .map((yearData: any) => {
+      .map((yearData) => {
         const brackets = yearData.size_brackets || {};
-
-        // Helper to get value based on active tab
-        const getValue = (bracket: any) => {
-          if (!bracket) return 0;
-          return activeTab === "supply"
-            ? Number(bracket.total_mw || 0)
-            : Number(bracket.count || 0);
-        };
-
-        // Map API size brackets to our 4 simplified categories
-        // Small (0-200 kW): Up to 16 kW + 16-50 kW + 50-200 kW
-        const small =
-          getValue(brackets["Up to 16 kW"]) +
-          getValue(brackets["16–50 kW"]) +
-          getValue(brackets["50–200 kW"]);
-        // Medium (201-630 kW): 200 kW-1 MW
-        const medium = getValue(brackets["200 kW–1 MW"]);
-        // Large (631-5000 kW): 1-5 MW
-        const large = getValue(brackets["1–5 MW"]);
-        // XLarge (5001+ kW): 5-50 MW + 50+ MW
-        const xlarge =
-          getValue(brackets["5–50 MW"]) + getValue(brackets["50+ MW"]);
+        const { small, medium, large, xlarge } = usesLegacyMwBands
+          ? mapLegacyInstalledStyleBrackets(brackets)
+          : accumulateFourSegments(brackets as Record<string, unknown>, (raw) =>
+              pick(
+                raw as { total_mw?: number; count?: number } | undefined,
+              ),
+            );
 
         const total = small + medium + large + xlarge;
 
         return {
           year: yearData.year,
-          small: isNaN(small) ? 0 : small,
-          medium: isNaN(medium) ? 0 : medium,
-          large: isNaN(large) ? 0 : large,
-          xlarge: isNaN(xlarge) ? 0 : xlarge,
-          total: isNaN(total) ? 0 : total,
+          small,
+          medium,
+          large,
+          xlarge,
+          total,
         };
       })
-      .sort((a: any, b: any) => a.year - b.year);
+      .sort((a, b) => a.year - b.year);
   }, [apiData, activeTab]);
 
   const availableYearOptions = useMemo(

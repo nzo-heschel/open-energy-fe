@@ -13,6 +13,7 @@ import {
   exportInstalledCapacityByFacilitySize,
   InstalledCapacityByFacilitySizeFilters,
 } from "@/lib/api";
+import { accumulateFourSegments } from "@/lib/chartSizeBracketMapping";
 
 // Size bracket configuration with colors and Hebrew labels (matching Figma)
 // Order: bottom to top in stack (first item is at bottom)
@@ -28,6 +29,24 @@ const displayModeOptions = [
   { value: "capacity", label: "הספק מותקן" },
   { value: "count", label: "מספר מתקנים" },
 ];
+
+function pickBracketStat(bracket: unknown, mode: "capacity" | "count"): number {
+  if (bracket == null) return 0;
+  if (typeof bracket === "number") {
+    return mode === "capacity" && Number.isFinite(bracket) ? bracket : 0;
+  }
+  if (typeof bracket === "object") {
+    const o = bracket as Record<string, unknown>;
+    if (mode === "count") {
+      const c = o.count ?? o.facility_count;
+      const n = Number(c);
+      return Number.isFinite(n) ? n : 0;
+    }
+    const n = Number(o.total_mw);
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
+}
 
 // Filter Dropdown Component
 const FilterDropdown = ({
@@ -252,20 +271,20 @@ const CustomTooltip = ({ active, payload, label, displayMode }: any) => {
       <div className="md:text-base text-sm font-medium mb-3 border-b border-[#707585]">
         סה״כ {Math.round(total).toLocaleString()} {unit}
       </div>
-      {payload.map((entry: any) => {
-        const bracket = SIZE_BRACKETS.find((b) => b.key === entry.dataKey);
-        if (!bracket) return null;
+      {SIZE_BRACKETS.map((bracket) => {
+        const entry = payload.find((p: any) => p.dataKey === bracket.key);
+        if (!entry) return null;
         const val = Number(entry.value) || 0;
         return (
-          <div key={entry.dataKey} className="flex items-start gap-2 mb-1">
+          <div key={bracket.key} className="flex items-start gap-2 mb-1">
             <span
-              style={{ background: entry.color }}
+              style={{ background: bracket.color }}
               className="w-2 h-2 rounded-full block mt-1"
             />
             <span className="flex flex-col text-sm font-normal">
               {bracket.label.split(" | ")[0]}{" "}
               <span className="font-medium">
-                {Math.round(val).toLocaleString()} {unit}
+                {val.toFixed(2).toLocaleString()} {unit}
               </span>
             </span>
           </div>
@@ -351,34 +370,18 @@ const InstalledCapacityTwo: React.FC = () => {
     error,
   } = useInstalledCapacityByFacilitySize(filters);
 
-  // Transform API data for chart
+  // Transform API data: map each `size_brackets` key by normalized label → segment (never index into sorted definitions).
   const chartData = useMemo(() => {
     if (!apiData?.series) return [];
 
+    const mode = displayMode === "count" ? "count" : "capacity";
+
     const mappedData = apiData.series.map((item) => {
       const brackets = item.size_brackets || {};
-
-      // Helper to get value based on display mode
-      const getValue = (bracket: any) => {
-        if (!bracket) return 0;
-        return displayMode === "count"
-          ? Number(bracket.facility_count || 0)
-          : Number(bracket.total_mw || 0);
-      };
-
-      // Map API size brackets to our simplified categories based on Figma
-      // Small (0-200 kW): Up to 16 kW + 16-50 kW + 50-200 kW
-      const small =
-        getValue(brackets["Up to 16 kW"]) +
-        getValue(brackets["16–50 kW"]) +
-        getValue(brackets["50–200 kW"]);
-      // Medium (201-630 kW): 200 kW-1 MW
-      const medium = getValue(brackets["200 kW–1 MW"]);
-      // Large (631-5000 kW): 1-5 MW
-      const large = getValue(brackets["1–5 MW"]);
-      // XLarge (5001+ kW): 5-50 MW + 50+ MW
-      const xlarge =
-        getValue(brackets["5–50 MW"]) + getValue(brackets["50+ MW"]);
+      const { small, medium, large, xlarge } = accumulateFourSegments(
+        brackets as Record<string, unknown>,
+        (raw) => pickBracketStat(raw, mode),
+      );
 
       const total = small + medium + large + xlarge;
 

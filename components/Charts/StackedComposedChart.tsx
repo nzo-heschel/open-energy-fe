@@ -111,7 +111,15 @@ export default function StackedComposedChart({
             },
           }}
         />
-        <Tooltip content={tooltipContent} cursor={tooltipCursor} />
+        <Tooltip
+          isAnimationActive={false}
+          cursor={tooltipCursor}
+          content={(props) =>
+            React.isValidElement(tooltipContent)
+              ? React.cloneElement(tooltipContent, props)
+              : null
+          }
+        />
         {sizeBrackets.map(
           (bracket, index) =>
             activeSeries[bracket.key] && (

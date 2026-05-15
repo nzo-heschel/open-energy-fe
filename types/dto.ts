@@ -793,19 +793,29 @@ export type InstalledCapacityGrowthResponse = {
   };
 };
 
+export type InstalledCapacityByFacilitySizeBracketValue =
+  | number
+  | {
+      total_mw?: number;
+      /** New API */
+      count?: number;
+      /** Legacy name */
+      facility_count?: number;
+    };
+
 // Installed Capacity by Facility Size API response
 export type InstalledCapacityByFacilitySizeResponse = {
+  title?: string;
+  title_he?: string;
+  /** Same shape as response-capacity-by-size when API aligns brackets */
+  size_bracket_definitions?: Array<{
+    label: string;
+    min_mw: number;
+    max_mw: number | null;
+  }>;
   series: Array<{
     year: number;
-    size_brackets: {
-      'Up to 16 kW'?: number;
-      '16–50 kW'?: number;
-      '50–200 kW'?: number;
-      '200 kW–1 MW'?: number;
-      '1–5 MW'?: number;
-      '5–50 MW'?: number;
-      '50+ MW'?: number;
-    };
+    size_brackets: Record<string, InstalledCapacityByFacilitySizeBracketValue>;
   }>;
   total_mw: number;
 };
@@ -850,25 +860,52 @@ export type ResponseCapacityByPeriodResponse = {
   >;
 };
 
+export type ResponseCapacityBySizeBracketStats = {
+  total_mw: number;
+  count: number;
+};
+
+export type ResponseCapacityBySizeDefinition = {
+  label: string;
+  min_mw: number;
+  max_mw: number | null;
+};
+
+/** Per-size totals across the filtered dataset (no year on each row). */
+export type ResponseCapacityBySizeSeriesRow = {
+  size_bracket: string;
+  total_mw: number;
+  request_count: number;
+};
+
+/** Legacy flat series row (year + one bracket per row). */
+export type ResponseCapacityBySizeLegacySeriesRow = {
+  year: number;
+  size_bracket: string;
+  total_mw: number;
+  request_count: number;
+};
+
 // Response Capacity by Size API response
 export type ResponseCapacityBySizeResponse = {
   title: string;
-  series: Array<{
-    year: number;
-    size_bracket: string;
-    total_mw: number;
-    request_count: number;
-  }>;
-  size_brackets: string[];
+  title_he?: string;
+  total_mw: number;
+  total_requests?: number;
+  filters_applied?: {
+    year: number | null;
+    district: string | null;
+    include_cancelled: boolean;
+  };
+  /** Ordered definitions for `series` / `yearly_series` keys (new API). */
+  size_bracket_definitions?: ResponseCapacityBySizeDefinition[];
+  series: ResponseCapacityBySizeSeriesRow[] | ResponseCapacityBySizeLegacySeriesRow[];
   yearly_series?: Array<{
     year: number;
-    size_brackets: {
-      [key: string]: {
-        total_mw: number;
-        count: number;
-      };
-    };
+    size_brackets: Record<string, ResponseCapacityBySizeBracketStats>;
   }>;
+  /** Present on older API versions only */
+  size_brackets?: string[];
 };
 
 // Response Capacity by District API response

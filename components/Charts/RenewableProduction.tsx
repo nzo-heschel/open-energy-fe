@@ -264,8 +264,8 @@ export default function RenewableProduction() {
     // monthly_series breakdown so each month appears as its own bar.
     const sourceSeries =
       apiData.filter === "year" &&
-      apiData.monthly_series &&
-      apiData.monthly_series.length > 0
+        apiData.monthly_series &&
+        apiData.monthly_series.length > 0
         ? apiData.monthly_series
         : apiData.series;
 
@@ -375,7 +375,7 @@ export default function RenewableProduction() {
       <div className="flex flex-col md:flex-row items-start justify-between">
         <div className="flex flex-col gap-2 mb-3">
           <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-            תחמ״ל ייצור אנרגיות מתחדשות
+            תמהיל ייצור אנרגיה מתחדשת
             <div
               className="relative"
               onMouseEnter={() => setShowTooltip(true)}
@@ -405,17 +405,30 @@ export default function RenewableProduction() {
               {showTooltip && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 mb-2 z-50">
                   <TooltipInfo
-                    content="
-                                        הגרף מציג את כמות החשמל שיוצר מאנרגיות מתחדשות (שמש, רוח ואחרים) לאורך שנה נבחרת, לפי חודשים.
-ניתן ללמוד ממנו איך משתנה ייצור החשמל מאנרגיות מתחדשות לאורך השנה, ימים, או חודשים,, ומה התרומה של כל סוג טכנולוגיה (רוח, סולארי, אחר) בכל חודש.
-הנתונים נאספים ממערכת נוגה ומתעדכנים מעת לעת. ניתן לסנן לפי סוג טכנולוגיה ושנה, יום או חודש,, ולהוריד את המידע לקובץ אקסל או לגשת אליו דרך API.
-                                        "
+                    content={
+                      <>
+                        <p>
+                          הנתונים נלקחים מאתר חברת ניהול מערכת החשמל – נוגה.{" "}
+                          <a
+                            href="https://www.noga-iso.co.il/systemoperationunit/piechartspage/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="whitespace-nowrap"
+                          >
+                            noga-iso.co.il
+                          </a>
+                        </p>
+                        <p>הנתונים מתעדכנים מעת לעת.</p>
+                        <p>
+                          צטטו אותנו: מרכז השילוב לקיימות, NZO. אתר הדאטה של NZO. תמהיל ייצור אנרגיה מתחדשת.
+                        </p>
+                      </>
+                    }
                   />
                 </div>
               )}
             </div>
           </h2>
-          <p className="mr-14">פרק זמן:</p>
           <div className="flex flex-wrap items-center gap-5">
             <span className="text-sm text-slate-600 mt-6">סינון לפי:</span>
             <div className="relative w-[120px]">

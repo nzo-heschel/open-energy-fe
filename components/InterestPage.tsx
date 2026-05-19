@@ -1,3 +1,4 @@
+'use client'
 import React from 'react'
 import { Button } from './ui/button'
 import Image from 'next/image'
@@ -25,28 +26,37 @@ const InterestPage = () => {
                         </div>
                         <div className="w-[46px] h-1 bg-[#276E4E] rounded md:my-5 my-3"></div>
                         <div className="grid md:grid-cols-4 grid-cols-2 md:gap-16 gap-4 relative z-10">
-                            <div className="bg-white border !border-t-[5px] border-[#C3D44A] border-t-[#1E8025] w-full md:pt-6 pt-3 pb-2 px-2 rounded-[5px] text-center flex flex-col gap-5" style={{ boxShadow: '0px 3px 30px 0px #99BF4129' }}>
-                                <span className='md:text-lg text-base text-[#484C56] font-normal text-center'>יתרונות וחסרונות של סוגי<br />  האנרגיה</span>
-                                <Button variant="link" className="text-[#358BFF] font-bold md:text-base text-sm hover:underline">
+                            <div className="bg-white border !border-t-[5px] border-[#C3D44A] border-t-[#1E8025] w-full md:pt-6 pt-3 pb-2 px-2 rounded-[5px] text-center flex flex-col gap-5 justify-between" style={{ boxShadow: '0px 3px 30px 0px #99BF4129' }}>
+                                <span className='md:text-lg text-base text-[#484C56] font-normal text-center'>
+                                    מפת הסבירות לחיבור מתקני ייצור חדשים לרשת החשמל
+                                </span>
+                                <Button variant="link" className="text-[#358BFF] font-bold md:text-base text-sm hover:underline" onClick={() => window.open('https://experience.arcgis.com/experience/50e8bc89f74449298c103615c2899697?locale=he', '_blank')}>
                                     למאמר <span className='mr-2'>&gt;</span>
                                 </Button>
                             </div>
-                            <div className="bg-white border !border-t-[5px] border-[#C3D44A] border-t-[#1E8025] w-full md:pt-6 pt-3 pb-2 px-2 rounded-[5px] text-center flex flex-col gap-5" style={{ boxShadow: '0px 3px 30px 0px #99BF4129' }}>
-                                <span className='md:text-lg text-base text-[#484C56] font-normal text-center'>דו”ח מצב - משק החשמל <br /> (אשתקד)</span>
-                                <Button variant="link" className="text-[#358BFF] font-bold md:text-base text-sm hover:underline">
-                                    הורדת קובץ EXCEL <span className='mr-2'>&gt;</span>
+                            <div className="bg-white border !border-t-[5px] border-[#C3D44A] border-t-[#1E8025] w-full md:pt-6 pt-3 pb-2 px-2 rounded-[5px] text-center flex flex-col gap-5 justify-between" style={{ boxShadow: '0px 3px 30px 0px #99BF4129' }}>
+                                <span className='md:text-lg text-base text-[#484C56] font-normal text-center'>
+                                    דו"ח מצב משק החשמל 2024
+                                </span>
+                                <Button onClick={() => window.open('https://www.gov.il/he/pages/dochmeshek', '_blank')} variant="link" className="text-[#358BFF] font-bold md:text-base text-sm hover:underline">
+                                    למאמר <span className='mr-2'>&gt;</span>
                                 </Button>
                             </div>
-                            <div className="bg-white border !border-t-[5px] border-[#C3D44A] border-t-[#1E8025] w-full md:pt-6 pt-3 pb-2 px-2 rounded-[5px] text-center flex flex-col gap-5" style={{ boxShadow: '0px 3px 30px 0px #99BF4129' }}>
-                                <span className='md:text-lg text-base text-[#484C56] font-normal text-center'>דו”ח מצב - משק האנרגיה <br /> (מ-2017)</span>
-                                <Button variant="link" className="text-[#358BFF] font-bold md:text-base text-sm hover:underline">
-                                    הצג דו״ח <span className='mr-2'>&gt;</span>
+                            <div className="bg-white border !border-t-[5px] border-[#C3D44A] border-t-[#1E8025] w-full md:pt-6 pt-3 pb-2 px-2 rounded-[5px] text-center flex flex-col gap-5 justify-between" style={{ boxShadow: '0px 3px 30px 0px #99BF4129' }}>
+                                <span className='md:text-lg text-base text-[#484C56] font-normal text-center'>
+                                    דו"ח מצב משק האנרגיה 2025
+                                </span>
+                                <Button onClick={() => window.open('https://www.gov.il/he/pages/energy-300424', '_blank')} variant="link" className="text-[#358BFF] font-bold md:text-base text-sm hover:underline">
+                                    למאמר <span className='mr-2'>&gt;</span>
                                 </Button>
                             </div>
-                            <div className="bg-white border !border-t-[5px] border-[#C3D44A] border-t-[#1E8025] w-full md:pt-6 pt-3 pb-2 px-2 rounded-[5px] text-center flex flex-col gap-5" style={{ boxShadow: '0px 3px 30px 0px #99BF4129' }}>
-                                <span className='md:text-lg text-base text-[#484C56] font-normal text-center'>ביקוש חשמל <br /> - תחזית יומית</span>
-                                <Button variant="link" className="text-[#358BFF] font-bold md:text-base text-sm hover:underline">
-                                    הצג דו״ח <span className='mr-2'>&gt;</span>
+
+                            <div className="bg-white border !border-t-[5px] border-[#C3D44A] border-t-[#1E8025] w-full md:pt-6 pt-3 pb-2 px-2 rounded-[5px] text-center flex flex-col gap-5 justify-between" style={{ boxShadow: '0px 3px 30px 0px #99BF4129' }}>
+                                <span className='md:text-lg text-base text-[#484C56] font-normal text-center'>
+                                    צריכה ביתית שעתית ממוצעת בימי חול ליישוב
+                                </span>
+                                <Button onClick={() => window.open('https://www.noga-iso.co.il/statistics/annual-hourly-consumption-data/', '_blank')} variant="link" className="text-[#358BFF] font-bold md:text-base text-sm hover:underline">
+                                    למאמר <span className='mr-2'>&gt;</span>
                                 </Button>
                             </div>
                         </div>

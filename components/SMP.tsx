@@ -51,9 +51,7 @@ const SMP = () => {
           SMP
         </h2>
         <p className="text-[#484C56] md:text-xl text-base font-normal">
-          מחיר השוק הסיטונאי, SMP, משמש כבסיס לסחר בחשמל בין יצרנים ומספקים
-          במשק. בחלק זה ניתן לראות את השינויים ב-SMP לאורך זמן, אל מול נתוני
-          הביקוש לחשמל.
+          מחיר השוק הסיטונאי, SMP, משמש כבסיס לסחר בחשמל בין יצרנים ומספקים במשק. בחלק זה ניתן לראות את השינויים ב-SMP לאורך זמן, אל מול נתוני הביקוש לחשמל.
         </p>
       </div>
       <Card className="bg-white border border-[#E9C863] rounded-2xl">
@@ -89,11 +87,36 @@ const SMP = () => {
                   {/* Tooltip that appears on hover */}
                   {showTooltip && (
                     <div className="absolute top-full left-1/2 -translate-x-1/2 mb-2 z-50">
-                      <TooltipInfo content="Lorem ipsum" />
+                      <TooltipInfo
+                        content={
+                          <>
+                            <p>
+                              הגרף מציג את הקשר בין ביקוש החשמל (במגה-ואט) לבין מחיר השוק הסיטונאי (SMP) ב־₪ למגה-ואט־שעה, לאורך ימים נבחרים.
+                            </p>
+                            <p>
+                              הנתונים נלקחים מאתר חברת ניהול מערכת החשמל – נוגה.{" "}
+                              <a
+                                href="https://www.noga-iso.co.il/trade/smp/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="whitespace-nowrap"
+                              >
+                                noga-iso.co.il
+                              </a>
+                            </p>
+                            <p>
+                              הנתונים מתעדכנים מעת לעת. בתצוגה יומית או חודשית, ניתן לראות את ממוצע הערכים באותו היום/ חודש (בהתאמה).
+                            </p>
+                            <p>
+                              צטטו אותנו: מרכז השילוב לקיימות, NZO. אתר הדאטה של NZO. התפתחות מחיר השוק הסיטונאי (SMP).
+                            </p>
+                          </>
+                        }
+                      />
                     </div>
                   )}
                 </div>
-                התפתחות מחיר השוק הסיטונאי (SMP){" "}
+                (SMP) התפתחות מחיר השוק הסיטונאי
               </CardTitle>
               <div className="flex items-start md:gap-4 gap-2">
                 <a

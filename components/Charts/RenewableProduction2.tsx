@@ -64,8 +64,8 @@ const getRenewableMwh = (item: Record<string, unknown>): number =>
   item.renewable_mwh !== undefined
     ? toNumber(item.renewable_mwh)
     : toNumber(item.solar_mwh ?? item.solar) +
-      toNumber(item.wind_mwh ?? item.wind) +
-      toNumber(item.other_mwh ?? item.other);
+    toNumber(item.wind_mwh ?? item.wind) +
+    toNumber(item.other_mwh ?? item.other);
 
 const getTechnologyRenewableMwh = (item: Record<string, unknown>): number =>
   toNumber(item.solar_mwh ?? item.solar) +
@@ -384,7 +384,7 @@ export default function RenewableProduction2() {
       <div className="flex flex-col md:flex-row items-start justify-between">
         <div className="flex flex-col gap-2 mb-3">
           <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-            המעבר לאנרגיות מתחדשות בישראל - נתוני ייצור
+            שיעור הייצור ממקורות מתחדשים
             <div
               className="relative"
               onMouseEnter={() => setShowTooltip(true)}
@@ -413,11 +413,25 @@ export default function RenewableProduction2() {
               {showTooltip && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 mb-2 z-50">
                   <TooltipInfo
-                    content="
-                                    הגרף מציג את כמות החשמל שיוצר מאנרגיות מתחדשות (שמש, רוח ואחרים) לאורך שנה נבחרת, לפי חודשים.
-                    ניתן ללמוד ממנו איך משתנה ייצור החשמל מאנרגיות מתחדשות לאורך השנה, ימים, או חודשים,, ומה התרומה של כל סוג טכנולוגיה (רוח, סולארי, אחר) בכל חודש.
-                    הנתונים נאספים ממערכת נוגה ומתעדכנים מעת לעת. ניתן לסנן לפי סוג טכנולוגיה ושנה, יום או חודש,, ולהוריד את המידע לקובץ אקסל או לגשת אליו דרך API.
-                    "
+                    content={
+                      <>
+                        <p>
+                          הנתונים נלקחים מאתר חברת ניהול מערכת החשמל – נוגה.{" "}
+                          <a
+                            href="https://www.noga-iso.co.il/systemoperationunit/piechartspage/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="whitespace-nowrap"
+                          >
+                            noga-iso.co.il
+                          </a>
+                        </p>
+                        <p>הנתונים מתעדכנים מעת לעת.</p>
+                        <p>
+                          צטטו אותנו: מרכז השילוב לקיימות, NZO. אתר הדאטה של NZO. שיעור הייצור ממקורות מתחדשים.
+                        </p>
+                      </>
+                    }
                   />
                 </div>
               )}
@@ -512,21 +526,19 @@ export default function RenewableProduction2() {
         style={{ boxShadow: "inset 0px 4px 10px 0px #0000001A" }}
       >
         <button
-          className={`rounded-full md:px-5 px-2 md:py-[6px] py-[2px] font-black md:text-base text-xs ${
-            tab === 1
+          className={`rounded-full md:px-5 px-2 md:py-[6px] py-[2px] font-black md:text-base text-xs ${tab === 1
               ? "bg-[#59687D] text-white hover:bg-[#59687D] hover:text-white"
               : "bbg-transparent text-[#59687D] hover:bg-[#59687D] hover:text-white"
-          }`}
+            }`}
           onClick={() => setTab(1)}
         >
           הספק מיוצר
         </button>
         <button
-          className={`rounded-full md:px-5 px-2 md:py-[6px] py-[2px] font-black md:text-base text-xs ${
-            tab === 2
+          className={`rounded-full md:px-5 px-2 md:py-[6px] py-[2px] font-black md:text-base text-xs ${tab === 2
               ? "bg-[#59687D] text-white hover:bg-[#59687D] hover:text-white"
               : "bg-transparent text-[#59687D] hover:bg-[#59687D] hover:text-white"
-          }`}
+            }`}
           onClick={() => setTab(2)}
         >
           פוטנציאל לפי ענף

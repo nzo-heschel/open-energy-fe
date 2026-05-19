@@ -460,7 +460,7 @@ const InstalledCapacityTwo: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-0">
           <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-            הספק מתקנים שחוברו על ציר הזמן, לפי גודל מתקן
+            מתקני ייצור אנרגיה מתחדשת מחוברים לרשת לפי גודל
             <div
               className="relative"
               onMouseEnter={() => setShowTooltip(true)}
@@ -491,11 +491,45 @@ const InstalledCapacityTwo: React.FC = () => {
               {showTooltip && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 mb-2 z-50">
                   <TooltipInfo
-                    content="
-                                        הגרף מציג את ההספק המותקן של מתקנים שחוברו לרשת החשמל לאורך השנים, מחולק לפי גודל מתקן.
-                                        ניתן לראות את התפלגות ההספק לפי טווחי גודל שונים (מקטנים ביותר ועד גדולים ביותר).
-                                        הנתונים נאספים מרשות החשמל ומתעדכנים מעת לעת. ניתן לסנן לפי מחוז ולהוריד את המידע לקובץ אקסל או לגשת אליו דרך API.
-                                        "
+                    content={
+                      <>
+                        <p>
+                          הנתונים נלקחים מאתר רשות החשמל.{" "}
+                          <a
+                            href="https://www.gov.il/he/pages/bipua2024"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="whitespace-nowrap"
+                          >
+                            gov.il
+                          </a>
+                        </p>
+                        <p>הנתונים מתעדכנים מעת לעת.</p>
+                        <p>
+                          צטטו אותנו: מרכז השילוב לקיימות, NZO. אתר הדאטה של NZO. מתקני ייצור אנרגיה מתחדשת מחוברים לרשת לפי גודל.
+                        </p>
+                        <p className="font-semibold text-[#484C56] pt-1">
+                          הערות כלליות:
+                        </p>
+                        <p>
+                          מידע זה הינו אינפורמטיבי בלבד ואין להסיק ממנו לגבי תשובה פרטנית. המידע המחייב הוא המידע המתקבל מהמחלק באופן פרטני אצל כל מבקש חיבור.
+                        </p>
+                        <p>
+                          נתוני הספק המתקנים המחוברים והמבוקשים הם ביחידות של MW ומוצגים במונחי DC (מחושב).
+                        </p>
+                        <p>
+                          ככל שדווחו על ידי המחלק נתוני הספק פאנלים בפועל (הספק DC), הם מוצגים בדו&quot;ח. במידה שלא קיימים נתונים אלו ועבור נתונים חריגים על מנת להמיר את ההספק מ-AC ל-DC, נעשה שימוש בטבלת המרה הבאה: טבלת המרת DC/AC (PV) – יש להכפיל ב:
+                        </p>
+                        <ul className="list-disc list-inside space-y-1 pr-1">
+                          <li>דו שימוש: 1.2</li>
+                          <li>קרקעי: 1.3</li>
+                          <li>משולב אגירה: 2.3</li>
+                        </ul>
+                        <p>
+                          הנתונים מבוססים על מידע שמועבר מחברת החשמל ונוגה לרשות החשמל.
+                        </p>
+                      </>
+                    }
                   />
                 </div>
               )}

@@ -18,11 +18,11 @@ export default function NewsletterPopup() {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
   const interests = [
-    'לצורך עבודה בתחום עסקי',
-    'לצרכים משפחתיים',
-    'לצורך מחקר אקדמיים',
-    'לצורך מדיה (עיתונות)',
-    'לצורך פרטי'
+    "פרטי",
+    "אקדמי",
+    "עיתונאי",
+    "עסקי",
+    "אחר"
   ];
 
   useEffect(() => {
@@ -38,14 +38,6 @@ export default function NewsletterPopup() {
       return () => clearTimeout(timer);
     }
   }, []);
-
-  const handleInterestToggle = (interest: string) => {
-    setSelectedInterests(prev =>
-      prev.includes(interest)
-        ? prev.filter(i => i !== interest)
-        : [...prev, interest]
-    );
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,17 +66,6 @@ export default function NewsletterPopup() {
 
   return (
     <>
-      {/* Toggle Button at the Top */}
-      {/* <div className="fixed top-4 right-4 z-[500000]">
-        <Button
-          onClick={() => setIsOpen(true)}
-          className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-full flex items-center"
-        >
-          <Mail className="w-4 h-4 ml-2" />
-          הצגת הטופס
-        </Button>
-      </div> */}
-
       {/* Popup Overlay */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
@@ -101,12 +82,11 @@ export default function NewsletterPopup() {
 
             {/* Content */}
             <h3 className='text-[#484C56] text-[28px] md:text-[34px] font-extrabold leading-tight'>
-              האתר חופשי לשימושך באופן מלא!
+              השימוש באתר חופשי וללא עלות!
             </h3>
             <div className="w-[46px] h-1 bg-[#276E4E] my-4 mr-0"></div>
             <p className="text-gray-600 mb-6 leading-relaxed">
-              לצורך שיפור חוויית השימוש באתר, נשמח לדעת
-              האם השימוש באתר הינו:
+              לאיזה צורך השימוש שלך באתר?:
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -130,10 +110,12 @@ export default function NewsletterPopup() {
                     />
                   </label>
                 ))}
-              </div>
 
+              </div>
+              <p className='text-gray-600 text-sm'>אני מאשר/ת לאתר זה להשתמש ב'עוגיות' (Cookies) ובטכנולוגיות דומות כדי לשפר את חווית המשתמש, בהתאם למדיניות הפרטיות.
+              </p>
               {/* Submit button */}
-              <div className="pt-4">
+              <div>
                 <Button
                   type="submit"
                   disabled={isPending}

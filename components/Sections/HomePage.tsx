@@ -669,10 +669,7 @@ export default function HomePage() {
             <div className="w-[46px] h-1 bg-[#276E4E] md:my-5 my-3"></div>
             <div className="flex flex-col gap-2 max-w-[1043px] w-full md:text-xl text-base">
               <p className="text-[#484C56] max-w-full leading-[120%]">
-                משק החשמל בישראל מורכב ממספר גורמים מרכזיים: משרד האנרגיה,
-                האחראי על קביעת מדיניות האנרגיה, רשות החשמל, המפקחת על השוק
-                וקובעת את התעריפים, וחברת נגה – ניהול מערכת החשמל, המנהלת את
-                אספקת החשמל ושומרת על איזון בין ביקוש לייצור בזמן אמת.
+                למשק החשמל בישראל מספר מקורות ייצור- חלקם מתחדשים, כמו אנרגיית שמש, רוח, ביו גז, וחלקם פוסיליים - פחם, גז וסולר. בחלק זה ניתן לעקוב אחר תמהיל הייצור המשקי, מחירי החשמל, ושוק המספקים הפרטיים.
               </p>
               {!showMore && (
                 <>
@@ -739,7 +736,29 @@ export default function HomePage() {
                         {/* Tooltip that appears on hover */}
                         {showMixTooltip && (
                           <div className="absolute top-full left-1/2 -translate-x-1/2 mb-2 z-50">
-                            <TooltipInfo content="Lorem ipsum" />
+                            <TooltipInfo
+                              content={
+                                <>
+                                  <p>
+                                    הנתונים נלקחים מאתר חברת ניהול מערכת החשמל – נוגה.{" "}
+                                    <a
+                                      href="https://www.noga-iso.co.il/systemoperationunit/piechartspage/"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="whitespace-nowrap"
+                                    >
+                                      noga-iso.co.il
+                                    </a>
+                                  </p>
+                                  <p>
+                                    הנתונים הומרו ל-MWh, עברו מיצוע שעתי, והם מתעדכנים מעת לעת.
+                                  </p>
+                                  <p>
+                                    צטטו אותנו: מרכז השילוב לקיימות, NZO. אתר הדאטה של NZO. תמהיל ייצור חשמל.
+                                  </p>
+                                </>
+                              }
+                            />
                           </div>
                         )}
                       </div>
@@ -858,7 +877,29 @@ export default function HomePage() {
                         </svg>
                         {showOverviewTooltip && (
                           <div className="absolute top-full left-1/2 -translate-x-1/2 mb-2 z-50">
-                            <TooltipInfo content="Lorem ipsum" />
+                            <TooltipInfo
+                              content={
+                                <>
+                                  <p>
+                                    הנתונים נלקחים מאתר חברת ניהול מערכת החשמל – נוגה.{" "}
+                                    <a
+                                      href="https://www.noga-iso.co.il/systemoperationunit/piechartspage/"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="whitespace-nowrap"
+                                    >
+                                      noga-iso.co.il
+                                    </a>
+                                  </p>
+                                  <p>
+                                    הנתונים הומרו ל-MWh, והם מתעדכנים מעת לעת.
+                                  </p>
+                                  <p>
+                                    צטטו אותנו: מרכז השילוב לקיימות, NZO. אתר הדאטה של NZO. מקורות ייצור חשמל.
+                                  </p>
+                                </>
+                              }
+                            />
                           </div>
                         )}
                       </div>
@@ -963,22 +1004,20 @@ export default function HomePage() {
             <div className="flex flex-col md:flex-row items-center md:gap-6 gap-3">
               <button
                 onClick={handleMarket}
-                className={`text-[#59687D] font-bold border py-[6px] px-6 rounded-full md:text-base text-sm transition-all ${
-                  activeTab === "market"
-                    ? "bg-[#1E8025] border-[#1E8025] text-white"
-                    : "bg-white border-[#DEDEDE] hover:bg-gray-50"
-                }`}
+                className={`text-[#59687D] font-bold border py-[6px] px-6 rounded-full md:text-base text-sm transition-all ${activeTab === "market"
+                  ? "bg-[#1E8025] border-[#1E8025] text-white"
+                  : "bg-white border-[#DEDEDE] hover:bg-gray-50"
+                  }`}
               >
                 שוק מספקי חשמל פרטיים
               </button>
 
               <button
                 onClick={handleSMP}
-                className={`text-[#59687D] w-full md:w-auto font-bold border py-[6px] px-6 rounded-full md:text-base text-sm transition-all ${
-                  activeTab === "smp"
-                    ? "bg-[#1E8025] border-[#1E8025] text-white"
-                    : "bg-white border-[#DEDEDE] hover:bg-gray-50"
-                }`}
+                className={`text-[#59687D] w-full md:w-auto font-bold border py-[6px] px-6 rounded-full md:text-base text-sm transition-all ${activeTab === "smp"
+                  ? "bg-[#1E8025] border-[#1E8025] text-white"
+                  : "bg-white border-[#DEDEDE] hover:bg-gray-50"
+                  }`}
               >
                 SMP
               </button>
@@ -995,7 +1034,7 @@ export default function HomePage() {
               {activeTab === "market" && (
                 <div className="flex flex-col gap-6">
                   <Market />
-                  <div className="flex flex-col">
+                  <div className="flex flex-col gap-8">
                     <DashChart />
                     <RejectionChart />
                   </div>

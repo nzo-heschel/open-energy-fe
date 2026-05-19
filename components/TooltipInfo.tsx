@@ -5,7 +5,7 @@ import React, { useState, useEffect } from "react";
 
 interface TooltipInfoProps {
     //   title?: string;
-    content: string;
+    content: React.ReactNode;
     delay?: number;
 }
 
@@ -25,9 +25,15 @@ const TooltipInfo: React.FC<TooltipInfoProps> = ({
         <div className="relative w-fit mx-auto text-gray-800 mt-3">
             <div className="relative bg-white rounded-[20px] md:p-[30px] p-5 w-[388px] shadow-[10.37px_5.18px_60px_0px_rgba(0,0,0,0.05),0px_3px_30px_0px_rgba(153,191,65,0.16)]">
                 <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-5 h-5 bg-white rotate-45"></div>
-                <p className="text-[#656565] text-sm font-normal">
+                <div
+                    className={`text-[#656565] text-sm font-normal leading-relaxed ${
+                        typeof content === "string"
+                            ? "whitespace-pre-line"
+                            : "space-y-2 text-right [&_a]:text-[#358BFF] [&_a]:hover:underline [&_a]:break-all"
+                    }`}
+                >
                     {content}
-                </p>
+                </div>
             </div>
         </div>
     );

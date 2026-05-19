@@ -110,9 +110,8 @@ const CustomLegend = ({
             className="w-2 h-2 rounded-full block transition-opacity duration-200"
           />
           <span
-            className={`transition-all duration-200 ${
-              activeSeries[bracket.key] ? "text-gray-800" : "text-gray-400"
-            }`}
+            className={`transition-all duration-200 ${activeSeries[bracket.key] ? "text-gray-800" : "text-gray-400"
+              }`}
           >
             {bracket.label}
           </span>
@@ -208,10 +207,10 @@ export default function RequestTwo() {
         const { small, medium, large, xlarge } = usesLegacyMwBands
           ? mapLegacyInstalledStyleBrackets(brackets)
           : accumulateFourSegments(brackets as Record<string, unknown>, (raw) =>
-              pick(
-                raw as { total_mw?: number; count?: number } | undefined,
-              ),
-            );
+            pick(
+              raw as { total_mw?: number; count?: number } | undefined,
+            ),
+          );
 
         const total = small + medium + large + xlarge;
 
@@ -335,7 +334,7 @@ export default function RequestTwo() {
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-0">
           <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-            הספק תשובות חיוביות
+            תשובות חיוביות לפי גודל
             <div
               className="relative"
               onMouseEnter={() => setShowTooltip(true)}
@@ -366,11 +365,45 @@ export default function RequestTwo() {
               {showTooltip && (
                 <div className="absolute top-full left-1/2 -translate-x-1/2 mb-2 z-50">
                   <TooltipInfo
-                    content="
-                                    הגרף מציג את קיבולת התגובה החיובית לפי גודל מתקן לאורך השנים.
-                                    ניתן לראות את התפלגות ההספק או מספר המתקנים לפי טווחי גודל שונים.
-                                    הנתונים נאספים מרשות החשמל ומתעדכנים מעת לעת. ניתן לסנן לפי שנה ולהוריד את המידע לקובץ אקסל או לגשת אליו דרך API.
-                                    "
+                    content={
+                      <>
+                        <p>
+                          הנתונים נלקחים מאתר רשות החשמל.{" "}
+                          <a
+                            href="https://www.gov.il/he/pages/bipua2024"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="whitespace-nowrap"
+                          >
+                            gov.il
+                          </a>
+                        </p>
+                        <p>הנתונים מתעדכנים מעת לעת.</p>
+                        <p>
+                          צטטו אותנו: מרכז השילוב לקיימות, NZO. אתר הדאטה של NZO. תשובות חיוביות לפי גודל.
+                        </p>
+                        <p className="font-semibold text-[#484C56] pt-1">
+                          הערות כלליות:
+                        </p>
+                        <p>
+                          מידע זה הינו אינפורמטיבי בלבד ואין להסיק ממנו לגבי תשובה פרטנית. המידע המחייב הוא המידע המתקבל מהמחלק באופן פרטני אצל כל מבקש חיבור.
+                        </p>
+                        <p>
+                          נתוני הספק המתקנים המחוברים והמבוקשים הם ביחידות של MW ומוצגים במונחי DC (מחושב).
+                        </p>
+                        <p>
+                          ככל שדווחו על ידי המחלק נתוני הספק פאנלים בפועל (הספק DC), הם מוצגים בדו&quot;ח. במידה שלא קיימים נתונים אלו ועבור נתונים חריגים על מנת להמיר את ההספק מ-AC ל-DC, נעשה שימוש בטבלת המרה הבאה: טבלת המרת DC/AC (PV) – יש להכפיל ב:
+                        </p>
+                        <ul className="list-disc list-inside space-y-1 pr-1">
+                          <li>דו שימוש: 1.2</li>
+                          <li>קרקעי: 1.3</li>
+                          <li>משולב אגירה: 2.3</li>
+                        </ul>
+                        <p>
+                          הנתונים מבוססים על מידע שמועבר מחברת החשמל ונוגה לרשות החשמל.
+                        </p>
+                      </>
+                    }
                   />
                 </div>
               )}
@@ -381,7 +414,9 @@ export default function RequestTwo() {
             <span className="text-sm text-slate-600 mt-6">סינון לפי:</span>
             <div className="relative w-[113px]">
               <label htmlFor="" className="flex flex-col gap-1">
-                <span className="text-sm text-slate-600">פרק זמן:</span>
+                <span className="text-sm text-slate-600">
+                  שנה:
+                </span>
                 <YearMultiSelectDropdown
                   selectedYears={selectedYears}
                   onChange={(years) => {
@@ -474,21 +509,19 @@ export default function RequestTwo() {
       >
         <button
           onClick={() => setActiveTab("supply")}
-          className={`rounded-full md:px-5 px-2 md:py-[6px] py-[2px] font-black md:text-base text-xs ${
-            activeTab === "supply"
-              ? "bg-[#59687D] text-white hover:bg-[#59687D] hover:text-white"
-              : "bbg-transparent text-[#59687D] hover:bg-[#59687D] hover:text-white"
-          }`}
+          className={`rounded-full md:px-5 px-2 md:py-[6px] py-[2px] font-black md:text-base text-xs ${activeTab === "supply"
+            ? "bg-[#59687D] text-white hover:bg-[#59687D] hover:text-white"
+            : "bbg-transparent text-[#59687D] hover:bg-[#59687D] hover:text-white"
+            }`}
         >
           הספק מתקנים
         </button>
         <button
           onClick={() => setActiveTab("facilities")}
-          className={`rounded-full md:px-5 px-2 md:py-[6px] py-[2px] font-black md:text-base text-xs ${
-            activeTab === "facilities"
-              ? "bg-[#59687D] text-white hover:bg-[#59687D] hover:text-white"
-              : "bbg-transparent text-[#59687D] hover:bg-[#59687D] hover:text-white"
-          }`}
+          className={`rounded-full md:px-5 px-2 md:py-[6px] py-[2px] font-black md:text-base text-xs ${activeTab === "facilities"
+            ? "bg-[#59687D] text-white hover:bg-[#59687D] hover:text-white"
+            : "bbg-transparent text-[#59687D] hover:bg-[#59687D] hover:text-white"
+            }`}
         >
           מספר מתקנים
         </button>

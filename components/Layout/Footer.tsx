@@ -3,7 +3,7 @@ import omnis from "@/public/images/omnis_logo1.png";
 import Image from "next/image";
 
 const footerLinks = [
-  { label: "מקורות נתונים", href: "#data-sources" },
+  { label: "תקנון ומדיניות פרטיות", href: "/terms" },
   { label: "|", href: "#" },
   { label: "אודותינו", href: "#about" },
 ];
@@ -28,7 +28,7 @@ export default function Footer() {
                 ))}
               </nav>
               <p className="text-base text=[#59687D] font-medium md:text-left text-center w-full">
-                © לשנות זכויות יוצרים ל-2026. שמורות להשל
+                © מרכז השל לקיימות 2026.
               </p>
             </div>
 

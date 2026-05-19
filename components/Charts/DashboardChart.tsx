@@ -23,14 +23,17 @@ interface DashboardChartsProps {
     regulationType?: string;
 }
 
+const COMPLETED_COLOR = "#276E4E";
+const REJECTED_COLOR = "#DC2626";
+
 // Color mapping for status labels
 const statusColorMap: Record<string, string> = {
-    "approved": "#648AA3",
-    "rejected": "#DACF61",
-    "pending": "#957669",
-    "הושלמו": "#648AA3",
-    "נדחו": "#DACF61",
-    "ממתין": "#957669",
+    approved: COMPLETED_COLOR,
+    rejected: REJECTED_COLOR,
+    pending: "#957669",
+    הושלמו: COMPLETED_COLOR,
+    נדחו: REJECTED_COLOR,
+    ממתין: "#957669",
 };
 
 // Custom tooltip for pie chart with percentage
@@ -72,7 +75,7 @@ const BarChartTooltip = ({ active, payload, label }: any) => {
                 <p className="text-[#59687D] font-bold text-lg mb-2">סה"כ {total.toLocaleString()}</p>
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "#648AA3" }}></div>
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COMPLETED_COLOR }}></div>
                         <span className="text-[#59687D] text-sm"
                         >
                             הושלמו
@@ -80,7 +83,7 @@ const BarChartTooltip = ({ active, payload, label }: any) => {
                         <span className="text-[#59687D] font-semibold text-sm mr-auto">{approved.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "#DACF61" }}></div>
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: REJECTED_COLOR }}></div>
                         <span className="text-[#59687D] text-sm">נדחו</span>
                         <span className="text-[#59687D] font-semibold text-sm mr-auto">{rejected.toLocaleString()}</span>
                     </div>
@@ -103,8 +106,8 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
     const pieData = useMemo(() => {
         if (!switchingData?.charts?.requests_by_status?.data) {
             return [
-                { name: "הושלמו", value: 0, color: "#648AA3" },
-                { name: "נדחו", value: 0, color: "#DACF61" },
+                { name: "הושלמו", value: 0, color: COMPLETED_COLOR },
+                { name: "נדחו", value: 0, color: REJECTED_COLOR },
             ];
         }
 
@@ -138,7 +141,7 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
             return {
                 name: hebrewLabel,
                 value: filteredCount,
-                color: statusColorMap[item.label] || statusColorMap[hebrewLabel] || "#648AA3",
+                color: statusColorMap[item.label] || statusColorMap[hebrewLabel] || COMPLETED_COLOR,
             };
         });
     }, [switchingData, regulationType]);
@@ -368,7 +371,7 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
                             barSize={28}
                             dataKey="approved"
                             name="הושלמו"
-                            fill="#648AA3"
+                            fill={COMPLETED_COLOR}
                             stackId="status"
                             opacity={getOpacity("הושלמו")}
                         />
@@ -378,7 +381,7 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
                             radius={[4, 4, 0, 0]}
                             dataKey="rejected"
                             name="נדחו"
-                            fill="#DACF61"
+                            fill={REJECTED_COLOR}
                             stackId="status"
                             opacity={getOpacity("נדחו")}
                         >

@@ -157,87 +157,93 @@ export default function ContactSection() {
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="flex flex-col md:gap-10 gap-5">
-                  <div className="relative">
+                <>
+                  <form onSubmit={handleSubmit} className="flex flex-col md:gap-10 gap-5">
                     <div className="relative">
-                      <input
-                        name="name"
-                        type="text"
-                        value={formData.name}
-                        onChange={handleChange}
-                        className={`${getInputClassName('name')}`}
-                        placeholder="שם"
-                      />
-                      {!formData.name && (
-                        <span className="absolute right-[40px] top-0 h-10 flex items-center text-[#E9C863] pointer-events-none pr-1">*</span>
+                      <div className="relative">
+                        <input
+                          name="name"
+                          type="text"
+                          value={formData.name}
+                          onChange={handleChange}
+                          className={`${getInputClassName('name')}`}
+                          placeholder="שם"
+                        />
+                        {!formData.name && (
+                          <span className="absolute right-[40px] top-0 h-10 flex items-center text-[#E9C863] pointer-events-none pr-1">*</span>
+                        )}
+                      </div>
+                      {errors.name && (
+                        <p className="text-right text-[#CEA073] text-sm mt-1 absolute bottom-[-20px] right-0">
+                          {errors.name}
+                        </p>
                       )}
                     </div>
-                    {errors.name && (
-                      <p className="text-right text-[#CEA073] text-sm mt-1 absolute bottom-[-20px] right-0">
-                        {errors.name}
-                      </p>
-                    )}
-                  </div>
 
-                  <div className="relative">
                     <div className="relative">
-                      <input
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        className={`${getInputClassName('email')}`}
-                        placeholder="כתובת דוא״ל"
-                      />
-                      {!formData.email && (
-                        <span className="absolute right-[100px] top-0 h-10 flex items-center text-[#E9C863] pointer-events-none pr-1">*</span>
+                      <div className="relative">
+                        <input
+                          name="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          className={`${getInputClassName('email')}`}
+                          placeholder="כתובת דוא״ל"
+                        />
+                        {!formData.email && (
+                          <span className="absolute right-[100px] top-0 h-10 flex items-center text-[#E9C863] pointer-events-none pr-1">*</span>
+                        )}
+                      </div>
+                      {errors.email && (
+                        <p className="text-right text-[#CEA073] text-sm mt-1 absolute bottom-[-20px] right-0">
+                          {errors.email}
+                        </p>
                       )}
                     </div>
-                    {errors.email && (
-                      <p className="text-right text-[#CEA073] text-sm mt-1 absolute bottom-[-20px] right-0">
-                        {errors.email}
-                      </p>
-                    )}
-                  </div>
 
 
-                  <div className="relative">
-                    <input
-                      name="organization"
-                      value={formData.organization}
-                      onChange={handleChange}
-                      className={`${getInputClassName('organization')}`}
-                      placeholder="ארגון (אם יש)"
-                    />
-                    {errors.organization && (
-                      <p className="text-right text-[#CEA073] text-sm mt-1 absolute bottom-[-20px] right-0">
-                        {errors.organization}
-                      </p>
-                    )}
-                  </div>
+                    <div className="relative">
+                      <input
+                        name="organization"
+                        value={formData.organization}
+                        onChange={handleChange}
+                        className={`${getInputClassName('organization')}`}
+                        placeholder="ארגון (אם יש)"
+                      />
+                      {errors.organization && (
+                        <p className="text-right text-[#CEA073] text-sm mt-1 absolute bottom-[-20px] right-0">
+                          {errors.organization}
+                        </p>
+                      )}
+                    </div>
 
-                  <div className="relative">
-                    <textarea
-                      name="message"
-                      value={formData.message}
-                      onChange={handleChange}
-                      className={`${getTextareaClassName()}`}
-                      placeholder="כתבו כאן את תוכן הפנייה"
-                    ></textarea>
-                    {errors.message && (
-                      <p className="text-right text-[#CEA073] text-sm mt-1 absolute bottom-[-20px] right-0">
-                        {errors.message}
-                      </p>
-                    )}
-                  </div>
+                    <div className="relative">
+                      <textarea
+                        name="message"
+                        value={formData.message}
+                        onChange={handleChange}
+                        className={`${getTextareaClassName()}`}
+                        placeholder="כתבו כאן את תוכן הפנייה"
+                      ></textarea>
+                      {errors.message && (
+                        <p className="text-right text-[#CEA073] text-sm mt-1 absolute bottom-[-20px] right-0">
+                          {errors.message}
+                        </p>
+                      )}
+                    </div>
 
-                  <Button
-                    type="submit"
-                    className="max-w-[192px] w-full bg-[#1E8025] text-white rounded-full h-10 text-lg font-extrabold"
-                  >
-                    שליחה
-                  </Button>
-                </form>
+                    <Button
+                      type="submit"
+                      className="max-w-[192px] w-full bg-[#1E8025] text-white rounded-full h-10 text-lg font-extrabold"
+                    >
+                      שליחה
+                    </Button>
+
+                  </form>
+                  <p className='mt-2 text-[14px]'>
+                    השארת פרטים מהווה הסכמה למדיניות הפרטיות.
+                  </p>
+                </>
               )}
             </div>
           </div>

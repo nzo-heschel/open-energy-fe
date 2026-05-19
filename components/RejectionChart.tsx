@@ -98,7 +98,7 @@ const RejectionChart = () => {
 
     return (
         <div className='flex flex-col md:gap-[30px] gap-5'>
-            <Card className="bg-white border border-[#E9C863] rounded-none rounded-b-2xl">
+            <Card className="bg-white border border-[#E9C863] rounded-2xl">
                 <CardHeader>
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2 justify-between">
@@ -116,7 +116,42 @@ const RejectionChart = () => {
                                     {showTooltip && (
                                         <div className="absolute top-full left-1/2 -translate-x-1/2 mb-2 z-50">
                                             <TooltipInfo
-                                                content="פירוט סיבות הדחיה של בקשות ניוד"
+                                                content={
+                                                    <>
+                                                        <p>
+                                                            הנתונים נלקחים מאתר רשות החשמל.{" "}
+                                                            <a
+                                                                href="https://www.gov.il/he/pages/bi_olam_haspaka"
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="whitespace-nowrap"
+                                                            >
+                                                                gov.il
+                                                            </a>
+                                                        </p>
+                                                        <p>הנתונים מתעדכנים מעת לעת.</p>
+                                                        <p>
+                                                            צטטו אותנו: מרכז השילוב לקיימות, NZO. אתר הדאטה של NZO. בקשות ניוד- סיבות דחיה.
+                                                        </p>
+                                                        <p className="font-semibold text-[#484C56] pt-1">
+                                                            הערות כלליות:
+                                                        </p>
+                                                        <p>
+                                                            המידע מבוסס על נתונים המועברים על ידי מנהל המערכת לרשות החשמל, והם יתעדכנו באופן שוטף.
+                                                        </p>
+                                                        <p>
+                                                            הנתונים מתייחסים למספר המונים ולא למספר הצרכנים, כלומר במקרה בו יש מספר מונים עבור צרכן אחד, כל המונים נספרים במספר המונים הכולל.
+                                                        </p>
+                                                        <p>
+                                                            הסקטורים סווגו על ידי הרשות, על בסיס תיאור הפעילות שהועבר מנוגה. סיווג הסקטורים אינו בהכרח תואם את סיווג הסקטורים כפי שמופיעים בדיווחים אחרים של הרשות או בדיווחים אחרים של חברת החשמל וחברת נוגה.
+                                                        </p>
+                                                        <p>גודל חיבור הינו במונחי GVA.</p>
+                                                        <p>
+                                                            במקרה של סתירה בין סוג הצרכן (&quot;לא ביתי&quot;) והסקטור (&quot;משקי בית&quot;) הרשות סיווגה את המונה לפי גודל החיבור.
+                                                        </p>
+                                                        <p>חדרי מדרגות נכללים כצרכנים &quot;לא ביתיים&quot;.</p>
+                                                    </>
+                                                }
                                             />
                                         </div>
                                     )}
@@ -209,7 +244,9 @@ const RejectionChart = () => {
                             </div>
                             <div className="relative w-[179px]">
                                 <label htmlFor="" className='flex flex-col gap-1'>
-                                    <span className='text-sm text-slate-600'>סיבה דחיה:</span>
+                                    <span className='text-sm text-slate-600'>
+                                        סיבת דחיה:
+                                    </span>
                                     <div className="relative rejection-reason-dropdown">
                                         <button
                                             type="button"

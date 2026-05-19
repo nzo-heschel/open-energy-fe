@@ -30,11 +30,14 @@ const Page = () => {
                 <section className="bg-[#FDFBF6] border border-[#DEDEDE]/70 md:rounded-[40px] rounded-[20px] overflow-hidden min-h-[500px]">
                     <div className="relative z-10 min-h-[500px] flex md:flex-row flex-col-reverse lg:gap-[0px]">
                         <div className="w-full text-right md:p-[60px] p-6 md:pb-[30px]">
-                            <h2 className="md:text-3xl text-2xl font-bold text-[#484C56]">אנרגיות מתחדשות</h2>
+                            <h2 className="md:text-3xl text-2xl font-bold text-[#484C56]">
+                                אנרגיה מתחדשת
+                            </h2>
                             <div className="w-[46px] h-1 bg-[#276E4E] md:my-5 my-3"></div>
                             <div className="flex flex-col gap-2 max-w-[1043px] w-full md:text-xl text-base">
                                 <p className="text-[#484C56] max-w-full leading-[140%]">
-                                    אפשר להכניס כאן הסבר. לורם איפסום דולור סיט אמט, קונסקטורר אדיפיסינג אלית הועניב היושבב שערש שמחויט - שלושע ותלברו חשלו שעותלשך וחאית נובש                                 </p>
+                                    בחלק זה תוכלו למצוא נתונים על תהליך המעבר לשימוש במקורות אנרגיה מתחדשים, מגמות הייצור והחיבור של מתקני אנרגיה מתחדשת לרשת.
+                                </p>
                             </div>
 
                             <div className="md:mt-20 mt-10">

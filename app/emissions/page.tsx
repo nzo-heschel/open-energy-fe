@@ -87,9 +87,7 @@ export default function Emissions() {
             <div className="w-[46px] h-1 bg-[#276E4E] md:my-5 my-3"></div>
             <div className="flex flex-col gap-2 max-w-[1043px] w-full md:text-xl text-base">
               <p className="text-[#484C56] max-w-full leading-[120%]">
-                ייצור חשמל ממקורות מאובנים גורם לפליטות רבות של גזי חממה, ובראשם
-                CO2. המעבר לאנרגיה מתחדשת צפוי להפחית פליטות גזי חממה, ולמתן את
-                התדרדרות משבר האקלים.
+                ייצור חשמל ממקורות מאובנים גורם לפליטות רבות של גזי חממה, ובראשם CO2. המעבר לאנרגיה מתחדשת צפוי להפחית פליטות גזי חממה, ולמתן את התדרדרות משבר האקלים.
               </p>
               {/* {!showMore && (
                                 <>

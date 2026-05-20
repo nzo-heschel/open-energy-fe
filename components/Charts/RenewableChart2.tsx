@@ -225,20 +225,20 @@ function buildRows(
   return regions.map((r) => {
     const t30FromData =
       r.renewable_target_percent_2030 != null &&
-      r.renewable_target_percent_2030 > 0
+        r.renewable_target_percent_2030 > 0
         ? toChartPercent(r.renewable_target_percent_2030, valueUnit)
         : null;
     const t50 =
       include2050 &&
-      r.renewable_target_percent_2050 != null &&
-      r.renewable_target_percent_2050 > 0
+        r.renewable_target_percent_2050 != null &&
+        r.renewable_target_percent_2050 > 0
         ? toChartPercent(r.renewable_target_percent_2050, valueUnit)
         : null;
 
     const solarW =
       includeSolar &&
-      r.solar_share_percent_2024 != null &&
-      r.solar_share_percent_2024 > 0
+        r.solar_share_percent_2024 != null &&
+        r.solar_share_percent_2024 > 0
         ? toChartPercent(r.solar_share_percent_2024, valueUnit)
         : null;
 
@@ -518,18 +518,6 @@ export default function RenewableChart2() {
 
   const title = "השוואה בין לאומית של יעדי מתחדשות וייצור אנרגיה סולארית";
 
-  const infoContent = useMemo(() => {
-    const parts: string[] = [];
-    if (data?.value_unit_description) parts.push(data.value_unit_description);
-    parts.push(
-      "הגרף משווה בין יעדי אנרגיה מתחדשת לשנים 2030 ו-2050 לבין שיעור סולארי ב-2024. לחיצה על פריט במקרא מפעילה או מכבה את שכבות הסולאר, יעד 2030 ויעד 2050.",
-    );
-    if (data?.source?.source_notes?.length) {
-      parts.push(`מקורות: ${data.source.source_notes.join(" · ")}`);
-    }
-    return parts.join("\n\n");
-  }, [data?.source?.source_notes, data?.value_unit_description]);
-
   const handleExport = async () => {
     setExporting(true);
     try {
@@ -580,9 +568,6 @@ export default function RenewableChart2() {
             <h2 className="text-lg md:text-xl font-bold text-[#484C56] leading-snug">
               {title}
             </h2>
-            {/* <p className="font-normal text-[#484C56] text-sm leading-snug">
-              אחוז אנרגיות מתחדשות מתוך תמהיל הייצור
-            </p> */}
           </div>
           <div
             className="relative shrink-0 pt-0.5"
@@ -611,7 +596,9 @@ export default function RenewableChart2() {
             </svg>
             {showTooltip && (
               <div className="absolute top-full end-1/2 translate-x-1/2 md:translate-x-0 md:end-0 mt-2 z-50 min-w-[280px] max-w-[min(90vw,388px)]">
-                <TooltipInfo content={infoContent} />
+                <TooltipInfo content={`הנתונים נלקחים מסוכנות האנרגיה הבין-לאומית (IEA), תכניות אנרגיה ואקלים לאומיות (NECP) של ספרד ויוון לשנים 2021-2030, נציבות האנרגיה של קליפורניה (CEC), דו"חות מצב משק החשמל השנתיים, החלטת ממשלה 465, והתרחיש הצהוב במתווה לאיפוס פליטות גזי חממה עד לשנת 2050.
+                הנתונים מתעדכנים מעת לעת.
+                צטטו אותנו: מרכז השל לקיימות, NZO. אתר הדאטה של NZO. השוואה בין לאומית של יעדי מתחדשות וייצור אנרגיה סולארית.`} />
               </div>
             )}
           </div>
@@ -658,9 +645,8 @@ export default function RenewableChart2() {
             key={row.dataKey}
             type="button"
             disabled={!row.toggleable}
-            className={`flex items-center gap-2.5 transition-opacity duration-200 border-0 bg-transparent p-0 ${
-              row.toggleable ? "cursor-pointer" : "cursor-default"
-            }`}
+            className={`flex items-center gap-2.5 transition-opacity duration-200 border-0 bg-transparent p-0 ${row.toggleable ? "cursor-pointer" : "cursor-default"
+              }`}
             style={{ opacity: legendRowOpacity(row) }}
             onClick={() => handleLegendRowClick(row)}
             onMouseEnter={() => handleLegendMouseEnter(row)}
@@ -671,13 +657,12 @@ export default function RenewableChart2() {
               style={{ backgroundColor: row.color }}
             />
             <span
-              className={`text-sm leading-tight ${
-                row.toggleable && row.enabled
-                  ? "font-medium text-[#484C56]"
-                  : row.toggleable
-                    ? "font-medium text-gray-400"
-                    : "font-medium text-[#484C56]"
-              }`}
+              className={`text-sm leading-tight ${row.toggleable && row.enabled
+                ? "font-medium text-[#484C56]"
+                : row.toggleable
+                  ? "font-medium text-gray-400"
+                  : "font-medium text-[#484C56]"
+                }`}
             >
               {row.label}
             </span>

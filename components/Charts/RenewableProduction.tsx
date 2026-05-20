@@ -494,7 +494,7 @@ export default function RenewableProduction() {
   useEffect(() => {
     setSelectedMonths((prev) => {
       const optionValues = availableMonths.map((m) => m.value);
-      const valid = prev.filter((m) => optionValues.includes(m));
+      const valid = prev.filter((m) => optionValues.some((v) => v === m));
       if (valid.length === 0) {
         const fallback = optionValues[optionValues.length - 1];
         return fallback ? [fallback] : prev;

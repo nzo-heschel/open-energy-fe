@@ -22,6 +22,7 @@ import {
   exportRenewablesDelivery4RenewableForecastIsrael,
   useRenewablesDelivery4,
 } from "@/lib/api";
+import TooltipInfo from "../TooltipInfo";
 
 type ChartRow = {
   year: number;
@@ -94,16 +95,13 @@ export default function RenewableChart() {
     "ministry" | "nzo"
   >("ministry");
   const [exporting, setExporting] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const { data, isLoading, error } = useRenewablesDelivery4();
   const { chartData, lastYearWithActual } = useMemo(
     () => buildChartRows(data?.data ?? [], selectedPrediction),
     [data?.data, selectedPrediction],
   );
-
-  const title =
-    data?.title_he ?? data?.title ?? "יעדי אנרגיות מתחדשות מול ייצור בפועל";
-
   const togglePrediction = (key: "ministry" | "nzo") => {
     setSelectedPrediction(key);
   };
@@ -194,7 +192,6 @@ export default function RenewableChart() {
         p.dataKey === "ministryPct" ||
         p.dataKey === "nzoPct",
     );
-
     return (
       <div className="bg-white shadow-lg rounded-lg p-3 border border-gray-200 text-sm">
         <p className="font-medium">שנה {row.year}</p>
@@ -247,7 +244,64 @@ export default function RenewableChart() {
     <div className="w-full">
       <div className="flex flex-col md:flex-row items-center justify-between">
         <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-          {title}
+          יעדים מול ייצור בפועל
+          <div
+            className="relative"
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+          >
+            <svg
+              width="21"
+              height="21"
+              viewBox="0 0 21 21"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="cursor-help"
+            >
+              <g opacity="0.5">
+                <path
+                  d="M10.5 0.545898C4.98 0.545898 0.5 5.0259 0.5 10.5459C0.5 16.0659 4.98 20.5459 10.5 20.5459C16.02 20.5459 20.5 16.0659 20.5 10.5459C20.5 5.0259 16.02 0.545898 10.5 0.545898ZM10.5 18.5459C6.09 18.5459 2.5 14.9559 2.5 10.5459C2.5 6.1359 6.09 2.5459 10.5 2.5459C14.91 2.5459 18.5 6.1359 18.5 10.5459C18.5 14.9559 14.91 18.5459 10.5 18.5459Z"
+                  fill="#59687D"
+                />
+                <path
+                  d="M9.5 5.5459H11.5V7.5459H9.5V5.5459ZM9.5 9.5459H11.5V15.5459H9.5V9.5459Z"
+                  fill="#59687D"
+                />
+              </g>
+            </svg>
+            {showTooltip && (
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mb-2 z-50">
+                <TooltipInfo
+                  content={
+                    <>
+                      <p>
+                        שיעור המתחדשות לקוח מתוך דו&quot;ח מצב משק החשמל השנתי.
+                      </p>
+                      <p>
+                        היעד הממשלתי מסתמך על היעד ל-20% מתחדשות בשנת 2025, ו-30%
+                        בשנת 2030, והערכה לינארית של המשמעויות לשנים האחרות
+                        המוצגות בגרף.
+                      </p>
+                      <p>
+                        היעד של פרויקט NZO מסתמך על היעד ל-50% מתחדשות בשנת 2030,
+                        ו-95% בשנת 2050, והערכה לינארית של המשמעויות לשנים
+                        האחרות המוצגות בגרף.
+                      </p>
+                      <p>
+                        צפי ריאלי מסתמך על גידול ממוצע בשיעור המתחדשות בשלושת
+                        השנים האחרונות.
+                      </p>
+                      <p>הנתונים מתעדכנים מעת לעת.</p>
+                      <p>
+                        צטטו אותנו: מרכז השל לקיימות, NZO. אתר הדאטה של NZO.
+                        יעדים מול ייצור בפועל.
+                      </p>
+                    </>
+                  }
+                />
+              </div>
+            )}
+          </div>
         </h2>
         <div className="flex items-start md:gap-4 gap-2">
           <Link
@@ -319,14 +373,6 @@ export default function RenewableChart() {
           </span>
         </div>
       </div>
-      <div className="flex justify-end items-center my-4">
-        <div
-          className=" text-[14px] w-[70px] text-sm text-gray-700"
-          style={{ fontFamily: "Heebo, sans-serif" }}
-        >
-          אחוז אנרגיה מתחדשת
-        </div>
-      </div>
       <div
         className="md:h-[500px] h-[300px] relative"
         onMouseLeave={() => setIsChartHovered(false)}
@@ -336,82 +382,99 @@ export default function RenewableChart() {
           onMouseEnter={() => setIsChartHovered(true)}
         >
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={chartData}>
+            <ComposedChart
+              data={chartData}
+              margin={{ top: 10, right: 20, left: 20, bottom: 10 }}
+            >
               <CartesianGrid vertical={false} />
-              <XAxis dataKey="year" />
-              <YAxis tickFormatter={(value) => `${value}%`} />
+              <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+              <YAxis
+                tick={{ fontSize: 12 }}
+                tickFormatter={(value) => `${value}%`}
+                label={{
+                  value: "שיעור אנרגיה מתחדשת",
+                  angle: -90,
+                  position: "insideLeft",
+                  dx: 5,
+                  style: {
+                    textAnchor: "middle",
+                    fontFamily: "Heebo, sans-serif",
+                    fontSize: 12,
+                  },
+                }}
+              />
               <Tooltip
                 content={<CustomTooltip />}
                 wrapperStyle={{ zIndex: 50 }}
               />
-            <Legend content={() => null} />
+              <Legend content={() => null} />
 
-            <Bar
-              dataKey="actualBar"
-              fill="#1E8025"
-              barSize={28}
-              stackId="stack"
-              name="ייצור בפועל"
-              opacity={opacity("actual")}
-            >
-              <LabelList
+              <Bar
                 dataKey="actualBar"
-                position="insideTop"
-                offset={10}
-                formatter={(val: number) =>
-                  val != null && val > 0 ? `${val.toFixed(0)}` : ""
+                fill="#1E8025"
+                barSize={28}
+                stackId="stack"
+                name="ייצור בפועל"
+                opacity={opacity("actual")}
+              >
+                <LabelList
+                  dataKey="actualBar"
+                  position="insideTop"
+                  offset={10}
+                  formatter={(val: number) =>
+                    val != null && val > 0 ? `${val.toFixed(0)}` : ""
+                  }
+                  style={{ fill: "#ffffff90", fontSize: 14, fontWeight: 400 }}
+                />
+              </Bar>
+
+              <Bar
+                dataKey="ministryBar"
+                fill="#957669"
+                barSize={28}
+                stackId="stack"
+                name="יעד משרד האנרגיה"
+                opacity={
+                  selectedPrediction === "ministry" ? opacity("ministry") : 0
                 }
-                style={{ fill: "#ffffff90", fontSize: 14, fontWeight: 400 }}
               />
-            </Bar>
 
-            <Bar
-              dataKey="ministryBar"
-              fill="#957669"
-              barSize={28}
-              stackId="stack"
-              name="יעד משרד האנרגיה"
-              opacity={
-                selectedPrediction === "ministry" ? opacity("ministry") : 0
-              }
-            />
+              <Bar
+                dataKey="nzoBar"
+                fill="#8BBFE1"
+                barSize={28}
+                stackId="stack"
+                name="יעד NZO"
+                opacity={selectedPrediction === "nzo" ? opacity("nzo") : 0}
+              />
 
-            <Bar
-              dataKey="nzoBar"
-              fill="#8BBFE1"
-              barSize={28}
-              stackId="stack"
-              name="יעד NZO"
-              opacity={selectedPrediction === "nzo" ? opacity("nzo") : 0}
-            />
-
-            <Line
-              type="monotone"
-              dataKey="actualLinePct"
-              stroke="#1E8025"
-              strokeWidth={2}
-              dot={false}
-              name="ייצור בפועל / תחזית ריאלית"
-              opacity={opacity("actual")}
-            />
-            <Line
-              type="monotone"
-              dataKey="ministryPct"
-              stroke="#957669"
-              strokeWidth={2}
-              dot={false}
-              name="יעד משרד האנרגיה"
-              opacity={opacity("ministry")}
-            />
-            <Line
-              type="monotone"
-              dataKey="nzoPct"
-              stroke="#8BBFE1"
-              strokeWidth={2}
-              dot={false}
-              name="יעד NZO"
-              opacity={opacity("nzo")}
-            />
+              <Line
+                type="monotone"
+                dataKey="actualLinePct"
+                stroke="#1E8025"
+                strokeWidth={2}
+                dot={false}
+                name="צפי ריאלי"
+                opacity={opacity("actual")}
+              />
+              <Line
+                type="monotone"
+                dataKey="ministryPct"
+                stroke="#957669"
+                strokeWidth={2}
+                dot={false}
+                name="יעד משרד האנרגיה"
+                opacity={opacity("ministry")}
+              />
+              <Line
+                type="monotone"
+                dataKey="nzoPct"
+                stroke="#8BBFE1"
+                strokeWidth={2}
+                dot={false}
+                name="יעד NZO"
+                opacity={opacity("nzo")}
+              />
             </ComposedChart>
           </ResponsiveContainer>
         </div>

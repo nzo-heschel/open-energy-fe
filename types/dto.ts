@@ -908,22 +908,54 @@ export type ResponseCapacityBySizeResponse = {
   size_brackets?: string[];
 };
 
+export type ResponseCapacityDistrictBreakdownValue =
+  | number
+  | {
+      total_mw?: number;
+      count?: number;
+    };
+
+export type ResponseCapacityDistrictBreakdown = Partial<
+  Record<
+    'Positive' | 'Negative' | 'Partial Positive' | 'Limited Positive',
+    ResponseCapacityDistrictBreakdownValue
+  >
+>;
+
 // Response Capacity by District API response
 export type ResponseCapacityByDistrictResponse = {
   title: string;
+  title_he?: string;
+  total_mw?: number;
+  total_requests?: number;
+  filters_applied?: {
+    year: number | null;
+    technology: string | null;
+    include_cancelled: boolean;
+  };
   series: Array<{
     district: string;
     total_mw: number;
     request_count: number;
-    technology_breakdown: {
+    response_breakdown?: ResponseCapacityDistrictBreakdown;
+    /** @deprecated use `response_breakdown` */
+    technology_breakdown?: {
       Photovoltaic?: number;
       Wind?: number;
       Other?: number;
     };
   }>;
-  district_technology_breakdown: Record<string, {
-    Photovoltaic?: number;
-    Wind?: number;
-    Other?: number;
-  }>;
+  district_response_breakdown?: Record<
+    string,
+    ResponseCapacityDistrictBreakdown
+  >;
+  /** @deprecated use `district_response_breakdown` */
+  district_technology_breakdown?: Record<
+    string,
+    {
+      Photovoltaic?: number;
+      Wind?: number;
+      Other?: number;
+    }
+  >;
 };

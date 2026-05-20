@@ -347,11 +347,19 @@ const CO2LineChart = () => {
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-sm">
-                  <p>נתונים על פליטות CO₂ לאורך זמן</p>
+                  <p>
+                    הנתונים נלקחים מאתר חברת ניהול מערכת החשמל- נגה. פליטות CO2
+                    שנחסכו עקב השימוש באנרגיה מתחדשת הוא נתון שנלקח מנגה. הנתונים
+                    מתעדכנים מעת לעת.
+                  </p>
+                  <p>
+                    צטטו אותנו: מרכז השל לקיימות, NZO. אתר הדאטה של NZO. פליטות
+                    CO2 מייצור חשמל.
+                  </p>
                 </TooltipContent>
               </UITooltip>
             </TooltipProvider>
-            פליטות CO₂ על פני זמן
+            פליטות CO2 מייצור חשמל
           </h2>
           {/* Buttons SECOND - goes to LEFT in RTL */}
           <div className="flex items-start md:gap-4 gap-2">
@@ -382,10 +390,6 @@ const CO2LineChart = () => {
               />
             </button>
           </div>
-        </div>
-        {/* Time period label */}
-        <div className="md:text-sm text-xs text-slate-600 w-full mr-14">
-          פרק זמן:
         </div>
 
         {/* Date controls row - same as SMP */}
@@ -505,11 +509,10 @@ const CO2LineChart = () => {
                       }}
                     />
                     <span
-                      className={`text-xs transition-all duration-200 ${
-                        isLineVisible(def.key)
-                          ? "text-gray-800"
-                          : "text-gray-400"
-                      }`}
+                      className={`text-xs transition-all duration-200 ${isLineVisible(def.key)
+                        ? "text-gray-800"
+                        : "text-gray-400"
+                        }`}
                     >
                       {def.label}
                     </span>
@@ -538,9 +541,8 @@ const CO2LineChart = () => {
                 }}
               />
               <span
-                className={`text-xs transition-all duration-200 ${
-                  isLineVisible(def.key) ? "text-gray-800" : "text-gray-400"
-                }`}
+                className={`text-xs transition-all duration-200 ${isLineVisible(def.key) ? "text-gray-800" : "text-gray-400"
+                  }`}
               >
                 {def.label}
               </span>

@@ -344,7 +344,6 @@ export default function RenewableProduction2() {
           r !== null,
       );
 
-    const total = rows.reduce((sum, r) => sum + r.value, 0);
     const formatValue = (value: number) =>
       tab === 1
         ? `${value.toFixed(0)}%`
@@ -488,7 +487,7 @@ export default function RenewableProduction2() {
             barCategoryGap="30%"
             data={chartData}
             xAxisDataKey="month"
-            yAxisLabel={tab === 1 ? "אחוז מכלל הייצור [%]" : "[MWh]"}
+            yAxisLabel={tab === 1 ? "שיעור מתוך הייצור [%]" : "[MWh]"}
             yAxisDomain={[
               0,
               (dataMax: number) => Math.max(5, Math.ceil(dataMax * 1.15)),
@@ -527,21 +526,21 @@ export default function RenewableProduction2() {
       >
         <button
           className={`rounded-full md:px-5 px-2 md:py-[6px] py-[2px] font-black md:text-base text-xs ${tab === 1
-              ? "bg-[#59687D] text-white hover:bg-[#59687D] hover:text-white"
-              : "bbg-transparent text-[#59687D] hover:bg-[#59687D] hover:text-white"
+            ? "bg-[#59687D] text-white hover:bg-[#59687D] hover:text-white"
+            : "bbg-transparent text-[#59687D] hover:bg-[#59687D] hover:text-white"
             }`}
           onClick={() => setTab(1)}
         >
-          הספק מיוצר
+          הספק
         </button>
         <button
           className={`rounded-full md:px-5 px-2 md:py-[6px] py-[2px] font-black md:text-base text-xs ${tab === 2
-              ? "bg-[#59687D] text-white hover:bg-[#59687D] hover:text-white"
-              : "bg-transparent text-[#59687D] hover:bg-[#59687D] hover:text-white"
+            ? "bg-[#59687D] text-white hover:bg-[#59687D] hover:text-white"
+            : "bg-transparent text-[#59687D] hover:bg-[#59687D] hover:text-white"
             }`}
           onClick={() => setTab(2)}
         >
-          פוטנציאל לפי ענף
+          ייצור
         </button>
       </div>
     </div>

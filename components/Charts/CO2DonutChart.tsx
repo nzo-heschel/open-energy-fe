@@ -56,28 +56,28 @@ const CO2DonutChart = () => {
   // Transform API data to chart format
   const chartData: EnergyData[] = emissionsMixData?.pie_chart
     ? [
-        {
-          name: "פחם",
-          value: emissionsMixData.pie_chart.coal.percentage,
-          percent: emissionsMixData.pie_chart.coal.percentage,
-          color: "#6B707C",
-          rawValue: emissionsMixData.pie_chart.coal.value,
-        },
-        {
-          name: "סולר",
-          value: emissionsMixData.pie_chart.diesel.percentage,
-          percent: emissionsMixData.pie_chart.diesel.percentage,
-          color: "#1C1A17",
-          rawValue: emissionsMixData.pie_chart.diesel.value,
-        },
-        {
-          name: "גז טבעי",
-          value: emissionsMixData.pie_chart.natural_gas.percentage,
-          percent: emissionsMixData.pie_chart.natural_gas.percentage,
-          color: "#957669",
-          rawValue: emissionsMixData.pie_chart.natural_gas.value,
-        },
-      ]
+      {
+        name: "פחם",
+        value: emissionsMixData.pie_chart.coal.percentage,
+        percent: emissionsMixData.pie_chart.coal.percentage,
+        color: "#6B707C",
+        rawValue: emissionsMixData.pie_chart.coal.value,
+      },
+      {
+        name: "סולר",
+        value: emissionsMixData.pie_chart.diesel.percentage,
+        percent: emissionsMixData.pie_chart.diesel.percentage,
+        color: "#1C1A17",
+        rawValue: emissionsMixData.pie_chart.diesel.value,
+      },
+      {
+        name: "גז טבעי",
+        value: emissionsMixData.pie_chart.natural_gas.percentage,
+        percent: emissionsMixData.pie_chart.natural_gas.percentage,
+        color: "#957669",
+        rawValue: emissionsMixData.pie_chart.natural_gas.value,
+      },
+    ]
     : [];
 
   const totalEmissions = emissionsMixData?.total_emissions || 0;
@@ -112,11 +112,11 @@ const CO2DonutChart = () => {
   const emissionsSavingsPercentage = emissionsMixData?.infographics
     ?.emissions_avoided_through_renewables
     ? (emissionsMixData.infographics.emissions_avoided_through_renewables
-        .value /
-        (emissionsMixData.total_emissions +
-          emissionsMixData.infographics.emissions_avoided_through_renewables
-            .value)) *
-      100
+      .value /
+      (emissionsMixData.total_emissions +
+        emissionsMixData.infographics.emissions_avoided_through_renewables
+          .value)) *
+    100
     : 0;
 
   return (
@@ -155,7 +155,10 @@ const CO2DonutChart = () => {
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-sm">
-                  <p>תמהיל פליטות CO2 מאנרגיה פוסילית</p>
+                  <p>
+                    הנתונים נלקחים מאתר חברת ניהול מערכת החשמל- נגה. שיעור פליטות CO2 ממקורות פוסיליים ופליטות CO2 שנחסכו עקב השימוש באנרגיה מתחדשת הם נתונים שמחושבים על ידי נגה. הנתונים הומרו ליחידות MWh, והם מתעדכנים מעת לעת.
+                    צטטו אותנו: מרכז השל לקיימות, NZO. אתר הדאטה של NZO. תמהיל פליטות CO2.
+                  </p>
                 </TooltipContent>
               </UITooltip>
             </TooltipProvider>
@@ -328,7 +331,7 @@ const CO2DonutChart = () => {
           </svg>
           <div>
             <p className="text-center text-sm font-normal text-[#59687D]">
-              חסכון בפליטות CO₂ בייצור אנרגיות מתחדשות
+              פליטות CO2 שנחסכו עקב השימוש באנרגיה מתחדשת
             </p>
             <p className="text-center text-lg font-normal text-[#484C56]">
               {isLoadingSavings
@@ -356,8 +359,7 @@ const CO2DonutChart = () => {
           </svg>
           <div>
             <p className="text-center text-sm font-normal text-[#59687D]">
-              יחס פליטות CO₂
-            </p>
+              שיעור פליטות CO2 ממקורות פוסיליים            </p>
             <p className="text-center text-lg font-normal text-[#484C56]">
               {isLoadingRatio
                 ? "..."
@@ -398,7 +400,7 @@ const CO2DonutChart = () => {
           </svg>
           <div>
             <p className="text-center text-sm font-normal text-[#59687D]">
-              סך יצור חשמלי
+              ייצור חשמל
             </p>
             <p className="text-center text-lg font-normal text-[#484C56] flex flex-row-reverse items-center">
               {isLoadingProduction

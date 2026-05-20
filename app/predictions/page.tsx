@@ -15,10 +15,7 @@ const page = () => {
             <div className="w-[46px] h-1 bg-[#276E4E] md:my-5 my-3"></div>
             <div className="flex flex-col gap-2 w-full md:text-xl text-base">
               <p className="text-[#484C56] max-w-full leading-[120%]">
-                החלטת ממשלה 465 קובעת יעד לייצור חשמל ממקורות מתחדשים של 20%
-                בשנת 2025, ו-30% בשנת 2030. אנו ב-NZO מציבים יעדים שאפנתיים
-                יותר. בגרף ניתן לראות יעדים אלו לעומת שיעור המתחדשות בפועל
-              </p>
+                החלטת ממשלה 465 קובעת יעד לייצור חשמל ממקורות מתחדשים של 20% בשנת 2025, ו-30% בשנת 2030. אנו ב-NZO מציבים יעדים שאפנתיים יותר. בגרף ניתן לראות יעדים אלו לעומת שיעור המתחדשות בפועל              </p>
             </div>
           </div>
           <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[20px] py-10 px-5 space-y-[30px]">

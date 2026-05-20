@@ -32,10 +32,27 @@ type ChartDataPoint = {
   totalMw: number;
   requestCount: number;
   total: number;
+  visibleTotal?: number;
   negative: number;
   limitedPositive: number;
   partialPositive: number;
   positive: number;
+};
+
+const sumVisibleTotal = (
+  point: Pick<
+    ChartDataPoint,
+    "negative" | "limitedPositive" | "partialPositive" | "positive"
+  >,
+  activeSeries: Record<string, boolean>,
+) => {
+  let total = 0;
+  for (const s of series) {
+    if (activeSeries[s.key]) {
+      total += (point[s.key as keyof typeof point] as number) || 0;
+    }
+  }
+  return Math.round(total);
 };
 
 // Legend series config (stack order matches bar render order)
@@ -325,24 +342,30 @@ const CustomTooltip = ({
   payload,
   label,
   tab,
+  activeSeries,
 }: {
   active?: boolean;
   payload?: Array<{ payload: ChartDataPoint }>;
   label?: string;
   tab: TabKey;
+  activeSeries: Record<string, boolean>;
 }) => {
   if (!active || !payload || payload.length === 0) return null;
   const point = payload[0]?.payload;
   if (!point) return null;
 
+  const visibleSeries = series.filter((s) => activeSeries[s.key]);
+  const visibleTotal = sumVisibleTotal(point, activeSeries);
+
   return (
     <div className="rounded-lg shadow-xl border border-[#DEDEDE] bg-white p-4 min-w-[160px] text-sm">
       <div className="text-sm text-gray-500">{label}</div>
       <div className="md:text-base text-sm font-medium mb-3 border-b border-[#707585]">
-        סה״כ {point.total.toLocaleString()}
+        סה״כ {visibleTotal.toLocaleString()}
+        {tab === "1" ? " MW" : ""}
       </div>
 
-      {series.map((s) => {
+      {visibleSeries.map((s) => {
         const val = point[s.key as keyof ChartDataPoint] as number;
         return (
           <div key={s.key} className="flex items-center gap-3 mb-1">
@@ -553,6 +576,15 @@ export default function RequestOne() {
       });
   }, [apiData, tab, selectedYears, singleSelectedYear]);
 
+  const chartDisplayData = useMemo(
+    () =>
+      chartData.map((point) => ({
+        ...point,
+        visibleTotal: sumVisibleTotal(point, activeSeries),
+      })),
+    [chartData, activeSeries],
+  );
+
   const opacityForKey = (key: string) => {
     if (hoveredSeries) {
       return hoveredSeries === key ? 1 : 0.3;
@@ -560,7 +592,9 @@ export default function RequestOne() {
     return activeSeries[key] ? 1 : 0.3;
   };
 
-  const yAxisLabel = tab === "1" ? "הספק תשובות [MW]" : "מספר מתקנים";
+  const yAxisLabel = tab === "1"
+    ? "הספק  [MW]"
+    : "מספר מתקנים";
 
   // Wider bars when showing yearly data (fewer bars)
   const barSize = singleSelectedYear ? 36 : 80;
@@ -604,14 +638,17 @@ export default function RequestOne() {
 
     return (
       <StackedComposedChart
-        data={chartData}
+        data={chartDisplayData}
         xAxisDataKey="period"
         yAxisLabel={yAxisLabel}
-        tooltipContent={<CustomTooltip tab={tab} />}
+        tooltipContent={
+          <CustomTooltip tab={tab} activeSeries={activeSeries} />
+        }
         sizeBrackets={SIZE_BRACKETS}
         activeSeries={activeSeries}
         barSize={barSize}
         opacityForKey={opacityForKey}
+        labelListDataKey="visibleTotal"
       />
     );
   };

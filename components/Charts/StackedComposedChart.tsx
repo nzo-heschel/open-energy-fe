@@ -120,9 +120,17 @@ export default function StackedComposedChart({
               : null
           }
         />
-        {sizeBrackets.map(
-          (bracket, index) =>
-            activeSeries[bracket.key] && (
+        {(() => {
+          const topVisibleKey = [...sizeBrackets]
+            .reverse()
+            .find((bracket) => activeSeries[bracket.key])?.key;
+
+          return sizeBrackets.map((bracket) => {
+            if (!activeSeries[bracket.key]) return null;
+
+            const isTopVisible = bracket.key === topVisibleKey;
+
+            return (
               <Bar
                 key={bracket.key}
                 dataKey={bracket.key}
@@ -133,41 +141,38 @@ export default function StackedComposedChart({
                 {...(!isStacked && groupedBarRadius
                   ? { radius: groupedBarRadius }
                   : {})}
-                {...(isStacked &&
-                index === sizeBrackets.length - 1 &&
-                lastBarRadius
+                {...(isStacked && isTopVisible && lastBarRadius
                   ? { radius: lastBarRadius }
                   : {})}
               >
-                {isStacked &&
-                  !hideLabelList &&
-                  index === sizeBrackets.length - 1 && (
-                    <LabelList
-                      dataKey={labelListDataKey}
-                      position="top"
-                      formatter={(value: number) => {
-                        if (
-                          value === undefined ||
-                          value === null ||
-                          isNaN(value)
-                        )
-                          return "";
-                        if (labelListFormatter)
-                          return labelListFormatter(value);
-                        return Math.round(value).toLocaleString();
-                      }}
-                      style={{
-                        fill: "#707585",
-                        fontWeight: 400,
-                        fontSize: 14,
-                        fontFamily: "Heebo",
-                        ...labelListStyle,
-                      }}
-                    />
-                  )}
+                {isStacked && !hideLabelList && isTopVisible && (
+                  <LabelList
+                    dataKey={labelListDataKey}
+                    position="top"
+                    formatter={(value: number) => {
+                      if (
+                        value === undefined ||
+                        value === null ||
+                        isNaN(value)
+                      )
+                        return "";
+                      if (labelListFormatter)
+                        return labelListFormatter(value);
+                      return Math.round(value).toLocaleString();
+                    }}
+                    style={{
+                      fill: "#707585",
+                      fontWeight: 400,
+                      fontSize: 14,
+                      fontFamily: "Heebo",
+                      ...labelListStyle,
+                    }}
+                  />
+                )}
               </Bar>
-            ),
-        )}
+            );
+          });
+        })()}
       </ComposedChart>
     </ResponsiveContainer>
   );

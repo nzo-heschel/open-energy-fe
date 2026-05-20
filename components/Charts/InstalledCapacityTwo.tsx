@@ -24,6 +24,17 @@ const SIZE_BRACKETS = [
   { key: "small", label: "קטן | 0-200 KW", color: "#D8EB4D" },
 ];
 
+const sumVisibleTotal = (
+  point: Record<string, number>,
+  hiddenKeys: Set<string>,
+) => {
+  let total = 0;
+  for (const b of SIZE_BRACKETS) {
+    if (!hiddenKeys.has(b.key)) total += point[b.key] || 0;
+  }
+  return Math.round(total);
+};
+
 // Display mode options (הספק/מספר מתקנים)
 const displayModeOptions = [
   { value: "capacity", label: "הספק מותקן" },
@@ -256,13 +267,28 @@ const YearMultiSelectDropdown = ({
 };
 
 // Custom Tooltip Component - matching InstalledCapacityOne style
-const CustomTooltip = ({ active, payload, label, displayMode }: any) => {
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+  displayMode,
+  hiddenKeys = new Set<string>(),
+}: {
+  active?: boolean;
+  payload?: Array<{ dataKey?: string; value?: number }>;
+  label?: string;
+  displayMode?: string;
+  hiddenKeys?: Set<string>;
+}) => {
   if (!active || !payload || !payload.length) return null;
 
-  const total = payload.reduce((sum: number, entry: any) => {
-    const val = Number(entry.value) || 0;
-    return sum + val;
-  }, 0);
+  const visiblePayload = payload.filter(
+    (entry) => entry.dataKey && !hiddenKeys.has(String(entry.dataKey)),
+  );
+  const total = visiblePayload.reduce(
+    (sum, entry) => sum + (Number(entry.value) || 0),
+    0,
+  );
   const unit = displayMode === "count" ? "מתקנים" : "MW";
 
   return (
@@ -271,25 +297,27 @@ const CustomTooltip = ({ active, payload, label, displayMode }: any) => {
       <div className="md:text-base text-sm font-medium mb-3 border-b border-[#707585]">
         סה״כ {Math.round(total).toLocaleString()} {unit}
       </div>
-      {SIZE_BRACKETS.map((bracket) => {
-        const entry = payload.find((p: any) => p.dataKey === bracket.key);
-        if (!entry) return null;
-        const val = Number(entry.value) || 0;
-        return (
-          <div key={bracket.key} className="flex items-start gap-2 mb-1">
-            <span
-              style={{ background: bracket.color }}
-              className="w-2 h-2 rounded-full block mt-1"
-            />
-            <span className="flex flex-col text-sm font-normal">
-              {bracket.label.split(" | ")[0]}{" "}
-              <span className="font-medium">
-                {val.toFixed(2).toLocaleString()} {unit}
+      {SIZE_BRACKETS.filter((bracket) => !hiddenKeys.has(bracket.key)).map(
+        (bracket) => {
+          const entry = visiblePayload.find((p) => p.dataKey === bracket.key);
+          if (!entry) return null;
+          const val = Number(entry.value) || 0;
+          return (
+            <div key={bracket.key} className="flex items-start gap-2 mb-1">
+              <span
+                style={{ background: bracket.color }}
+                className="w-2 h-2 rounded-full block mt-1"
+              />
+              <span className="flex flex-col text-sm font-normal">
+                {bracket.label.split(" | ")[0]}{" "}
+                <span className="font-medium">
+                  {val.toLocaleString()} {unit}
+                </span>
               </span>
-            </span>
-          </div>
-        );
-      })}
+            </div>
+          );
+        },
+      )}
     </div>
   );
 };
@@ -402,6 +430,15 @@ const InstalledCapacityTwo: React.FC = () => {
     const selectedYearSet = new Set(selectedYears.map((year) => Number(year)));
     return mappedData.filter((item) => selectedYearSet.has(item.year));
   }, [apiData, displayMode, selectedYears]);
+
+  const chartDisplayData = useMemo(
+    () =>
+      chartData.map((point) => ({
+        ...point,
+        visibleTotal: sumVisibleTotal(point, hiddenKeys),
+      })),
+    [chartData, hiddenKeys],
+  );
 
   const availableYearOptions = useMemo(() => {
     if (!apiData?.series) return [];
@@ -604,16 +641,22 @@ const InstalledCapacityTwo: React.FC = () => {
           </div>
         ) : (
           <StackedComposedChart
-            data={chartData}
+            data={chartDisplayData}
             xAxisDataKey="year"
             yAxisLabel={
               displayMode === "count" ? "מספר מתקנים" : "הספק מותקן [MW]"
             }
-            tooltipContent={<CustomTooltip displayMode={displayMode} />}
+            tooltipContent={
+              <CustomTooltip
+                displayMode={displayMode}
+                hiddenKeys={hiddenKeys}
+              />
+            }
             sizeBrackets={SIZE_BRACKETS}
             activeSeries={stackedActiveSeries}
             barSize={28}
             opacityForKey={getBarOpacity}
+            labelListDataKey="visibleTotal"
             margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
           />
         )}

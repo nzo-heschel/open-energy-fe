@@ -25,14 +25,40 @@ const SIZE_BRACKETS = [
   { key: "small", label: "קטן | 0-200 KW", color: "#A66565" },
 ];
 
+const sumVisibleTotal = (
+  point: Record<string, number>,
+  activeSeries: Record<string, boolean>,
+) => {
+  let total = 0;
+  for (const b of SIZE_BRACKETS) {
+    if (activeSeries[b.key]) total += point[b.key] || 0;
+  }
+  return Math.round(total);
+};
+
 // Custom Tooltip
-const CustomTooltip = ({ active, payload, label, activeTab }: any) => {
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+  activeTab,
+  activeSeries,
+}: {
+  active?: boolean;
+  payload?: Array<{ dataKey?: string; value?: number; color?: string }>;
+  label?: string;
+  activeTab: "supply" | "facilities";
+  activeSeries: Record<string, boolean>;
+}) => {
   if (!active || !payload || payload.length === 0) return null;
 
-  const total = payload.reduce((sum: number, entry: any) => {
-    const val = Number(entry.value) || 0;
-    return sum + val;
-  }, 0);
+  const visiblePayload = payload.filter(
+    (entry) => entry.dataKey && activeSeries[String(entry.dataKey)],
+  );
+  const total = visiblePayload.reduce(
+    (sum, entry) => sum + (Number(entry.value) || 0),
+    0,
+  );
   const unit = activeTab === "supply" ? "KW" : "מתקנים";
 
   return (
@@ -42,26 +68,28 @@ const CustomTooltip = ({ active, payload, label, activeTab }: any) => {
         סה״כ {Math.round(total).toLocaleString()} {unit}
       </div>
 
-      {SIZE_BRACKETS.map((bracket) => {
-        const entry = payload.find((p: any) => p.dataKey === bracket.key);
-        if (!entry) return null;
-        const val = Number(entry.value) || 0;
+      {SIZE_BRACKETS.filter((bracket) => activeSeries[bracket.key]).map(
+        (bracket) => {
+          const entry = visiblePayload.find((p) => p.dataKey === bracket.key);
+          if (!entry) return null;
+          const val = Number(entry.value) || 0;
 
-        return (
-          <div key={bracket.key} className="flex items-start gap-2 mb-1">
-            <span
-              style={{ background: bracket.color }}
-              className="w-2 h-2 rounded-full block mt-1"
-            />
-            <span className="flex flex-col text-sm font-normal">
-              {bracket.label.split(" | ")[0]}{" "}
-              <span className="font-medium">
-                {Math.round(val).toLocaleString()} {unit}
+          return (
+            <div key={bracket.key} className="flex items-start gap-2 mb-1">
+              <span
+                style={{ background: bracket.color }}
+                className="w-2 h-2 rounded-full block mt-1"
+              />
+              <span className="flex flex-col text-sm font-normal">
+                {bracket.label.split(" | ")[0]}{" "}
+                <span className="font-medium">
+                  {Math.round(val).toLocaleString()} {unit}
+                </span>
               </span>
-            </span>
-          </div>
-        );
-      })}
+            </div>
+          );
+        },
+      )}
     </div>
   );
 };
@@ -297,6 +325,15 @@ export default function RequestTwo() {
     currentMonthKey,
   ]);
 
+  const chartDisplayData = useMemo(
+    () =>
+      chartData.map((point) => ({
+        ...point,
+        visibleTotal: sumVisibleTotal(point, activeSeries),
+      })),
+    [chartData, activeSeries],
+  );
+
   // Match RequestOne behavior for monthly (single-year) view
   const barSize = singleSelectedYear
     ? 36
@@ -480,16 +517,22 @@ export default function RequestTwo() {
           </div>
         ) : (
           <StackedComposedChart
-            data={chartData}
+            data={chartDisplayData}
             xAxisDataKey="year"
             yAxisLabel={
-              activeTab === "supply" ? "הספק תשובות [KW]" : "מספר מתקנים"
+              activeTab === "supply" ? "הספק [KW]" : "מספר מתקנים"
             }
-            tooltipContent={<CustomTooltip activeTab={activeTab} />}
+            tooltipContent={
+              <CustomTooltip
+                activeTab={activeTab}
+                activeSeries={activeSeries}
+              />
+            }
             sizeBrackets={SIZE_BRACKETS}
             activeSeries={activeSeries}
             barSize={barSize}
             opacityForKey={opacityForKey}
+            labelListDataKey="visibleTotal"
           />
         )}
       </div>

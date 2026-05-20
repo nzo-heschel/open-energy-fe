@@ -33,6 +33,23 @@ const categories = [
   { key: "רוח", label: "רוח", color: "#98C74E", apiKey: "Wind" },
 ];
 
+const sumVisibleCapacity = (
+  point: Record<string, number>,
+  hiddenKeys: Set<string>,
+) => {
+  let total = 0;
+  for (const c of categories) {
+    if (!hiddenKeys.has(c.key)) total += point[c.key] || 0;
+  }
+  return total;
+};
+
+const formatMwTooltip = (value: number) =>
+  value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
 // District options
 const districtOptions = [
   { value: "", label: "הכל" },
@@ -210,6 +227,15 @@ export default function InstalledCapacityOne() {
     return result.sort((a, b) => a.year - b.year);
   }, [cumulativeData]);
 
+  const cumulativeChartDisplayData = useMemo(
+    () =>
+      cumulativeChartData.map((point) => ({
+        ...point,
+        visibleCumulativeMw: sumVisibleCapacity(point, hiddenKeys),
+      })),
+    [cumulativeChartData, hiddenKeys],
+  );
+
   // Transform growth data for stacked bar chart (same style as cumulative)
   const growthChartData = useMemo(() => {
     if (!growthData?.series) return [];
@@ -249,6 +275,15 @@ export default function InstalledCapacityOne() {
     });
   }, [growthData, cumulativeData]);
 
+  const growthChartDisplayData = useMemo(
+    () =>
+      growthChartData.map((point) => ({
+        ...point,
+        visibleAddedMw: sumVisibleCapacity(point, hiddenKeys),
+      })),
+    [growthChartData, hiddenKeys],
+  );
+
   // Function to determine opacity for each bar
   const opacityForKey = (key: string) => {
     if (hiddenKeys.has(key)) return 0;
@@ -264,23 +299,40 @@ export default function InstalledCapacityOne() {
     [hiddenKeys],
   );
 
-  // Custom tooltip for cumulative tab
-  const CumulativeTooltip = ({ active, payload, label }: any) => {
+  // Custom tooltip for cumulative / growth tabs
+  const CumulativeTooltip = ({
+    active,
+    payload,
+    label,
+  }: {
+    active?: boolean;
+    payload?: Array<{
+      dataKey?: string;
+      value?: number;
+      color?: string;
+    }>;
+    label?: string;
+  }) => {
     if (!active || !payload) return null;
-    const total = payload.reduce(
-      (sum: number, entry: any) => sum + (entry.value || 0),
+
+    const visiblePayload = payload.filter(
+      (entry) => entry.dataKey && !hiddenKeys.has(String(entry.dataKey)),
+    );
+    const total = visiblePayload.reduce(
+      (sum, entry) => sum + (entry.value || 0),
       0,
     );
+
     return (
       <div className="rounded-lg shadow-xl border border-[#DEDEDE] bg-white p-4 min-w-[160px] text-sm">
         <div className="text-sm text-gray-500">{label}</div>
         <div className="md:text-base text-sm font-medium mb-3 border-b border-[#707585]">
-          סה״כ {total.toLocaleString()} MW
+          סה״כ {formatMwTooltip(total)} MW
         </div>
-        {payload
+        {visiblePayload
           .slice()
           .reverse()
-          .map((entry: any) => (
+          .map((entry) => (
             <div key={entry.dataKey} className="flex items-start gap-2 mb-1">
               <span
                 style={{ background: entry.color }}
@@ -289,7 +341,7 @@ export default function InstalledCapacityOne() {
               <span className="flex flex-col text-sm font-normal">
                 {entry.dataKey}{" "}
                 <span className="font-medium">
-                  {entry.value?.toFixed(2).toLocaleString()} MWh
+                  {formatMwTooltip(entry.value ?? 0)} MW
                 </span>
               </span>
             </div>
@@ -326,9 +378,8 @@ export default function InstalledCapacityOne() {
         <button
           key={c.key}
           type="button"
-          className={`flex items-center gap-2 text-sm cursor-pointer select-none transition-opacity duration-200 ${
-            hiddenKeys.has(c.key) ? "opacity-40" : ""
-          } ${hoveredKey && hoveredKey !== c.key ? "opacity-30" : ""}`}
+          className={`flex items-center gap-2 text-sm cursor-pointer select-none transition-opacity duration-200 ${hiddenKeys.has(c.key) ? "opacity-40" : ""
+            } ${hoveredKey && hoveredKey !== c.key ? "opacity-30" : ""}`}
           onMouseEnter={() => handleLegendMouseEnter(c.key)}
           onMouseLeave={handleLegendMouseLeave}
           onClick={() => handleLegendClick(c.key)}
@@ -341,9 +392,8 @@ export default function InstalledCapacityOne() {
             className="w-2 h-2 rounded-full inline-block transition-opacity duration-200"
           />
           <span
-            className={`transition-all duration-200 ${
-              hiddenKeys.has(c.key) ? "text-gray-400" : "text-gray-800"
-            }`}
+            className={`transition-all duration-200 ${hiddenKeys.has(c.key) ? "text-gray-400" : "text-gray-800"
+              }`}
           >
             {c.label}
           </span>
@@ -507,7 +557,7 @@ export default function InstalledCapacityOne() {
             </div>
           ) : (
             <StackedComposedChart
-              data={cumulativeChartData}
+              data={cumulativeChartDisplayData}
               xAxisDataKey="year"
               yAxisLabel="הספק מותקן [MW]"
               tooltipContent={<CumulativeTooltip />}
@@ -515,7 +565,7 @@ export default function InstalledCapacityOne() {
               activeSeries={stackedActiveSeries}
               barSize={28}
               opacityForKey={opacityForKey}
-              labelListDataKey="cumulative_mw"
+              labelListDataKey="visibleCumulativeMw"
               margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
             />
           )
@@ -525,7 +575,7 @@ export default function InstalledCapacityOne() {
           </div>
         ) : (
           <StackedComposedChart
-            data={growthChartData}
+            data={growthChartDisplayData}
             xAxisDataKey="year"
             yAxisLabel="הספק מותקן [MW]"
             tooltipContent={<CumulativeTooltip />}
@@ -533,7 +583,7 @@ export default function InstalledCapacityOne() {
             activeSeries={stackedActiveSeries}
             barSize={28}
             opacityForKey={opacityForKey}
-            labelListDataKey="added_mw"
+            labelListDataKey="visibleAddedMw"
             margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
           />
         )}
@@ -550,21 +600,19 @@ export default function InstalledCapacityOne() {
           style={{ boxShadow: "inset 0px 4px 10px 0px #0000001A" }}
         >
           <button
-            className={`rounded-full md:px-5 px-2 md:py-[6px] py-[2px] font-black md:text-base text-xs ${
-              tab === 1
-                ? "bg-[#59687D] text-white hover:bg-[#59687D] hover:text-white"
-                : "bg-transparent text-[#59687D] hover:bg-[#59687D] hover:text-white"
-            }`}
+            className={`rounded-full md:px-5 px-2 md:py-[6px] py-[2px] font-black md:text-base text-xs ${tab === 1
+              ? "bg-[#59687D] text-white hover:bg-[#59687D] hover:text-white"
+              : "bg-transparent text-[#59687D] hover:bg-[#59687D] hover:text-white"
+              }`}
             onClick={() => setTab(1)}
           >
             הספק מצטבר
           </button>
           <button
-            className={`rounded-full md:px-5 px-2 md:py-[6px] py-[2px] font-black md:text-base text-xs ${
-              tab === 2
-                ? "bg-[#59687D] text-white hover:bg-[#59687D] hover:text-white"
-                : "bg-transparent text-[#59687D] hover:bg-[#59687D] hover:text-white"
-            }`}
+            className={`rounded-full md:px-5 px-2 md:py-[6px] py-[2px] font-black md:text-base text-xs ${tab === 2
+              ? "bg-[#59687D] text-white hover:bg-[#59687D] hover:text-white"
+              : "bg-transparent text-[#59687D] hover:bg-[#59687D] hover:text-white"
+              }`}
             onClick={() => setTab(2)}
           >
             הספק מותקן שנתי

@@ -13,6 +13,7 @@ import {
   exportResponseCapacityByDistrict,
   ResponseCapacityByDistrictFilters,
 } from "@/lib/api";
+import type { ResponseCapacityDistrictBreakdownValue } from "@/types/dto";
 
 // District name mapping (English to Hebrew)
 const DISTRICT_NAMES: Record<string, string> = {
@@ -43,6 +44,31 @@ const series = [
   },
   { key: "negative", apiKey: "Negative", label: "שלילית", color: "#A66565" },
 ];
+
+const pickBreakdownStat = (
+  val: ResponseCapacityDistrictBreakdownValue | undefined,
+  mode: "chart" | "text",
+) => {
+  if (val == null) return 0;
+  if (typeof val === "number") return Number.isFinite(val) ? val : 0;
+  if (mode === "chart") {
+    const mw = Number(val.total_mw);
+    return Number.isFinite(mw) ? mw : 0;
+  }
+  const count = Number(val.count);
+  return Number.isFinite(count) ? count : 0;
+};
+
+const sumVisibleTotal = (
+  point: Record<string, number | string>,
+  activeSeries: Record<string, boolean>,
+) => {
+  let total = 0;
+  for (const s of series) {
+    if (activeSeries[s.key]) total += Number(point[s.key]) || 0;
+  }
+  return Math.round(total);
+};
 
 // Static year options (to avoid hydration mismatch)
 const yearOptions = [2026, 2025, 2024, 2023, 2022, 2021];
@@ -185,21 +211,37 @@ const YearMultiSelectDropdown = ({
 };
 
 // Custom Tooltip
-const CustomTooltip = ({ active, payload, label, activeTab }: any) => {
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+  activeTab,
+  activeSeries,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload?: Record<string, number | string> }>;
+  label?: string;
+  activeTab: "chart" | "text";
+  activeSeries: Record<string, boolean>;
+}) => {
   if (!active || !payload || payload.length === 0) return null;
   const point = payload[0]?.payload;
+  if (!point) return null;
+
   const unit = activeTab === "chart" ? "MW" : "מתקנים";
+  const visibleSeries = series.filter((s) => activeSeries[s.key]);
+  const visibleTotal = sumVisibleTotal(point, activeSeries);
 
   return (
     <div className="rounded-lg shadow-xl border border-[#DEDEDE] bg-white p-4 min-w-[160px] text-sm">
       <div className="text-sm text-gray-500">{label}</div>
       <div className="md:text-base text-sm font-medium mb-3 border-b border-[#707585]">
-        סה״כ {Math.round(point.total || 0).toLocaleString()} {unit}
+        סה״כ {visibleTotal.toLocaleString()} {unit}
       </div>
 
-      {series.map((s) => {
-        const val = point[s.key];
-        if (val === undefined || val === 0) return null;
+      {visibleSeries.map((s) => {
+        const val = Number(point[s.key]) || 0;
+        if (val === 0) return null;
         return (
           <div key={s.key} className="flex items-start gap-2 mb-1">
             <span
@@ -209,7 +251,7 @@ const CustomTooltip = ({ active, payload, label, activeTab }: any) => {
             <span className="flex flex-col text-sm font-normal">
               {s.label}{" "}
               <span className="font-medium">
-                {Math.round(val || 0).toLocaleString()} {unit}
+                {Math.round(val).toLocaleString()} {unit}
               </span>
             </span>
           </div>
@@ -313,50 +355,27 @@ export default function RequestThree() {
   const chartData = useMemo(() => {
     if (!apiData?.series) return [];
 
-    // Get response type breakdown from district_response_type_breakdown or response_type_breakdown
-    const responseBreakdown =
-      (apiData as any).district_response_type_breakdown ||
-      (apiData as any).response_type_breakdown ||
-      {};
+    const mode = activeTab === "chart" ? "chart" : "text";
+    const districtBreakdowns = apiData.district_response_breakdown ?? {};
 
     return apiData.series.map((item) => {
       const districtResponse =
-        responseBreakdown[item.district] || responseBreakdown || {};
+        item.response_breakdown ??
+        districtBreakdowns[item.district] ??
+        {};
 
-      // Get values - handle both direct numbers and nested objects
-      const getValue = (val: any) => {
-        if (!val) return 0;
-        if (typeof val === "number") return val;
-        return activeTab === "chart"
-          ? Number(val.total_mw || 0)
-          : Number(val.count || 0);
-      };
-
-      const negative = getValue(
-        districtResponse.Negative || districtResponse["Negative"],
+      const negative = pickBreakdownStat(districtResponse.Negative, mode);
+      const limitedPositive = pickBreakdownStat(
+        districtResponse["Limited Positive"],
+        mode,
       );
-      const limitedPositive = getValue(districtResponse["Limited Positive"]);
-      const partialPositive = getValue(districtResponse["Partial Positive"]);
-      const positive = getValue(
-        districtResponse.Positive || districtResponse["Positive"],
+      const partialPositive = pickBreakdownStat(
+        districtResponse["Partial Positive"],
+        mode,
       );
+      const positive = pickBreakdownStat(districtResponse.Positive, mode);
 
-      const responseTotal =
-        negative + limitedPositive + partialPositive + positive;
       const total = activeTab === "chart" ? item.total_mw : item.request_count;
-
-      // If no response breakdown available, distribute proportionally based on typical ratios
-      if (responseTotal === 0 && total > 0) {
-        // Use proportional distribution: ~50% positive, ~20% partial, ~15% limited, ~15% negative
-        return {
-          district: DISTRICT_NAMES[item.district] || item.district,
-          total,
-          negative: total * 0.15,
-          limitedPositive: total * 0.15,
-          partialPositive: total * 0.2,
-          positive: total * 0.5,
-        };
-      }
 
       return {
         district: DISTRICT_NAMES[item.district] || item.district,
@@ -368,6 +387,15 @@ export default function RequestThree() {
       };
     });
   }, [apiData, activeTab]);
+
+  const chartDisplayData = useMemo(
+    () =>
+      chartData.map((point) => ({
+        ...point,
+        visibleTotal: sumVisibleTotal(point, activeSeries),
+      })),
+    [chartData, activeSeries],
+  );
 
   // Function to determine opacity for each bar
   const opacityForKey = (key: string) => {
@@ -530,16 +558,22 @@ export default function RequestThree() {
           </div>
         ) : (
           <StackedComposedChart
-            data={chartData}
+            data={chartDisplayData}
             xAxisDataKey="district"
             yAxisLabel={
-              activeTab === "chart" ? "הספק תשובות [MW]" : "מספר מתקנים"
+              activeTab === "chart" ? " הספק [MW]" : "מספר מתקנים"
             }
-            tooltipContent={<CustomTooltip activeTab={activeTab} />}
+            tooltipContent={
+              <CustomTooltip
+                activeTab={activeTab}
+                activeSeries={activeSeries}
+              />
+            }
             sizeBrackets={series}
             activeSeries={activeSeries}
             barSize={80}
             opacityForKey={opacityForKey}
+            labelListDataKey="visibleTotal"
           />
         )}
       </div>

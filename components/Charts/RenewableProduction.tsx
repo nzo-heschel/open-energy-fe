@@ -17,12 +17,24 @@ type DataPoint = {
   period: string;
   label?: string;
   total: number;
+  visibleTotalMW: number;
   other: number;
   solar: number;
   wind: number;
   otherMW: number;
   solarMW: number;
   windMW: number;
+};
+
+const sumVisibleMW = (
+  point: Pick<DataPoint, "otherMW" | "solarMW" | "windMW">,
+  hiddenKeys: Set<string>,
+) => {
+  let total = 0;
+  if (!hiddenKeys.has("other")) total += point.otherMW || 0;
+  if (!hiddenKeys.has("solar")) total += point.solarMW || 0;
+  if (!hiddenKeys.has("wind")) total += point.windMW || 0;
+  return total;
 };
 
 const series = [
@@ -111,27 +123,259 @@ const FilterDropdown = ({
   );
 };
 
+const monthsInRange = (
+  start: number,
+  end: number,
+  optionValues: string[],
+) => {
+  const lo = Math.min(start, end);
+  const hi = Math.max(start, end);
+  return optionValues.filter((value) => {
+    const month = Number(value);
+    return month >= lo && month <= hi;
+  });
+};
+
+const MonthMultiSelectDropdown = ({
+  selectedMonths,
+  onChange,
+  options,
+  isOpen,
+  setIsOpen,
+}: {
+  selectedMonths: string[];
+  onChange: (months: string[]) => void;
+  options: { value: string; label: string }[];
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}) => {
+  const optionValues = options.map((o) => o.value);
+  const allSelected =
+    selectedMonths.length === 0 ||
+    selectedMonths.length === optionValues.length;
+
+  const currentMonths =
+    selectedMonths.length === 0 ? optionValues : selectedMonths;
+
+  const toggleMonth = (month: string) => {
+    const clicked = Number(month);
+    const currentNums = currentMonths.map(Number);
+    const minMonth = Math.min(...currentNums);
+    const maxMonth = Math.max(...currentNums);
+    const inRange = clicked >= minMonth && clicked <= maxMonth;
+
+    if (!inRange) {
+      const lo = Math.min(minMonth, clicked);
+      const hi = Math.max(maxMonth, clicked);
+      onChange(monthsInRange(lo, hi, optionValues));
+      return;
+    }
+
+    if (minMonth === maxMonth) {
+      onChange([month]);
+      return;
+    }
+
+    if (clicked === minMonth) {
+      onChange(monthsInRange(minMonth + 1, maxMonth, optionValues));
+      return;
+    }
+
+    if (clicked === maxMonth) {
+      onChange(monthsInRange(minMonth, maxMonth - 1, optionValues));
+      return;
+    }
+
+    onChange([month]);
+  };
+
+  const toggleAll = () => {
+    if (allSelected) {
+      onChange([optionValues[optionValues.length - 1]]);
+      return;
+    }
+    onChange([]);
+  };
+
+  const displayText = allSelected
+    ? "כל החודשים"
+    : selectedMonths.length === 1
+      ? (options.find((o) => o.value === selectedMonths[0])?.label ?? "חודש")
+      : `${selectedMonths.length} חודשים`;
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6 text-right flex items-center justify-between min-w-[140px]"
+        style={{ fontFamily: "Heebo, sans-serif" }}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span>{displayText}</span>
+        <ChevronDown
+          size={14}
+          className={`transform ${isOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {isOpen && (
+        <div
+          className="absolute z-10 mt-1 w-full min-w-[179px] max-h-[258px] bg-[#FAFAFC] border border-[#A1A1A1] rounded-2xl shadow-[0px_3px_30px_rgba(153,191,65,0.16)] p-[15px_10px]"
+          style={{ fontFamily: "Heebo, sans-serif" }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-start gap-[10px]">
+            {/* <div className="w-1 h-10 bg-[#C3C3C3] rounded-[100px] mt-1" /> */}
+            <div className="flex flex-col gap-[10px] flex-1 max-h-[228px] overflow-y-auto pr-1">
+              <label className="w-full flex flex-row-reverse justify-end items-center gap-[10px] text-right text-base font-medium text-[#59687D] cursor-pointer">
+                <span>הכל</span>
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={toggleAll}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </label>
+              {options.map((option) => {
+                const checked =
+                  allSelected || currentMonths.includes(option.value);
+                return (
+                  <label
+                    key={option.value}
+                    className="w-full flex flex-row-reverse justify-end items-center gap-[10px] text-right text-base font-medium text-[#59687D] cursor-pointer"
+                  >
+                    <span>{option.label}</span>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleMonth(option.value)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const padMonth = (month: string) => month.padStart(2, "0");
+
+const toPeriodKey = (year: string, month: string) =>
+  `${year}-${padMonth(month)}`;
+
+type SeriesItem = {
+  period: string;
+  label?: string;
+  solar_mwh: number;
+  wind_mwh: number;
+  other_mwh: number;
+  total_mwh: number;
+};
+
+const monthFromPeriod = (period: string) => {
+  const match = /^(\d{4})-(\d{2})/.exec(period);
+  return match ? `${match[1]}-${match[2]}` : null;
+};
+
+const buildDataPoint = (
+  period: string,
+  label: string,
+  solar_mwh: number,
+  wind_mwh: number,
+  other_mwh: number,
+): DataPoint => {
+  const totalMW = solar_mwh + wind_mwh + other_mwh;
+  const solarPercent = totalMW > 0 ? (solar_mwh / totalMW) * 100 : 0;
+  const windPercent = totalMW > 0 ? (wind_mwh / totalMW) * 100 : 0;
+  const otherPercent = totalMW > 0 ? (other_mwh / totalMW) * 100 : 0;
+
+  return {
+    period,
+    label,
+    total: Math.round(totalMW),
+    visibleTotalMW: Math.round(totalMW),
+    solar: Math.round(solarPercent),
+    wind: Math.round(windPercent),
+    other: Math.round(otherPercent),
+    solarMW: solar_mwh,
+    windMW: wind_mwh,
+    otherMW: other_mwh,
+  };
+};
+
+const aggregateSeriesByMonth = (
+  items: SeriesItem[],
+  allowedPeriods: Set<string>,
+  monthLabels: string[],
+): DataPoint[] => {
+  const buckets = new Map<
+    string,
+    { solar: number; wind: number; other: number }
+  >();
+
+  for (const item of items) {
+    const monthKey = monthFromPeriod(item.period);
+    if (!monthKey || !allowedPeriods.has(monthKey)) continue;
+
+    const bucket = buckets.get(monthKey) ?? { solar: 0, wind: 0, other: 0 };
+    bucket.solar += item.solar_mwh || 0;
+    bucket.wind += item.wind_mwh || 0;
+    bucket.other += item.other_mwh || 0;
+    buckets.set(monthKey, bucket);
+  }
+
+  return Array.from(allowedPeriods)
+    .sort()
+    .filter((key) => buckets.has(key))
+    .map((monthKey) => {
+      const bucket = buckets.get(monthKey)!;
+      const monthIdx = parseInt(monthKey.split("-")[1], 10) - 1;
+      const label = monthLabels[monthIdx] ?? monthKey;
+      return buildDataPoint(
+        monthKey,
+        label,
+        bucket.solar,
+        bucket.wind,
+        bucket.other,
+      );
+    });
+};
+
 // Custom tooltip for the chart
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+  hiddenKeys = new Set<string>(),
+}: {
+  active?: boolean;
+  payload?: Array<{ payload?: DataPoint }>;
+  label?: string;
+  hiddenKeys?: Set<string>;
+}) => {
   if (!active || !payload || payload.length === 0) return null;
 
   const payloadPoint = payload[0]?.payload;
-  const totalMW =
-    (payloadPoint.windMW || 0) +
-    (payloadPoint.solarMW || 0) +
-    (payloadPoint.otherMW || 0);
+  if (!payloadPoint) return null;
+
+  const visibleSeries = series.filter((s) => !hiddenKeys.has(s.key));
+  const totalMW = sumVisibleMW(payloadPoint, hiddenKeys);
 
   return (
     <div className="rounded-lg shadow-xl border border-[#DEDEDE] bg-white p-4 min-w-[140px] text-sm">
       <div className="text-xs text-gray-500 mb-2">{label}</div>
       <div className="md:text-base text-sm font-medium mb-3 border-b border-[#707585]">
-        {totalMW
-          ? `${totalMW.toLocaleString()} MWh`
-          : `סה״כ ${payloadPoint.total}`}
+        {`${totalMW.toLocaleString()} MWh`}
       </div>
 
-      {[...series].reverse().map((s) => {
-        const mwKey = `${s.key}MW` as keyof typeof payloadPoint;
+      {[...visibleSeries].reverse().map((s) => {
+        const mwKey = `${s.key}MW` as keyof DataPoint;
+        const value = payloadPoint[mwKey] as number;
         return (
           <div key={s.key} className="flex items-center gap-3 mb-1">
             <span
@@ -141,9 +385,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
             <div className="flex-1">
               <div className="text-xs text-gray-600">{s.label}</div>
               <div className="text-sm font-medium">
-                {payloadPoint[mwKey]
-                  ? `${payloadPoint[mwKey].toLocaleString()} MWh`
-                  : ""}
+                {value ? `${value.toLocaleString()} MWh` : ""}
               </div>
             </div>
           </div>
@@ -211,9 +453,10 @@ export default function RenewableProduction() {
   const currentMonth = today.getMonth() + 1;
   const [showTooltip, setShowTooltip] = useState(false);
   const [selectedYear, setSelectedYear] = useState<string>(String(currentYear));
-  const [selectedMonth, setSelectedMonth] = useState<string>(
+  const [selectedMonths, setSelectedMonths] = useState<string[]>([
     String(currentMonth),
-  );
+  ]);
+  const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
   const [startDate, setStartDate] = useState<string>(() => {
     return format(startOfMonth(new Date()), "yyyy-MM-dd");
   });
@@ -222,21 +465,64 @@ export default function RenewableProduction() {
   });
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
   const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(new Set());
+
+  const availableMonths = useMemo(() => {
+    const yearNum = Number(selectedYear);
+    const maxMonth = yearNum === currentYear ? currentMonth : 12;
+    return MONTH_OPTIONS.filter((m) => Number(m.value) <= maxMonth);
+  }, [selectedYear, currentYear, currentMonth]);
+
+  const effectiveMonths = useMemo(() => {
+    if (selectedMonths.length === 0) {
+      return availableMonths.map((m) => m.value);
+    }
+    return selectedMonths.filter((m) =>
+      availableMonths.some((opt) => opt.value === m),
+    );
+  }, [selectedMonths, availableMonths]);
+
+  const allowedPeriodKeys = useMemo(
+    () =>
+      new Set(
+        effectiveMonths.map((month) => toPeriodKey(selectedYear, month)),
+      ),
+    [effectiveMonths, selectedYear],
+  );
+
+  const isSingleMonthView = effectiveMonths.length === 1;
+
+  useEffect(() => {
+    setSelectedMonths((prev) => {
+      const optionValues = availableMonths.map((m) => m.value);
+      const valid = prev.filter((m) => optionValues.includes(m));
+      if (valid.length === 0) {
+        const fallback = optionValues[optionValues.length - 1];
+        return fallback ? [fallback] : prev;
+      }
+      const nums = valid.map(Number);
+      return monthsInRange(Math.min(...nums), Math.max(...nums), optionValues);
+    });
+  }, [selectedYear, availableMonths]);
+
+  useEffect(() => {
+    if (effectiveMonths.length === 0) return;
+
+    const sorted = [...effectiveMonths].sort((a, b) => Number(a) - Number(b));
+    const firstMonth = Number(sorted[0]);
+    const lastMonth = Number(sorted[sorted.length - 1]);
+    const rangeStart = new Date(Number(selectedYear), firstMonth - 1, 1);
+    const rangeEnd = endOfMonth(
+      new Date(Number(selectedYear), lastMonth - 1, 1),
+    );
+    setStartDate(format(rangeStart, "yyyy-MM-dd"));
+    setEndDate(format(rangeEnd, "yyyy-MM-dd"));
+  }, [selectedYear, effectiveMonths]);
+
   const {
     data: apiData,
     isLoading,
     error,
   } = useRenewablesProductionMix(startDate, endDate);
-
-  useEffect(() => {
-    const monthDate = new Date(
-      Number(selectedYear),
-      Number(selectedMonth) - 1,
-      1,
-    );
-    setStartDate(format(startOfMonth(monthDate), "yyyy-MM-dd"));
-    setEndDate(format(endOfMonth(monthDate), "yyyy-MM-dd"));
-  }, [selectedYear, selectedMonth]);
 
   const availableYears = useMemo(() => {
     const years: { value: string; label: string }[] = [];
@@ -260,72 +546,97 @@ export default function RenewableProduction() {
       return [];
     }
 
-    // For year filter (this year / last 12 months / multi-year ranges), use the
-    // monthly_series breakdown so each month appears as its own bar.
+    const allowedPeriods = allowedPeriodKeys;
+    const monthPrefix =
+      isSingleMonthView && effectiveMonths[0]
+        ? toPeriodKey(selectedYear, effectiveMonths[0])
+        : null;
+
     const sourceSeries =
       apiData.filter === "year" &&
         apiData.monthly_series &&
-        apiData.monthly_series.length > 0
+        apiData.monthly_series.length > 0 &&
+        !isSingleMonthView
         ? apiData.monthly_series
         : apiData.series;
 
     const monthLabels = [
-      "ינו׳",
-      "פבר׳",
+      "ינואר",
+      "פברואר",
       "מרץ",
-      "אפר׳",
+      "אפריל",
       "מאי",
       "יוני",
       "יולי",
-      "אוג׳",
-      "ספט׳",
-      "אוק׳",
-      "נוב׳",
-      "דצמ׳",
+      "אוגוסט",
+      "ספטמבר",
+      "אוקטובר",
+      "נובמבר",
+      "דצמבר",
     ];
 
     const formatLabel = (period: string, fallback?: string) => {
-      // YYYY-MM → localized short month (with year suffix when multi-year range)
       const monthMatch = /^(\d{4})-(\d{2})$/.exec(period);
       if (monthMatch) {
         const monthIdx = parseInt(monthMatch[2], 10) - 1;
         const year = monthMatch[1];
         const monthName = monthLabels[monthIdx] ?? monthMatch[2];
-        const spansMultipleYears = (apiData.monthly_series ?? []).some(
-          (m) => /^(\d{4})-/.exec(m.period)?.[1] !== year,
-        );
-        return spansMultipleYears
-          ? `${monthName} ${year.slice(2)}'`
-          : monthName;
+        return monthName;
       }
       return fallback || period;
     };
 
-    return sourceSeries.map((item) => {
-      const totalMW =
-        item.total_mwh ??
-        (item.solar_mwh || 0) + (item.wind_mwh || 0) + (item.other_mwh || 0);
-      // Calculate percentage shares for stacked bar heights
-      const solarPercent =
-        totalMW > 0 ? ((item.solar_mwh || 0) / totalMW) * 100 : 0;
-      const windPercent =
-        totalMW > 0 ? ((item.wind_mwh || 0) / totalMW) * 100 : 0;
-      const otherPercent =
-        totalMW > 0 ? ((item.other_mwh || 0) / totalMW) * 100 : 0;
-
-      return {
-        period: item.period,
-        label: formatLabel(item.period, item.label),
-        total: Math.round(totalMW),
-        solar: Math.round(solarPercent),
-        wind: Math.round(windPercent),
-        other: Math.round(otherPercent),
-        solarMW: item.solar_mwh || 0,
-        windMW: item.wind_mwh || 0,
-        otherMW: item.other_mwh || 0,
-      };
+    const filteredSeries = sourceSeries.filter((item) => {
+      const monthKey = monthFromPeriod(item.period);
+      if (monthKey && allowedPeriods.has(monthKey)) return true;
+      if (monthPrefix && item.period.startsWith(monthPrefix)) return true;
+      return false;
     });
-  }, [apiData]);
+
+    if (!isSingleMonthView) {
+      const monthlyItems = filteredSeries.filter((item) =>
+        /^(\d{4})-(\d{2})$/.test(item.period),
+      );
+      if (monthlyItems.length > 0) {
+        return monthlyItems.map((item) =>
+          buildDataPoint(
+            item.period,
+            formatLabel(item.period, item.label),
+            item.solar_mwh || 0,
+            item.wind_mwh || 0,
+            item.other_mwh || 0,
+          ),
+        );
+      }
+      return aggregateSeriesByMonth(
+        filteredSeries as SeriesItem[],
+        allowedPeriods,
+        monthLabels,
+      );
+    }
+
+    return filteredSeries.map((item) => {
+      const solar_mwh = item.solar_mwh || 0;
+      const wind_mwh = item.wind_mwh || 0;
+      const other_mwh = item.other_mwh || 0;
+      return buildDataPoint(
+        item.period,
+        formatLabel(item.period, item.label),
+        solar_mwh,
+        wind_mwh,
+        other_mwh,
+      );
+    });
+  }, [apiData, allowedPeriodKeys, isSingleMonthView, selectedYear, effectiveMonths]);
+
+  const chartDisplayData = useMemo(
+    () =>
+      chartData.map((point) => ({
+        ...point,
+        visibleTotalMW: Math.round(sumVisibleMW(point, hiddenKeys)),
+      })),
+    [chartData, hiddenKeys],
+  );
 
   const barKeyToLegendKey = (barKey: string) => {
     if (barKey === "otherMW") return "other";
@@ -442,14 +753,15 @@ export default function RenewableProduction() {
                 />
               </label>
             </div>
-            <div className="relative w-[140px]">
+            <div className="relative w-[160px]">
               <label className="flex flex-col gap-1">
                 <span className="text-sm text-slate-600">חודש</span>
-                <FilterDropdown
-                  value={selectedMonth}
-                  onChange={setSelectedMonth}
-                  options={[...MONTH_OPTIONS]}
-                  placeholder="חודש"
+                <MonthMultiSelectDropdown
+                  selectedMonths={selectedMonths}
+                  onChange={setSelectedMonths}
+                  options={availableMonths}
+                  isOpen={isMonthDropdownOpen}
+                  setIsOpen={setIsMonthDropdownOpen}
                 />
               </label>
             </div>
@@ -503,16 +815,17 @@ export default function RenewableProduction() {
             </div>
           ) : (
             <StackedComposedChart
-              data={chartData}
+              data={chartDisplayData}
               xAxisDataKey="label"
-              yAxisLabel="[MW]"
-              tooltipContent={<CustomTooltip />}
+              yAxisLabel="[MWh]"
+              tooltipContent={<CustomTooltip hiddenKeys={hiddenKeys} />}
               sizeBrackets={[...MW_STACK_KEYS]}
               activeSeries={stackedActiveSeries}
               barSize={28}
               opacityForKey={opacityForKey}
               margin={{ top: 20, right: 20, left: 10, bottom: 10 }}
               lastBarRadius={[4, 4, 0, 0]}
+              labelListDataKey="visibleTotalMW"
               labelListFormatter={(value) => value.toLocaleString()}
               labelListStyle={{ fontWeight: 500 }}
             />

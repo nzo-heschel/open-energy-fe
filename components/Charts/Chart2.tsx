@@ -11,6 +11,21 @@ import {
 import ReactECharts from "echarts-for-react";
 import { useEffect, useMemo, useState } from "react";
 
+const LEGEND_DISPLAY_NAMES: Record<string, string> = {
+  "אנרגיות פוסיליות": "אנרגיה פוסילית",
+  "אנרגיות מתחדשות": "אנרגיה מתחדשת",
+};
+
+const getLegendDisplayName = (name: string) =>
+  LEGEND_DISPLAY_NAMES[name] ?? name;
+
+const LEVEL1_CATEGORY_COLORS: Record<string, string> = {
+  "אנרגיה פוסילית": LEVEL1_COLORS["אנרגיות פוסיליות"],
+  "אנרגיה מתחדשת": LEVEL1_COLORS["אנרגיות מתחדשות"],
+  אחר: LEVEL1_COLORS["אחר"],
+  'סה"כ': "#000000",
+};
+
 interface LineChartProps {
   data: {
     dates: string[];
@@ -372,7 +387,8 @@ export default function Chart2({
               .map((cat) => ({
                 category: {
                   name: cat,
-                  color: LEVEL1_COLORS[cat] || ENERGY_MIX_FIGMA_FALLBACK,
+                  color:
+                    LEVEL1_CATEGORY_COLORS[cat] || ENERGY_MIX_FIGMA_FALLBACK,
                 },
                 items: grouped[cat],
               }));
@@ -448,7 +464,9 @@ export default function Chart2({
                         series.color || ENERGY_MIX_FIGMA_FALLBACK,
                     }}
                   ></div>
-                  <span className="md:text-sm text-xs">{series.name}</span>
+                  <span className="md:text-sm text-xs">
+                    {getLegendDisplayName(series.name)}
+                  </span>
                 </div>
               );
             })}

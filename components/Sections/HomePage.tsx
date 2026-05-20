@@ -903,7 +903,7 @@ export default function HomePage() {
                           </div>
                         )}
                       </div>
-                      משק החשמל בישראל - מבט על
+                      מקורות ייצור חשמל
                     </CardTitle>
                     {/* Buttons SECOND - goes to LEFT in RTL */}
                     <div className="flex items-start md:gap-4 gap-2">

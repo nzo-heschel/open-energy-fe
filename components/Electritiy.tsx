@@ -89,7 +89,30 @@ const Electricity = () => {
                   </svg>
                   {showTooltip && (
                     <div className="absolute top-full left-1/2 -translate-x-1/2 mb-2 z-50">
-                      <TooltipInfo content="Lorem ipsum" />
+                      <TooltipInfo
+                        content={
+                          <>
+                            <p>
+                              הנתונים נלקחים מאתר חברת ניהול מערכת החשמל- נגה.{" "}
+                              <a
+                                href="https://www.noga-iso.co.il/trade/smp/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="whitespace-nowrap"
+                              >
+                                noga-iso.co.il
+                              </a>
+                            </p>
+                            <p>
+                              הנתונים הומרו ל-MWh, מתעדכנים מעת לעת.
+                            </p>
+                            <p>
+                              צטטו אותנו: מרכז השל לקיימות, NZO. אתר הדאטה של
+                              NZO. מחיר השוק הסיטונאי (SMP) מול הביקוש לחשמל.
+                            </p>
+                          </>
+                        }
+                      />
                     </div>
                   )}
                 </div>

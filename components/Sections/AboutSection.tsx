@@ -32,7 +32,9 @@ export default function AboutSection() {
                     </h2>
                     <div className="w-[46px] h-1 bg-[#276E4E] mr-auto"></div>
                     <p className="text-[#484C56] md:text-lg text-sm font-normal">
-                      הפרויקט נוסד במטרה לצמצם את פליטות הפחמן של מדינת ישראל, על ידי איפוס הפליטות מהמרכיב הגדול ביותר - ייצור חשמל. זאת באמצעות מעבר למשק חשמל מבוזר, דיגיטלי ומבוסס על אנרגיות מתחדשות. לב הפרויקט נשען על מחקר טכנו-כלכלי מבוסס-נתונים ומודלים אלטרנטיביים למשק החשמל. בנוסף למחקרים, פרויקט NZO מבצע מחקרי שטח, מיפוי וסיוע בהסרת חסמים ועבודה עם מקבלי החלטות. לאתר הפרוייקט.
+                      פרויקט NZO (שמשמעותו Net ZerO Emissions) נוסד במטרה לצמצם את פליטות הפחמן של מדינת ישראל, על ידי איפוס הפליטות מהמרכיב הגדול ביותר - ייצור חשמל. הפרויקט פועל החל משנת 2019 להאצת המעבר של מדינת ישראל למשק מבוסס אנרגיה מתחדשת, באמצעות מחקר, מודלים מבוססי נתונים ומעורבות בשיח ובמדיניות הממשלתית.
+                      <br />
+                      <a href="http://www.nzo.org.il" target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500">www.NZO.org.il</a>
                     </p>
                     <Image src={logo} width={75} height={65} className='' alt='logo' />
 
@@ -55,7 +57,10 @@ export default function AboutSection() {
                     </h2>
                     <div className="w-[46px] h-1 bg-[#276E4E] mr-auto"></div>
                     <p className="text-[#484C56] md:text-lg text-sm font-normal">
-                      (ע&quot;ר) היא עמותה עם חשיבה פורצת דרך וחדשנית שבאה למצוא פתרונות יצירתיים, פרקטיים ומעוררי השראה להתמודדות עם אתגרי המאה ה-21. אנחנו מקדמים שינוי בחברה הישראלית ובמיוחד עשייה למען האקלים באמצעות יצירת ליבה של ידע מחקרי, תיאורטי ומעשי והנחלתו דרך הכשרות מנהיגות, קורסים למשרתי ציבור ולציבור הרחב, והסברה למקבלי החלטות על מנת ליצור השפעה ושינוי מדיניות.
+                      מרכז השל לקיימות (ע"ר) מפתח ומיישם את חזון הקיימות: חברה צודקת ומלוכדת, כלכלה חסונה ודמוקרטית, וסביבה יצרנית ובריאה לכל תושביה. המרכז מחבר בין ידע רעיוני לידע מעשי, מפיץ את סיפור הקיימות בדרכים יצירתיות, ומסייע לסוכני שינוי מכל המגזרים לקדם תהליכי שינוי משמעותיים בישראל.
+                      <br />
+                      <a href="http://www.heschel.org.il/" target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500">www.Heschel.org.il</a>
+
                     </p>
                     <Image src={logoicon} width={75} height={65} className='' alt='logoicon' />
                   </div>
@@ -69,8 +74,9 @@ export default function AboutSection() {
                     <div className="w-[46px] h-1 bg-[#276E4E] mr-auto"></div>
                     <div className="flex flex-col gap-1">
                       <p className="text-[#484C56] md:text-lg text-sm font-normal">סעדיה גאון 26 תל אביב</p>
-                      <p className="text-[#484C56] md:text-lg text-sm font-normal">טלפון: 03-5608788</p>
-                      <p className="text-[#484C56] md:text-lg text-sm font-normal">heschel@heschel.org.il</p>
+                      <p className="text-[#484C56] md:text-lg text-sm font-normal">טלפון: 077-3448514</p>
+                      <p className="text-[#484C56] md:text-lg text-sm font-normal"><a href="mailto:Nufar@Heschel.org.il" target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500">Nufar@Heschel.org.il</a>
+                      </p>
                     </div>
                   </div>
                   <div className="w-full flex justify-end rounded-full">

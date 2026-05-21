@@ -1,5 +1,6 @@
 "use client";
 
+import { mapCombinedSeriesToHourlyChartRows } from "@/lib/smpCombinedSeriesHourly";
 import type { SMPProductionVsMarginalPriceResponse } from "@/types/dto";
 import { differenceInDays, format, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
@@ -15,6 +16,36 @@ import {
 } from "recharts";
 import { Button } from "../ui/button";
 import { ElectricityScatterGraph } from "./ElectricityScatterGraph";
+
+const CustomHourlyXAxisTick = ({
+    x,
+    y,
+    payload,
+}: {
+    x?: number;
+    y?: number;
+    payload?: { value?: string };
+}) => {
+    if (x == null || y == null || !payload?.value) return null;
+
+    return (
+        <g transform={`translate(${x},${y})`}>
+            <text
+                x={0}
+                y={0}
+                dy={4}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fill="#6b7280"
+                fontSize={10}
+                fontFamily="Heebo, sans-serif"
+                transform="rotate(-90)"
+            >
+                {payload.value}
+            </text>
+        </g>
+    );
+};
 
 // Custom Tooltip component for Line Chart
 const CustomLineTooltip = ({ active, payload, label }: any) => {
@@ -96,11 +127,14 @@ const ElectricityLineGraph = ({ data, startDate, endDate, selectedPreset }: Elec
         const twoYearsInDays = 730; // 2 years = 730 days
 
         // Determine range type based on actual duration:
-        // - Less than 62 days: use daily data
-        // - 62 days to less than 2 years (730 days): use monthly data
-        // - 2 years (730 days) or more: use yearly data
-        if (days < 62) {
-            return 'day'; // Use daily_average for ranges less than 62 days
+        // - Single day: hourly (combined_series)
+        // - 1–61 days: daily data
+        // - 62 days to less than 2 years (730 days): monthly data
+        // - 2 years (730 days) or more: yearly data
+        if (days < 1) {
+            return "hour";
+        } else if (days < 62) {
+            return "day"; // Use daily_average for ranges less than 62 days
         } else if (days < twoYearsInDays) {
             return 'month'; // Use monthly_average for ranges 62 days to less than 2 years
         } else {
@@ -111,6 +145,11 @@ const ElectricityLineGraph = ({ data, startDate, endDate, selectedPreset }: Elec
     // Transform API data to chart format
     const chartData = useMemo(() => {
         if (!data) return [];
+
+        if (dateRangeType === "hour") {
+            const hourly = mapCombinedSeriesToHourlyChartRows(data.combined_series);
+            if (hourly.length > 0) return hourly;
+        }
 
         // Use daily_average for day ranges, monthly_average for month ranges, yearly_average for year ranges
         if (dateRangeType === 'day' && data.daily_average && data.daily_average.length > 0) {
@@ -292,40 +331,10 @@ const ElectricityLineGraph = ({ data, startDate, endDate, selectedPreset }: Elec
         }
 
         // Fallback to combined_series if averages are not available
-        if (data.combined_series && data.combined_series.length > 0) {
-            return data.combined_series
-                .filter(item => item.timestamp)
-                .map(item => {
-                    try {
-                        const date = parseISO(item.timestamp);
-                        const timeStr = format(date, 'HH:mm');
-
-                        return {
-                            time: timeStr,
-                            timestamp: item.timestamp,
-                            price_with_constraints: item.price_with_constraints ?? item.smp ?? 0,
-                            price_without_constraints: item.price_without_constraints ?? 0,
-                            net_demand: item.net_demand ?? 0,
-                            smp: item.smp ?? 0
-                        };
-                    } catch (e) {
-                        console.error('Error parsing timestamp:', item.timestamp, e);
-                        return null;
-                    }
-                })
-                .filter(item => item !== null)
-                .sort((a, b) => {
-                    if (!a || !b) return 0;
-                    return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
-                }) as Array<{
-                    time: string;
-                    timestamp: string;
-                    price_with_constraints: number;
-                    price_without_constraints: number;
-                    net_demand: number;
-                    smp: number;
-                }>;
-        }
+        const fallbackHourly = mapCombinedSeriesToHourlyChartRows(
+            data.combined_series,
+        );
+        if (fallbackHourly.length > 0) return fallbackHourly;
 
         return [];
     }, [data, dateRangeType]);
@@ -356,11 +365,7 @@ const ElectricityLineGraph = ({ data, startDate, endDate, selectedPreset }: Elec
     // Show labels for every data point
     const xAxisInterval = 0;
 
-    // Determine if labels should be rotated
-    const shouldRotateLabels = useMemo(() => {
-        // No rotation - show all labels horizontally
-        return false;
-    }, []);
+    const shouldRotateLabels = dateRangeType === "hour";
 
     const handleLegendClick = (dataKey: string) => {
         if (activeSeries.includes(dataKey)) {
@@ -500,14 +505,17 @@ const ElectricityLineGraph = ({ data, startDate, endDate, selectedPreset }: Elec
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis
                         dataKey="time"
-                        tick={{ fontSize: 11 }}
+                        tick={
+                            shouldRotateLabels ? (
+                                <CustomHourlyXAxisTick />
+                            ) : (
+                                { fontSize: 11, fontFamily: "Heebo, sans-serif" }
+                            )
+                        }
                         axisLine={true}
                         interval={xAxisInterval}
-                        angle={shouldRotateLabels ? -45 : 0}
-                        textAnchor={shouldRotateLabels ? 'end' : 'middle'}
-                        height={shouldRotateLabels ? 70 : 30}
-                        tickMargin={shouldRotateLabels ? 20 : 5}
-                        dy={shouldRotateLabels ? 10 : 0}
+                        height={shouldRotateLabels ? 88 : 30}
+                        tickMargin={shouldRotateLabels ? 18 : 5}
                     />
                     <YAxis
                         yAxisId="left"

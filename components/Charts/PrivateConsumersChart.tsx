@@ -31,15 +31,46 @@ const meterTypeColors: Record<string, string> = {
     smart: '#3A7C2F', // Green
 };
 
+const STACK_KEYS = ['basic', 'smart'] as const;
+
+const sumVisibleTotal = (
+    point: { basic: number; smart: number },
+    hiddenBars: string[],
+) => {
+    let total = 0;
+    if (!hiddenBars.includes('basic')) total += point.basic || 0;
+    if (!hiddenBars.includes('smart')) total += point.smart || 0;
+    return total;
+};
+
+const getTopVisibleStackKey = (hiddenBars: string[]) =>
+    [...STACK_KEYS].reverse().find((key) => !hiddenBars.includes(key));
+
 // Custom Tooltip
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({
+    active,
+    payload,
+    label,
+    hiddenBars = [],
+}: {
+    active?: boolean;
+    payload?: Array<{ dataKey?: string; value?: number; name?: string; color?: string }>;
+    label?: string;
+    hiddenBars?: string[];
+}) => {
     if (active && payload && payload.length) {
-        const total = payload.reduce((acc: number, cur: any) => acc + (cur.value || 0), 0);
+        const visiblePayload = payload.filter(
+            (entry) => entry.dataKey && !hiddenBars.includes(String(entry.dataKey)),
+        );
+        const total = visiblePayload.reduce(
+            (acc, cur) => acc + (cur.value || 0),
+            0,
+        );
         return (
             <div className="bg-white p-2 rounded-[10px] shadow-md border-none" style={{ boxShadow: "0px 2px 30px 2px #99BF4129" }}>
                 <p className="font-normal text-[#59687D] text-sm">{label}</p>
                 <p className="text-[#59687D] font-medium text-base border-b border-[#59687D]">סה"כ {total.toLocaleString()}</p>
-                {payload.map((entry: any, index: number) => (
+                {visiblePayload.map((entry, index: number) => (
                     <div
                         key={index}
                         className="flex gap-1 items-start pt-1"
@@ -111,6 +142,17 @@ const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
             };
         }).sort((a, b) => b.total - a.total); // Sort by total consumers descending
     }, [data, selectedSector]);
+
+    const chartDisplayData = useMemo(
+        () =>
+            chartData.map((point) => ({
+                ...point,
+                visibleTotal: sumVisibleTotal(point, hiddenBars),
+            })),
+        [chartData, hiddenBars],
+    );
+
+    const topVisibleStackKey = getTopVisibleStackKey(hiddenBars);
 
     const handleLegendClick = (payload: any) => {
         const { dataKey } = payload;
@@ -187,7 +229,7 @@ const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
         <div className="w-full md:h-[500px] h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
-                    data={chartData}
+                    data={chartDisplayData}
                     margin={{ top: 30, right: 10, left: 20, bottom: 20 }}
                     barCategoryGap="25%"
                 >
@@ -207,7 +249,7 @@ const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
                             style: { textAnchor: 'middle', fontFamily: 'Heebo, sans-serif' }
                         }}
                     />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip hiddenBars={hiddenBars} />} />
                     <Legend
                         content={
                             <CustomLegend
@@ -223,10 +265,24 @@ const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
                         stackId="a"
                         fill={meterTypeColors.basic}
                         barSize={40}
-                        radius={[0, 0, 0, 0]}
+                        radius={
+                            topVisibleStackKey === 'basic' ? [4, 4, 0, 0] : [0, 0, 0, 0]
+                        }
                         hide={hiddenBars.includes('basic')}
                         opacity={getBarOpacity('basic')}
-                    />
+                    >
+                        {topVisibleStackKey === 'basic' && (
+                            <LabelList
+                                dataKey="visibleTotal"
+                                position="top"
+                                formatter={(value: number) => {
+                                    if (value == null || value === 0) return '';
+                                    return value.toLocaleString();
+                                }}
+                                style={{ fill: '#59687D', fontSize: '10px', fontWeight: 500 }}
+                            />
+                        )}
+                    </Bar>
                     <Bar
                         dataKey="smart"
                         name={meterTypeLabels.smart}
@@ -237,15 +293,17 @@ const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
                         hide={hiddenBars.includes('smart')}
                         opacity={getBarOpacity('smart')}
                     >
-                        <LabelList
-                            dataKey="total"
-                            position="top"
-                            formatter={(value: number) => {
-                                if (value == null || value === 0) return '';
-                                return value.toLocaleString();
-                            }}
-                            style={{ fill: '#59687D', fontSize: '10px', fontWeight: 500 }}
-                        />
+                        {topVisibleStackKey === 'smart' && (
+                            <LabelList
+                                dataKey="visibleTotal"
+                                position="top"
+                                formatter={(value: number) => {
+                                    if (value == null || value === 0) return '';
+                                    return value.toLocaleString();
+                                }}
+                                style={{ fill: '#59687D', fontSize: '10px', fontWeight: 500 }}
+                            />
+                        )}
                     </Bar>
                 </ComposedChart>
             </ResponsiveContainer>

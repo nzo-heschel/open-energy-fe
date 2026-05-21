@@ -13,6 +13,7 @@ import {
   Scatter,
 } from "recharts";
 import { useState, useMemo } from "react";
+import { mapCombinedSeriesToHourlyChartRows } from "@/lib/smpCombinedSeriesHourly";
 import type { SMPProductionVsMarginalPriceResponse } from "@/types/dto";
 import { differenceInDays, differenceInMonths } from "date-fns";
 
@@ -152,10 +153,13 @@ export function ElectricityScatterGraph({
     const twoYearsInDays = 730; // 2 years = 730 days
 
     // Determine range type based on actual duration:
-    // - Less than 62 days: use daily correlation data
-    // - 62 days to less than 2 years (730 days): use monthly correlation data
+    // - Single day: hourly correlation (raw correlation / combined points)
+    // - 1–61 days: daily correlation data
+    // - 62 days to less than 2 years (730 days): monthly correlation data
     // - 2 years (730 days) or more: use yearly correlation data
-    if (days < 62) {
+    if (days < 1) {
+      return "hour";
+    } else if (days < 62) {
       return "day"; // Use correlation_by_view.day for ranges less than 62 days
     } else if (days < twoYearsInDays) {
       return "month"; // Use correlation_by_view.month for ranges 62 days to less than 2 years
@@ -187,7 +191,15 @@ export function ElectricityScatterGraph({
       price_without_constraints: number;
     }> = [];
 
-    if (dateRangeType === "day" && data.correlation_by_view.day) {
+    if (dateRangeType === "hour" && data.combined_series?.length) {
+      return mapCombinedSeriesToHourlyChartRows(data.combined_series).map(
+        (item, i) => ({
+          price: item.price_with_constraints || item.smp || 0,
+          demand: item.net_demand || 0,
+          type: i % 2 === 0 ? "ביקוש משקי" : "מחיר שולי כולל אילוצים",
+        }),
+      );
+    } else if (dateRangeType === "day" && data.correlation_by_view.day) {
       correlationData = data.correlation_by_view.day;
     } else if (dateRangeType === "month" && data.correlation_by_view.month) {
       correlationData = data.correlation_by_view.month;

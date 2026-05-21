@@ -157,7 +157,14 @@ const CO2EmissionsChart = () => {
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-sm">
-                  <p>נתונים על פליטות CO₂ ויחס הפליטות ביחס לייצור חשמל</p>
+                  <p>
+                    הנתונים נלקחים מאתר חברת ניהול מערכת החשמל- נגה. הנתונים
+                    מתעדכנים מעת לעת.
+                  </p>
+                  <p>
+                    צטטו אותנו: מרכז השל לקיימות, NZO. אתר הדאטה של NZO. סך
+                    פליטות CO₂ מול עצימות פליטות CO₂.
+                  </p>
                 </TooltipContent>
               </UITooltip>
             </TooltipProvider>

@@ -43,7 +43,7 @@ function buildChartRows(
     ministry_target_percent: number;
     nzo_target_percent: number;
   }[],
-  selectedPrediction: "ministry" | "nzo",
+  activePredictions: { ministry: boolean; nzo: boolean },
 ): { chartData: ChartRow[]; lastYearWithActual: number } {
   if (!rows.length) {
     return { chartData: [], lastYearWithActual: 0 };
@@ -66,6 +66,12 @@ function buildChartRows(
     const inBarRange = lastYearWithActual > 0 && r.year <= lastYearWithActual;
     const actualBar = inBarRange ? historicalActualPct : null;
     const histForGap = historicalActualPct;
+    const showMinistry = activePredictions.ministry;
+    const showNzo = activePredictions.nzo;
+    const stackTopAfterActual =
+      showMinistry && inBarRange
+        ? Math.max(histForGap, ministryPct)
+        : histForGap;
 
     return {
       year: r.year,
@@ -75,12 +81,12 @@ function buildChartRows(
       nzoPct,
       actualBar,
       ministryBar:
-        selectedPrediction === "ministry" && inBarRange
+        showMinistry && inBarRange
           ? Math.max(0, ministryPct - histForGap)
           : null,
       nzoBar:
-        selectedPrediction === "nzo" && inBarRange
-          ? Math.max(0, nzoPct - histForGap)
+        showNzo && inBarRange
+          ? Math.max(0, nzoPct - stackTopAfterActual)
           : null,
     };
   });
@@ -91,19 +97,23 @@ function buildChartRows(
 export default function RenewableChart() {
   const [hovered, setHovered] = useState<string | null>(null);
   const [isChartHovered, setIsChartHovered] = useState(false);
-  const [selectedPrediction, setSelectedPrediction] = useState<
-    "ministry" | "nzo"
-  >("ministry");
+  const [activePredictions, setActivePredictions] = useState({
+    ministry: true,
+    nzo: true,
+  });
   const [exporting, setExporting] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
 
   const { data, isLoading, error } = useRenewablesDelivery4();
   const { chartData, lastYearWithActual } = useMemo(
-    () => buildChartRows(data?.data ?? [], selectedPrediction),
-    [data?.data, selectedPrediction],
+    () => buildChartRows(data?.data ?? [], activePredictions),
+    [data?.data, activePredictions],
   );
   const togglePrediction = (key: "ministry" | "nzo") => {
-    setSelectedPrediction(key);
+    setActivePredictions((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
   };
 
   const opacity = (key: string) => {
@@ -180,34 +190,54 @@ export default function RenewableChart() {
     if (!active || !payload?.length) return null;
 
     const row = payload[0].payload;
-    const targetPct =
-      selectedPrediction === "ministry" ? row.ministryPct : row.nzoPct;
     const actualPct =
       row.historicalActualPct > 0 ? row.historicalActualPct : row.actualLinePct;
-    const gapPct = targetPct - actualPct;
 
     const lineItems = payload.filter(
       (p) =>
         p.dataKey === "actualLinePct" ||
-        p.dataKey === "ministryPct" ||
-        p.dataKey === "nzoPct",
+        (p.dataKey === "ministryPct" && activePredictions.ministry) ||
+        (p.dataKey === "nzoPct" && activePredictions.nzo),
     );
     return (
       <div className="bg-white shadow-lg rounded-lg p-3 border border-gray-200 text-sm">
         <p className="font-medium">שנה {row.year}</p>
-        {row.year <= lastYearWithActual && lastYearWithActual > 0 && (
-          <p className="mt-2 text-[#484C56] text-xs">
-            יעד ({selectedPrediction === "ministry" ? "משרד" : "NZO"}):{" "}
-            <span className="font-medium">{targetPct.toFixed(1)}%</span>
-            <br />
-            בפועל:{" "}
-            <span className="font-medium">
-              {row.historicalActualPct.toFixed(1)}%
-            </span>
-            <br />
-            פער: <span className="font-medium">{gapPct.toFixed(1)}%</span>
-          </p>
-        )}
+        {row.year <= lastYearWithActual &&
+          lastYearWithActual > 0 &&
+          row.historicalActualPct > 0 && (
+            <>
+              <p className="mt-2 text-[#484C56] text-xs">
+                בפועל:{" "}
+                <span className="font-medium">
+                  {row.historicalActualPct.toFixed(1)}%
+                </span>
+              </p>
+              {activePredictions.ministry && (
+                <p className="mt-1 text-[#484C56] text-xs">
+                  יעד משרד:{" "}
+                  <span className="font-medium">
+                    {row.ministryPct.toFixed(1)}%
+                  </span>
+                  {" · "}
+                  פער:{" "}
+                  <span className="font-medium">
+                    {(row.ministryPct - actualPct).toFixed(1)}%
+                  </span>
+                </p>
+              )}
+              {activePredictions.nzo && (
+                <p className="mt-1 text-[#484C56] text-xs">
+                  יעד NZO:{" "}
+                  <span className="font-medium">{row.nzoPct.toFixed(1)}%</span>
+                  {" · "}
+                  פער:{" "}
+                  <span className="font-medium">
+                    {(row.nzoPct - actualPct).toFixed(1)}%
+                  </span>
+                </p>
+              )}
+            </>
+          )}
         {lineItems.map((p) => (
           <p
             key={String(p.dataKey)}
@@ -342,14 +372,14 @@ export default function RenewableChart() {
           onClick={() => togglePrediction("ministry")}
           onMouseEnter={() => setHovered("ministry")}
           onMouseLeave={() => setHovered(null)}
-          style={{ opacity: selectedPrediction === "ministry" ? 1 : 0.5 }}
+          style={{ opacity: activePredictions.ministry ? 1 : 0.5 }}
         >
           <span
             className="w-2 h-2 rounded-full"
             style={{ backgroundColor: "#957669" }}
           />
           <span
-            className={`md:text-sm text-xs ${selectedPrediction === "ministry" ? "text-gray-800" : "text-gray-400"}`}
+            className={`md:text-sm text-xs ${activePredictions.ministry ? "text-gray-800" : "text-gray-400"}`}
           >
             לפי יעד משרד האנרגיה
           </span>
@@ -360,14 +390,14 @@ export default function RenewableChart() {
           onClick={() => togglePrediction("nzo")}
           onMouseEnter={() => setHovered("nzo")}
           onMouseLeave={() => setHovered(null)}
-          style={{ opacity: selectedPrediction === "nzo" ? 1 : 0.5 }}
+          style={{ opacity: activePredictions.nzo ? 1 : 0.5 }}
         >
           <span
             className="w-2 h-2 rounded-full"
             style={{ backgroundColor: "#8BBFE1" }}
           />
           <span
-            className={`md:text-sm text-xs ${selectedPrediction === "nzo" ? "text-gray-800" : "text-gray-400"}`}
+            className={`md:text-sm text-xs ${activePredictions.nzo ? "text-gray-800" : "text-gray-400"}`}
           >
             יעד NZO
           </span>
@@ -448,7 +478,7 @@ export default function RenewableChart() {
                 stackId="stack"
                 name="יעד משרד האנרגיה"
                 opacity={
-                  selectedPrediction === "ministry" ? opacity("ministry") : 0
+                  activePredictions.ministry ? opacity("ministry") : 0
                 }
               />
 
@@ -458,7 +488,7 @@ export default function RenewableChart() {
                 barSize={28}
                 stackId="stack"
                 name="יעד NZO"
-                opacity={selectedPrediction === "nzo" ? opacity("nzo") : 0}
+                opacity={activePredictions.nzo ? opacity("nzo") : 0}
               />
 
               <Line
@@ -477,7 +507,9 @@ export default function RenewableChart() {
                 strokeWidth={2}
                 dot={false}
                 name="יעד משרד האנרגיה"
-                opacity={opacity("ministry")}
+                opacity={
+                  activePredictions.ministry ? opacity("ministry") : 0
+                }
               />
               <Line
                 type="monotone"
@@ -486,7 +518,7 @@ export default function RenewableChart() {
                 strokeWidth={2}
                 dot={false}
                 name="יעד NZO"
-                opacity={opacity("nzo")}
+                opacity={activePredictions.nzo ? opacity("nzo") : 0}
               />
             </ComposedChart>
           </ResponsiveContainer>
@@ -505,30 +537,34 @@ export default function RenewableChart() {
           >
             צפי ריאלי לפי יצור בפועל
           </div>
-          <div
-            className="absolute text-sm font-medium whitespace-nowrap"
-            style={{
-              color: "#8BBFE1",
-              right: "20px",
-              top: `${100 - lineMetrics.nzo.end}%`,
-              transform: `rotate(${lineMetrics.nzo.angle}deg)`,
-              transformOrigin: "left center",
-            }}
-          >
-            לפי יעד NZO
-          </div>
-          <div
-            className="absolute text-sm font-medium whitespace-nowrap"
-            style={{
-              color: "#957669",
-              right: "20px",
-              top: `${100 - lineMetrics.ministry.end}%`,
-              transform: `rotate(${lineMetrics.ministry.angle}deg)`,
-              transformOrigin: "left center",
-            }}
-          >
-            יעד אנרגיות מתחדשות לפי משרד האנרגיה
-          </div>
+          {activePredictions.nzo && (
+            <div
+              className="absolute text-sm font-medium whitespace-nowrap"
+              style={{
+                color: "#8BBFE1",
+                right: "20px",
+                top: `${100 - lineMetrics.nzo.end}%`,
+                transform: `rotate(${lineMetrics.nzo.angle}deg)`,
+                transformOrigin: "left center",
+              }}
+            >
+              לפי יעד NZO
+            </div>
+          )}
+          {activePredictions.ministry && (
+            <div
+              className="absolute text-sm font-medium whitespace-nowrap"
+              style={{
+                color: "#957669",
+                right: "20px",
+                top: `${100 - lineMetrics.ministry.end}%`,
+                transform: `rotate(${lineMetrics.ministry.angle}deg)`,
+                transformOrigin: "left center",
+              }}
+            >
+              יעד אנרגיות מתחדשות לפי משרד האנרגיה
+            </div>
+          )}
         </div>
       </div>
     </div>

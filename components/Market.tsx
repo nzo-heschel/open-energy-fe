@@ -108,7 +108,7 @@ const Market = () => {
                                 rel="noopener noreferrer"
                                 className="whitespace-nowrap"
                               >
-                                gov.il
+                                https://www.gov.il/he/pages/bi_olam_haspaka
                               </a>
                             </p>
                             <p>הנתונים מתעדכנים מעת לעת.</p>

@@ -10,6 +10,7 @@ import { ChevronDown, Loader2 } from "lucide-react";
 import Link from "next/link";
 import {
   useInstalledCapacityByFacilitySize,
+  buildExportDateRangeSuffix,
   exportInstalledCapacityByFacilitySize,
   InstalledCapacityByFacilitySizeFilters,
 } from "@/lib/api";
@@ -383,12 +384,12 @@ const InstalledCapacityTwo: React.FC = () => {
   const [displayMode, setDisplayMode] = useState<string>("capacity");
   const [isExporting, setIsExporting] = useState(false);
 
-  // Build filters
+  const singleSelectedYear =
+    selectedYears.length === 1 ? Number(selectedYears[0]) : undefined;
+
   const filters: InstalledCapacityByFacilitySizeFilters = useMemo(
-    () => ({
-      year: undefined,
-    }),
-    [],
+    () => (singleSelectedYear ? { year: singleSelectedYear } : {}),
+    [singleSelectedYear],
   );
 
   // Fetch data from API
@@ -448,6 +449,16 @@ const InstalledCapacityTwo: React.FC = () => {
     return uniqueYears.sort((a, b) => Number(b) - Number(a));
   }, [apiData]);
 
+  const exportDateRange = useMemo(
+    () =>
+      buildExportDateRangeSuffix({
+        year: singleSelectedYear,
+        years:
+          selectedYears.length > 0 ? selectedYears : availableYearOptions,
+      }),
+    [singleSelectedYear, selectedYears, availableYearOptions],
+  );
+
   const handleLegendMouseEnter = (dataKey: string) => {
     setHoveredKey(dataKey);
   };
@@ -484,7 +495,7 @@ const InstalledCapacityTwo: React.FC = () => {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      await exportInstalledCapacityByFacilitySize(filters);
+      await exportInstalledCapacityByFacilitySize(filters, exportDateRange);
     } catch (err) {
       console.error("Export failed:", err);
     } finally {
@@ -538,7 +549,7 @@ const InstalledCapacityTwo: React.FC = () => {
                             rel="noopener noreferrer"
                             className="whitespace-nowrap"
                           >
-                            gov.il
+                            https://www.gov.il/he/pages/bipua2024
                           </a>
                         </p>
                         <p>הנתונים מתעדכנים מעת לעת.</p>

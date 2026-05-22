@@ -26,6 +26,7 @@ export const ENERGY_COLORS = {
   COAL: '#6B707C',
   DIESEL: '#1C1A17',
   NATURAL_GAS: '#957669',
+  FUEL_OIL: '#4A4F58',
 } as const;
 
 /**
@@ -62,6 +63,7 @@ export const LEVEL2_COLORS: Record<string, string> = {
   'coal': ENERGY_COLORS.COAL,
   'natural_gas': ENERGY_COLORS.NATURAL_GAS,
   'diesel': ENERGY_COLORS.DIESEL,
+  'fuel_oil': ENERGY_COLORS.FUEL_OIL,
 
   // Renewable Energy (keys match normalizeKey output: lowercase, spaces to _)
   'photovoltaic': ENERGY_COLORS.PHOTOVOLTAIC,
@@ -82,6 +84,7 @@ export const LEVEL2_HEBREW_COLORS: Record<string, string> = {
   'פחם': ENERGY_COLORS.COAL,
   'גז טבעי': ENERGY_COLORS.NATURAL_GAS,
   'סולר': ENERGY_COLORS.DIESEL,
+  'מזוט': ENERGY_COLORS.FUEL_OIL,
   'פוטו וולטאי': ENERGY_COLORS.PHOTOVOLTAIC,
   'ביו גז': ENERGY_COLORS.BIOGAS,
   'רוח': ENERGY_COLORS.WIND,

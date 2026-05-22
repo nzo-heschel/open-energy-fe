@@ -724,9 +724,10 @@ export default function RenewableProduction() {
                             href="https://www.noga-iso.co.il/systemoperationunit/piechartspage/"
                             target="_blank"
                             rel="noopener noreferrer"
+                            dir="ltr"
                             className="whitespace-nowrap"
                           >
-                            noga-iso.co.il
+                            https://www.noga-iso.co.il/systemoperationunit/piechartspage/
                           </a>
                         </p>
                         <p>הנתונים מתעדכנים מעת לעת.</p>

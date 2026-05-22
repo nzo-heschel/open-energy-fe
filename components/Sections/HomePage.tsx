@@ -12,17 +12,18 @@ import {
   useEnergyOverview,
 } from "@/lib/api";
 import { LEVEL2_HEBREW_COLORS } from "@/lib/colors";
+import { getDieselFromNonRenewablesLevel2 } from "@/lib/energyMixFossilDiesel";
 import image2 from "@/public/Frame 427319913.png";
 import image3 from "@/public/Frame 427319914.png";
 import image1 from "@/public/Frame 427319915.png";
 import api from "@/public/images/API.png";
 import download from "@/public/images/download_2.png";
 import topleft from "@/public/images/Ellipse 89.png";
-import { endOfYear, format, startOfYear } from "date-fns";
+import { format, parseISO, subDays } from "date-fns";
 import { ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Chart2 from "../Charts/Chart2";
 import DashChart from "../DashChart";
 import Electritiy from "../Electritiy";
@@ -35,6 +36,19 @@ import TooltipInfo from "../TooltipInfo";
 // Shared chart height so both overview (line) and energy mix (pie) cards match Figma
 const HOME_CHART_HEIGHT = 400;
 
+const getLast7DaysDateRange = () => {
+  const today = new Date();
+  return {
+    start: format(subDays(today, 6), "yyyy-MM-dd"),
+    end: format(today, "yyyy-MM-dd"),
+  };
+};
+
+const toDateRangePickerValue = (range: {
+  start: string;
+  end: string;
+}): [Date, Date] => [parseISO(range.start), parseISO(range.end)];
+
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<"market" | "smp">();
   const [smpDetails, setSmpDetails] = useState(false);
@@ -44,25 +58,14 @@ export default function HomePage() {
   const [showMixLevel2, setShowMixLevel2] = useState(false);
   const [showOverviewLevel2, setShowOverviewLevel2] = useState(false);
 
-  // Date range picker state for energy mix
-  const [startEndMixDate, setStartEndMixDate] = useState(() => {
-    const today = new Date();
-    return {
-      start: format(startOfYear(today), "yyyy-MM-dd"),
-      end: format(endOfYear(today), "yyyy-MM-dd"),
-    };
-  });
+  // Date range picker state for energy mix (matches DateRangePicker last7Days preset)
+  const [startEndMixDate, setStartEndMixDate] = useState(getLast7DaysDateRange);
 
   // Date range picker state for overview chart
   const [overviewSelectedPreset, setOverviewSelectedPreset] =
-    useState<string>("שנה זו");
-  const [startEndOverviewDate, setStartEndOverviewDate] = useState(() => {
-    const today = new Date();
-    return {
-      start: format(startOfYear(today), "yyyy-MM-dd"),
-      end: format(endOfYear(today), "yyyy-MM-dd"),
-    };
-  });
+    useState<string>("7 ימים אחרונים");
+  const [startEndOverviewDate, setStartEndOverviewDate] =
+    useState(getLast7DaysDateRange);
   //tooltips
   const [showMixTooltip, setShowMixTooltip] = useState(false);
   const [showOverviewTooltip, setShowOverviewTooltip] = useState(false);
@@ -123,6 +126,15 @@ export default function HomePage() {
     error: energyMixError,
   } = useEnergyMix(startEndMixDate.start, startEndMixDate.end);
 
+  useEffect(() => {
+    if (!energyMixData?.start_date || !energyMixData?.end_date) return;
+    const { start_date, end_date } = energyMixData;
+    setStartEndMixDate((prev) => {
+      if (prev.start === start_date && prev.end === end_date) return prev;
+      return { start: start_date, end: end_date };
+    });
+  }, [energyMixData?.start_date, energyMixData?.end_date]);
+
   // Fetch energy overview data from API (for pie chart)
   const {
     data: energyOverviewData,
@@ -133,6 +145,16 @@ export default function HomePage() {
     startEndOverviewDate.end,
     overviewSelectedPreset,
   );
+
+  useEffect(() => {
+    if (!energyOverviewData?.start_date || !energyOverviewData?.end_date)
+      return;
+    const { start_date, end_date } = energyOverviewData;
+    setStartEndOverviewDate((prev) => {
+      if (prev.start === start_date && prev.end === end_date) return prev;
+      return { start: start_date, end: end_date };
+    });
+  }, [energyOverviewData?.start_date, energyOverviewData?.end_date]);
 
   // Transform energy mix series data for Chart2 - uses label from API response for X-axis
   const chart2Data = useMemo(() => {
@@ -151,54 +173,55 @@ export default function HomePage() {
         item: (typeof energyOverviewData.series)[0],
         key: string,
       ): number => {
-        // First try direct field (e.g., coal_mw)
+        // סולר (Chart2 only): solar_thermal / solar — never server diesel_mw or תרמו סולרי
+        if (key === "diesel") {
+          const nonRenewables =
+            item.level2?.["Non-renewables"] ??
+            (item.level2 as { non_renewables?: Record<string, number> } | undefined)
+              ?.non_renewables;
+          if (nonRenewables) {
+            return getDieselFromNonRenewablesLevel2(nonRenewables);
+          }
+          if (typeof item.solar_thermal_mw === "number") {
+            return item.solar_thermal_mw;
+          }
+          return 0;
+        }
+
+        // solar_thermal_mw is non-renewable diesel — do not use for other series
+        if (key === "solar_thermal" || key === "thermo") {
+          return 0;
+        }
+
         const directKey = `${key}_mw` as keyof typeof item;
         if (directKey in item && typeof item[directKey] === "number") {
           return item[directKey] as number;
         }
-        // Then try level2 object
+
         if (item.level2) {
-          if (key === "coal" && item.level2["Non-renewables"]?.coal) {
-            return item.level2["Non-renewables"].coal;
+          if (key === "coal") {
+            return item.level2["Non-renewables"]?.coal ?? 0;
           }
-          if (
-            key === "natural_gas" &&
-            item.level2["Non-renewables"]?.natural_gas
-          ) {
-            return item.level2["Non-renewables"].natural_gas;
+          if (key === "natural_gas") {
+            return item.level2["Non-renewables"]?.natural_gas ?? 0;
           }
-          if (key === "diesel" && item.level2["Non-renewables"]?.diesel) {
-            return item.level2["Non-renewables"].diesel;
+          if (key === "photoVoltaic") {
+            return item.level2.Renewables?.photoVoltaic ?? 0;
           }
-          if (
-            key === "photoVoltaic" &&
-            item.level2["Renewables"]?.photoVoltaic
-          ) {
-            return item.level2["Renewables"].photoVoltaic;
+          if (key === "biogas") {
+            return item.level2.Renewables?.biogas ?? 0;
           }
-          if (key === "biogas" && item.level2["Renewables"]?.biogas) {
-            return item.level2["Renewables"].biogas;
+          if (key === "wind") {
+            return item.level2.Renewables?.wind ?? 0;
           }
-          if (key === "wind" && item.level2["Renewables"]?.wind) {
-            return item.level2["Renewables"].wind;
+          if (key === "pv_storage") {
+            return item.level2.Renewables?.pv_storage ?? 0;
           }
-          if (
-            key === "solar_thermal" &&
-            item.level2["Renewables"]?.solar_thermal
-          ) {
-            return item.level2["Renewables"].solar_thermal;
+          if (key === "other") {
+            return item.level2.Other?.other ?? 0;
           }
-          if (key === "pv_storage" && item.level2["Renewables"]?.pv_storage) {
-            return item.level2["Renewables"].pv_storage;
-          }
-          if (key === "other" && item.level2["Other"]?.other) {
-            return item.level2["Other"].other;
-          }
-          if (
-            key === "pumped_storage" &&
-            item.level2["Other"]?.pumped_storage
-          ) {
-            return item.level2["Other"].pumped_storage;
+          if (key === "pumped_storage") {
+            return item.level2.Other?.pumped_storage ?? 0;
           }
         }
         return 0;
@@ -275,19 +298,6 @@ export default function HomePage() {
       }
       if (
         energyOverviewData.series.some(
-          (item) => getValue(item, "solar_thermal") > 0,
-        )
-      ) {
-        series.push({
-          name: "תרמו סולרי",
-          data: energyOverviewData.series.map((item) =>
-            getValue(item, "solar_thermal"),
-          ),
-          color: LEVEL2_HEBREW_COLORS["תרמו סולרי"],
-        });
-      }
-      if (
-        energyOverviewData.series.some(
           (item) => getValue(item, "pv_storage") > 0,
         )
       ) {
@@ -325,13 +335,6 @@ export default function HomePage() {
           color: LEVEL2_HEBREW_COLORS["אגירה שאובה"],
         });
       }
-
-      // Add total line
-      series.push({
-        name: 'סה"כ',
-        data: energyOverviewData.series.map((item) => item.total_mw || 0),
-        color: "#000000",
-      });
     } else {
       // Show level 1 only
       series.push(
@@ -374,13 +377,12 @@ export default function HomePage() {
             {/* Right side - Content */}
             <div className="max-w-2xl text-right md:p-[60px] p-6 md:pb-[30px]">
               <h1 className="md:text-[45px] text-3xl font-extrabold text-[#484C56] leading-tight">
-                כל החשמל במקום אחד
+                נתוני משק החשמל
               </h1>
               <div className="w-[46px] h-1 bg-[#276E4E] md:my-[18px] my-3 mr-0"></div>
 
               <p className="md:text-xl text-base text-slate-700 leading-relaxed mb-12 max-w-lg mr-0">
-                מצב החשמל הלאומי בזמן אמת. קבלו נתונים עדכניים ותובנות חדשות
-                בדרכנו לעולם ירוק יותר.{" "}
+                פלטפורמה מרכזית למעקב אחר משק החשמל בישראל: נתונים עדכניים, מגמות ותובנות לקידום מערכת חשמל מבוססת אנרגיה מתחדשת.
               </p>
 
               <div className="md:mt-20 mt-10">
@@ -737,6 +739,7 @@ export default function HomePage() {
                         {showMixTooltip && (
                           <div className="absolute top-full left-1/2 -translate-x-1/2 mb-2 z-50">
                             <TooltipInfo
+
                               content={
                                 <>
                                   <p>
@@ -745,9 +748,10 @@ export default function HomePage() {
                                       href="https://www.noga-iso.co.il/systemoperationunit/piechartspage/"
                                       target="_blank"
                                       rel="noopener noreferrer"
+                                      dir="ltr"
                                       className="whitespace-nowrap"
                                     >
-                                      noga-iso.co.il
+                                      https://www.noga-iso.co.il/systemoperationunit/piechartspage/
                                     </a>
                                   </p>
                                   <p>
@@ -800,6 +804,7 @@ export default function HomePage() {
                 <div className="flex items-center gap-2 flex-wrap mb-4">
                   <span className="text-sm text-slate-600">סינון לפי:</span>
                   <DateRangePicker
+                    value={toDateRangePickerValue(startEndMixDate)}
                     onDateRangeChange={handleMixDateRangeChange}
                     defaultPreset="last7Days"
                   />
@@ -821,7 +826,7 @@ export default function HomePage() {
                     </div>
                   ) : energyMixData ? (
                     <EnergyMixPieChart
-                      key={`energy-mix-${showMixLevel2 ? "nested" : "single"}`}
+                      key={`energy-mix-${startEndMixDate.start}-${startEndMixDate.end}-${showMixLevel2 ? "nested" : "single"}`}
                       energyMixData={energyMixData}
                       height={HOME_CHART_HEIGHT}
                       showLevel2={showMixLevel2}
@@ -886,10 +891,10 @@ export default function HomePage() {
                                       href="https://www.noga-iso.co.il/systemoperationunit/piechartspage/"
                                       target="_blank"
                                       rel="noopener noreferrer"
+                                      dir="ltr"
                                       className="whitespace-nowrap"
                                     >
-                                      noga-iso.co.il
-                                    </a>
+                                      https://www.noga-iso.co.il/systemoperationunit/piechartspage/                                    </a>
                                   </p>
                                   <p>
                                     הנתונים הומרו ל-MWh, והם מתעדכנים מעת לעת.
@@ -941,6 +946,7 @@ export default function HomePage() {
                 <div className="flex items-center gap-2 flex-wrap mb-4">
                   <span className="text-sm text-slate-600">סינון לפי:</span>
                   <DateRangePicker
+                    value={toDateRangePickerValue(startEndOverviewDate)}
                     onDateRangeChange={handleOverviewDateRangeChange}
                     onPresetChange={setOverviewSelectedPreset}
                     defaultPreset="last7Days"

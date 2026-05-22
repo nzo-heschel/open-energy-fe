@@ -1,6 +1,7 @@
 'use client';
 
 import { ENERGY_MIX_FIGMA_FALLBACK, LEVEL1_COLORS, LEVEL2_COLORS } from '@/lib/colors';
+import { normalizeFossilLevel2Source } from '@/lib/energyMixFossilDiesel';
 import type { EnergyMixResponse, EnergyOverviewResponse } from '@/types/dto';
 import { ECElementEvent, ECharts } from 'echarts';
 import ReactECharts from 'echarts-for-react';
@@ -9,16 +10,46 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 // Translation map for level 2 energy source names (all keys in lowercase)
 const level2NameTranslations: Record<string, string> = {
   'photovoltaic': 'פוטו וולטאי',
+  'photo_voltaic': 'פוטו וולטאי',
+  'photovoltaics': 'פוטו וולטאי',
   'biogas': 'ביו גז',
   'wind': 'רוח',
   'solar_thermal': 'תרמו סולרי',
   'solar': 'תרמו סולרי',
+  'thermo': 'תרמו סולרי',
   'pv_storage': 'פוטו וולטאי משולב אגירה',
   'coal': 'פחם',
   'natural_gas': 'גז טבעי',
   'diesel': 'סולר',
+  'fuel_oil': 'מזוט',
   'other': 'אחר',
   'pumped_storage': 'אגירה שאובה'
+};
+
+type Level2Item = { name: string; value: number; color: string; parentName: string };
+
+const FOSSIL_PARENT = 'אנרגיה פוסילית';
+const RENEWABLE_PARENT = 'אנרגיה מתחדשת';
+const OTHER_PARENT = 'אחר';
+
+const appendLevel2Entries = (
+  source: Record<string, number> | undefined,
+  parentName: string,
+  target: Level2Item[]
+) => {
+  if (!source) return;
+  Object.entries(source).forEach(([key, value]) => {
+    const numValue = typeof value === 'number' ? value : 0;
+    if (numValue > 0) {
+      const normalizedKey = normalizeKey(key);
+      target.push({
+        name: level2NameTranslations[normalizedKey] || key,
+        value: numValue,
+        color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK,
+        parentName,
+      });
+    }
+  });
 };
 
 // Helper function to normalize keys for lookup (lowercase, replace spaces with underscores)
@@ -76,156 +107,29 @@ export default function EnergyMixPieChart({
     ];
   }, [energyMixData]);
 
-  // Transform level 2 data
+  // Transform level 2 data (parentName ties each slice to its level-1 ring segment)
   const level2Data = useMemo(() => {
     if (!energyMixData?.level2) {
-      return [];
+      return [] as Level2Item[];
     }
 
-    const level2DataArray: Array<{ name: string; value: number; color: string }> = [];
+    const level2DataArray: Level2Item[] = [];
+    const { level2 } = energyMixData;
+    const categories = (energyMixData as EnergyMixResponse).categories;
 
-    // Check if it's EnergyMixResponse format (fossil_energy, renewable_energy, other)
-    if ('fossil_energy' in energyMixData.level2) {
-      // Transform fossil_energy
-      if (energyMixData.level2.fossil_energy) {
-        const fossilEnergy = energyMixData.level2.fossil_energy;
-        Object.entries(fossilEnergy).forEach(([key, value]) => {
-          if (value && value > 0) {
-            const normalizedKey = normalizeKey(key);
-            level2DataArray.push({
-              name: level2NameTranslations[normalizedKey] || key,
-              value: value,
-              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
-            });
-          }
-        });
-      }
-
-      // Transform renewable_energy
-      if (energyMixData.level2.renewable_energy) {
-        const renewableEnergy = energyMixData.level2.renewable_energy;
-        Object.entries(renewableEnergy).forEach(([key, value]) => {
-          if (value && value > 0) {
-            const normalizedKey = normalizeKey(key);
-            level2DataArray.push({
-              name: level2NameTranslations[normalizedKey] || key,
-              value: value,
-              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
-            });
-          }
-        });
-      }
-
-      // Transform other
-      if (energyMixData.level2.other) {
-        const other = energyMixData.level2.other;
-        Object.entries(other).forEach(([key, value]) => {
-          if (value && value > 0) {
-            const normalizedKey = normalizeKey(key);
-            level2DataArray.push({
-              name: level2NameTranslations[normalizedKey] || key,
-              value: value,
-              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
-            });
-          }
-        });
-      }
-    } else if ('non_renewables' in energyMixData.level2) {
-      // Format with non_renewables, renewables, other (lowercase with underscores)
-      const level2Any = energyMixData.level2 as any;
-      // Transform non_renewables
-      if (level2Any.non_renewables) {
-        const nonRenewables = level2Any.non_renewables;
-        Object.entries(nonRenewables).forEach(([key, value]) => {
-          const numValue = typeof value === 'number' ? value : 0;
-          if (numValue > 0) {
-            const normalizedKey = normalizeKey(key);
-            level2DataArray.push({
-              name: level2NameTranslations[normalizedKey] || key,
-              value: numValue,
-              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
-            });
-          }
-        });
-      }
-
-      // Transform renewables
-      if (level2Any.renewables) {
-        const renewables = level2Any.renewables;
-        Object.entries(renewables).forEach(([key, value]) => {
-          const numValue = typeof value === 'number' ? value : 0;
-          if (numValue > 0) {
-            const normalizedKey = normalizeKey(key);
-            level2DataArray.push({
-              name: level2NameTranslations[normalizedKey] || key,
-              value: numValue,
-              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
-            });
-          }
-        });
-      }
-
-      // Transform other
-      if (level2Any.other) {
-        const other = level2Any.other;
-        Object.entries(other).forEach(([key, value]) => {
-          const numValue = typeof value === 'number' ? value : 0;
-          if (numValue > 0) {
-            const normalizedKey = normalizeKey(key);
-            level2DataArray.push({
-              name: level2NameTranslations[normalizedKey] || key,
-              value: numValue,
-              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
-            });
-          }
-        });
-      }
+    if ('fossil_energy' in level2) {
+      appendLevel2Entries(normalizeFossilLevel2Source(level2.fossil_energy, categories), FOSSIL_PARENT, level2DataArray);
+      appendLevel2Entries(level2.renewable_energy, RENEWABLE_PARENT, level2DataArray);
+      appendLevel2Entries(level2.other, OTHER_PARENT, level2DataArray);
+    } else if ('non_renewables' in level2) {
+      const level2Any = level2 as Record<string, Record<string, number>>;
+      appendLevel2Entries(normalizeFossilLevel2Source(level2Any.non_renewables, categories), FOSSIL_PARENT, level2DataArray);
+      appendLevel2Entries(level2Any.renewables, RENEWABLE_PARENT, level2DataArray);
+      appendLevel2Entries(level2Any.other, OTHER_PARENT, level2DataArray);
     } else {
-      // EnergyOverviewResponse format (Non-renewables, Renewables, Other)
-      // Transform Non-renewables
-      if (energyMixData.level2['Non-renewables']) {
-        const nonRenewables = energyMixData.level2['Non-renewables'];
-        Object.entries(nonRenewables).forEach(([key, value]) => {
-          if (value && value > 0) {
-            const normalizedKey = normalizeKey(key);
-            level2DataArray.push({
-              name: level2NameTranslations[normalizedKey] || key,
-              value: value,
-              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
-            });
-          }
-        });
-      }
-
-      // Transform Renewables
-      if (energyMixData.level2.Renewables) {
-        const renewables = energyMixData.level2.Renewables;
-        Object.entries(renewables).forEach(([key, value]) => {
-          if (value && value > 0) {
-            const normalizedKey = normalizeKey(key);
-            level2DataArray.push({
-              name: level2NameTranslations[normalizedKey] || key,
-              value: value,
-              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
-            });
-          }
-        });
-      }
-
-      // Transform Other
-      if (energyMixData.level2.Other) {
-        const other = energyMixData.level2.Other;
-        Object.entries(other).forEach(([key, value]) => {
-          if (value && value > 0) {
-            const normalizedKey = normalizeKey(key);
-            level2DataArray.push({
-              name: level2NameTranslations[normalizedKey] || key,
-              value: value,
-              color: LEVEL2_COLORS[normalizedKey] || ENERGY_MIX_FIGMA_FALLBACK
-            });
-          }
-        });
-      }
+      appendLevel2Entries(normalizeFossilLevel2Source(level2['Non-renewables'], categories), FOSSIL_PARENT, level2DataArray);
+      appendLevel2Entries(level2.Renewables, RENEWABLE_PARENT, level2DataArray);
+      appendLevel2Entries(level2.Other, OTHER_PARENT, level2DataArray);
     }
 
     return level2DataArray;
@@ -459,37 +363,20 @@ export default function EnergyMixPieChart({
     };
   }, [level1Data, level2Data, showLevel2, isMobile, isMdPlus, hoveredItem]);
 
-  // Group level2 items by their parent category
+  // Group level2 items by their parent level-1 category
   const groupedLevel2Data = useMemo(() => {
     if (!showLevel2 || !level2Data || level2Data.length === 0) {
       return null;
     }
 
-    // Map Hebrew names to categories
-    const categoryMap: Record<string, { name: string; color: string }> = {
-      'פחם': { name: "אנרגיה פוסילית", color: LEVEL1_COLORS['אנרגיות פוסיליות'] },
-      'גז טבעי': { name: 'אנרגיות פוסיליות', color: LEVEL1_COLORS['אנרגיות פוסיליות'] },
-      'סולר': { name: 'אנרגיות פוסיליות', color: LEVEL1_COLORS['אנרגיות פוסיליות'] },
-      'פוטו וולטאי': { name: "אנרגיה מתחדשת", color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
-      'ביו גז': { name: "אנרגיה מתחדשת", color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
-      'רוח': { name: "אנרגיה מתחדשת", color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
-      'תרמו סולרי': { name: "אנרגיה מתחדשת", color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
-      'פוטו וולטאי משולב אגירה': { name: "אנרגיה מתחדשת", color: LEVEL1_COLORS['אנרגיות מתחדשות'] },
-      'אחר': { name: 'אחר', color: LEVEL1_COLORS['אחר'] },
-      'אגירה שאובה': { name: 'אחר', color: LEVEL1_COLORS['אחר'] }
-    };
-
-    const grouped: Record<string, typeof level2Data> = {};
-
+    const grouped: Record<string, Level2Item[]> = {};
     level2Data.forEach(item => {
-      const category = categoryMap[item.name]?.name || 'אחר';
-      if (!grouped[category]) {
-        grouped[category] = [];
+      if (!grouped[item.parentName]) {
+        grouped[item.parentName] = [];
       }
-      grouped[category].push(item);
+      grouped[item.parentName].push(item);
     });
 
-    // Return in the order of level1Data
     return level1Data.map(category => ({
       category,
       items: grouped[category.name] || []

@@ -7,7 +7,7 @@ import download from "@/public/images/download_2.png";
 import { format, parseISO, subDays } from "date-fns";
 import { he } from "date-fns/locale";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -36,23 +36,38 @@ const formatTooltipNumber = (value: number, decimals: number) =>
     maximumFractionDigits: decimals,
   });
 
+const getLast7DaysDateRange = () => {
+  const today = new Date();
+  return {
+    startDate: format(subDays(today, 6), "yyyy-MM-dd"),
+    endDate: format(today, "yyyy-MM-dd"),
+  };
+};
+
+const toDateRangePickerValue = (range: {
+  startDate: string;
+  endDate: string;
+}): [Date, Date] => [parseISO(range.startDate), parseISO(range.endDate)];
+
 const CO2EmissionsChart = () => {
   const [hovered, setHovered] = useState<string | null>(null);
   const [active, setActive] = useState({ co2: true, savings: true });
-  const [dateRange, setDateRange] = useState(() => {
-    const endDate = new Date();
-    const startDate = subDays(endDate, 7);
-    return {
-      startDate: format(startDate, "yyyy-MM-dd"),
-      endDate: format(endDate, "yyyy-MM-dd"),
-    };
-  });
+  const [dateRange, setDateRange] = useState(getLast7DaysDateRange);
 
   // Fetch data from API
   const { data: totalVsRatioData, isLoading } = useCO2TotalVsRatio(
     dateRange.startDate,
     dateRange.endDate,
   );
+
+  useEffect(() => {
+    if (!totalVsRatioData?.start_date || !totalVsRatioData?.end_date) return;
+    const { start_date, end_date } = totalVsRatioData;
+    setDateRange((prev) => {
+      if (prev.startDate === start_date && prev.endDate === end_date) return prev;
+      return { startDate: start_date, endDate: end_date };
+    });
+  }, [totalVsRatioData?.start_date, totalVsRatioData?.end_date]);
 
   const toggle = (key: keyof typeof active) =>
     setActive((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -209,6 +224,7 @@ const CO2EmissionsChart = () => {
         <div className="flex items-center gap-2">
           <span className="text-sm text-slate-600"> סינון לפי:</span>
           <DateRangePicker
+            value={toDateRangePickerValue(dateRange)}
             onDateRangeChange={handleDateRangeChange}
             defaultPreset="last7Days"
           />
@@ -224,6 +240,7 @@ const CO2EmissionsChart = () => {
           <>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
+                key={`co2-emissions-${dateRange.startDate}-${dateRange.endDate}`}
                 data={chartData}
                 margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
               >

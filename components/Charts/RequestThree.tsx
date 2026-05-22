@@ -10,6 +10,7 @@ import download from "@/public/images/download_2.png";
 import api from "@/public/images/API.png";
 import {
   useResponseCapacityByDistrict,
+  buildExportDateRangeSuffix,
   exportResponseCapacityByDistrict,
   ResponseCapacityByDistrictFilters,
 } from "@/lib/api";
@@ -405,11 +406,20 @@ export default function RequestThree() {
     return activeSeries[key] ? 1 : 0.3;
   };
 
+  const exportDateRange = useMemo(
+    () =>
+      buildExportDateRangeSuffix({
+        year: singleSelectedYear,
+        years: selectedYears.length > 0 ? selectedYears : undefined,
+      }),
+    [singleSelectedYear, selectedYears],
+  );
+
   // Handle export
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      await exportResponseCapacityByDistrict(filters);
+      await exportResponseCapacityByDistrict(filters, exportDateRange);
     } catch (err) {
       console.error("Export failed:", err);
     } finally {
@@ -424,7 +434,7 @@ export default function RequestThree() {
           <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
             תשובות מחלק לפי מחוז
             <div
-              className="relative"
+              className="relative cursor-help"
               onMouseEnter={() => setShowTooltip(true)}
               onMouseLeave={() => setShowTooltip(false)}
               role="tooltip"
@@ -463,7 +473,7 @@ export default function RequestThree() {
                             rel="noopener noreferrer"
                             className="whitespace-nowrap"
                           >
-                            gov.il
+                            https://www.gov.il/he/pages/bipua2024
                           </a>
                         </p>
                         <p>הנתונים מתעדכנים מעת לעת.</p>

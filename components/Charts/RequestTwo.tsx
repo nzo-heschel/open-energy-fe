@@ -10,6 +10,7 @@ import TooltipInfo from "../TooltipInfo";
 import YearMultiSelectDropdown from "../ui/YearMultiSelectDropdown";
 import StackedComposedChart from "./StackedComposedChart";
 import {
+  buildExportDateRangeSuffix,
   useResponseCapacityBySize,
   exportResponseCapacityBySize,
   ResponseCapacityBySizeFilters,
@@ -169,9 +170,11 @@ export default function RequestTwo() {
   const singleSelectedYear =
     selectedYears.length === 1 ? Number(selectedYears[0]) : undefined;
 
-  // Build filters
   // API currently supports a single year filter. We fetch all and filter client-side for multi-select.
-  const filters: ResponseCapacityBySizeFilters = useMemo(() => ({}), []);
+  const filters: ResponseCapacityBySizeFilters = useMemo(
+    () => (singleSelectedYear ? { year: singleSelectedYear } : {}),
+    [singleSelectedYear],
+  );
 
   // Fetch data from API
   const {
@@ -260,6 +263,16 @@ export default function RequestTwo() {
         .map((item: any) => String(item.year))
         .sort((a, b) => Number(b) - Number(a)),
     [allYearData],
+  );
+
+  const exportDateRange = useMemo(
+    () =>
+      buildExportDateRangeSuffix({
+        year: singleSelectedYear,
+        years:
+          selectedYears.length > 0 ? selectedYears : availableYearOptions,
+      }),
+    [singleSelectedYear, selectedYears, availableYearOptions],
   );
 
   const chartData = useMemo(() => {
@@ -357,7 +370,7 @@ export default function RequestTwo() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      await exportResponseCapacityBySize(filters);
+      await exportResponseCapacityBySize(filters, exportDateRange);
     } catch (err) {
       console.error("Export failed:", err);
     } finally {
@@ -373,7 +386,7 @@ export default function RequestTwo() {
           <h2 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
             תשובות חיוביות לפי גודל
             <div
-              className="relative"
+              className="relative cursor-help"
               onMouseEnter={() => setShowTooltip(true)}
               onMouseLeave={() => setShowTooltip(false)}
               role="tooltip"
@@ -412,7 +425,7 @@ export default function RequestTwo() {
                             rel="noopener noreferrer"
                             className="whitespace-nowrap"
                           >
-                            gov.il
+                            https://www.gov.il/he/pages/bipua2024
                           </a>
                         </p>
                         <p>הנתונים מתעדכנים מעת לעת.</p>

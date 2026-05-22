@@ -6,7 +6,7 @@ import download from '@/public/images/download_2.png'
 import api from '@/public/images/API.png'
 import DashboardCharts from './Charts/DashboardChart'
 import TooltipInfo from './TooltipInfo'
-import { useSwitchingRequests, exportSwitchingRequests } from '@/lib/api'
+import { useSwitchingRequests, exportSwitchingRequests, buildExportDateRangeSuffix } from '@/lib/api'
 
 const DashChart = () => {
     //tooltips
@@ -35,7 +35,15 @@ const DashChart = () => {
     const handleExport = async () => {
         try {
             const year = selectedYear !== 'all' ? selectedYear : undefined;
-            await exportSwitchingRequests(year, customerType);
+            const dateRange = buildExportDateRangeSuffix({
+                year,
+                years: year ? undefined : availableYears.map(String),
+                fallbackStartYear: switchingData?.start_year,
+                fallbackEndYear: availableYears.length
+                    ? Math.max(...availableYears)
+                    : undefined,
+            });
+            await exportSwitchingRequests(year, customerType, dateRange);
         } catch (error) {
             console.error('Failed to export data:', error);
             // You could add a toast notification here
@@ -73,7 +81,7 @@ const DashChart = () => {
                                                                 rel="noopener noreferrer"
                                                                 className="whitespace-nowrap"
                                                             >
-                                                                gov.il
+                                                                https://www.gov.il/he/pages/bi_olam_haspaka
                                                             </a>
                                                         </p>
                                                         <p>הנתונים מתעדכנים מעת לעת.</p>

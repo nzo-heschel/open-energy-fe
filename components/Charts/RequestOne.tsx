@@ -10,6 +10,7 @@ import StackedComposedChart from "./StackedComposedChart";
 import TooltipInfo from "../TooltipInfo";
 import {
   useResponseCapacityByPeriod,
+  buildExportDateRangeSuffix,
   exportResponseCapacityByPeriod,
   ResponseCapacityByPeriodFilters,
 } from "@/lib/api";
@@ -458,9 +459,14 @@ export default function RequestOne() {
 
   const [hoveredSeries, setHoveredSeries] = useState<string | null>(null);
 
-  // Build filters
+  const singleSelectedYear =
+    selectedYears.length === 1 ? Number(selectedYears[0]) : undefined;
+
   // API supports only a single year filter. For multi-select, we fetch all years and filter client-side.
-  const filters: ResponseCapacityByPeriodFilters = useMemo(() => ({}), []);
+  const filters: ResponseCapacityByPeriodFilters = useMemo(
+    () => (singleSelectedYear ? { year: singleSelectedYear } : {}),
+    [singleSelectedYear],
+  );
 
   // Fetch data from API
   const {
@@ -477,10 +483,15 @@ export default function RequestOne() {
     return Array.from(new Set(years)).sort((a, b) => Number(b) - Number(a));
   }, [apiData]);
 
-  console.log(apiData);
-
-  const singleSelectedYear =
-    selectedYears.length === 1 ? Number(selectedYears[0]) : undefined;
+  const exportDateRange = useMemo(
+    () =>
+      buildExportDateRangeSuffix({
+        year: singleSelectedYear,
+        years:
+          selectedYears.length > 0 ? selectedYears : availableYearOptions,
+      }),
+    [singleSelectedYear, selectedYears, availableYearOptions],
+  );
 
   // Transform API data for chart
   const chartData = useMemo(() => {
@@ -603,7 +614,7 @@ export default function RequestOne() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      await exportResponseCapacityByPeriod(filters);
+      await exportResponseCapacityByPeriod(filters, exportDateRange);
     } catch (err) {
       console.error("Export failed:", err);
     } finally {
@@ -697,7 +708,7 @@ export default function RequestOne() {
                             rel="noopener noreferrer"
                             className="whitespace-nowrap"
                           >
-                            gov.il
+                            https://www.gov.il/he/pages/bipua2024
                           </a>
                         </p>
                         <p>

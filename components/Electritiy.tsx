@@ -6,26 +6,33 @@ import {
 } from "@/lib/api";
 import api from "@/public/images/API.png";
 import download from "@/public/images/download_2.png";
-import { endOfYear, format, startOfYear } from "date-fns";
+import { format, parseISO, subDays } from "date-fns";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ElectricityGraphWithTabs from "./Graph/ElectricityGraph";
 import TooltipInfo from "./TooltipInfo";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import DateRangePicker from "./ui/DateRangePicker";
 
+const getLast7DaysDateRange = () => {
+  const today = new Date();
+  return {
+    start: format(subDays(today, 6), "yyyy-MM-dd"),
+    end: format(today, "yyyy-MM-dd"),
+  };
+};
+
+const toDateRangePickerValue = (range: {
+  start: string;
+  end: string;
+}): [Date, Date] => [parseISO(range.start), parseISO(range.end)];
+
 const Electricity = () => {
   //tooltips
   const [showTooltip, setShowTooltip] = useState(false);
 
-  const [selectedPreset, setSelectedPreset] = useState<string>("שנה זו");
-  const [startEndDate, setStartEndDate] = useState(() => {
-    const today = new Date();
-    return {
-      start: format(startOfYear(today), "yyyy-MM-dd"),
-      end: format(endOfYear(today), "yyyy-MM-dd"),
-    };
-  });
+  const [selectedPreset, setSelectedPreset] = useState<string>("7 ימים אחרונים");
+  const [startEndDate, setStartEndDate] = useState(getLast7DaysDateRange);
 
   const handleDateRangeChange = (startDate: string, endDate: string) => {
     setStartEndDate({
@@ -55,6 +62,15 @@ const Electricity = () => {
     isLoading,
     error,
   } = useSMPProductionVsMarginalPrice(startEndDate.start, startEndDate.end);
+
+  useEffect(() => {
+    if (!smpProductionData?.start_date || !smpProductionData?.end_date) return;
+    const { start_date, end_date } = smpProductionData;
+    setStartEndDate((prev) => {
+      if (prev.start === start_date && prev.end === end_date) return prev;
+      return { start: start_date, end: end_date };
+    });
+  }, [smpProductionData?.start_date, smpProductionData?.end_date]);
 
   return (
     <div className="flex flex-col md:gap-[30px] gap-5">
@@ -98,9 +114,10 @@ const Electricity = () => {
                                 href="https://www.noga-iso.co.il/trade/smp/"
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                dir="ltr"
                                 className="whitespace-nowrap"
                               >
-                                noga-iso.co.il
+                                https://www.noga-iso.co.il/trade/smp/
                               </a>
                             </p>
                             <p>
@@ -154,6 +171,7 @@ const Electricity = () => {
             <div className="flex items-center gap-2">
               <span className="text-sm text-slate-600">מיון לפי:</span>
               <DateRangePicker
+                value={toDateRangePickerValue(startEndDate)}
                 onDateRangeChange={handleDateRangeChange}
                 onPresetChange={setSelectedPreset}
                 defaultPreset="last7Days"
@@ -161,6 +179,7 @@ const Electricity = () => {
             </div>
           </div>
           <ElectricityGraphWithTabs
+            key={`electricity-${startEndDate.start}-${startEndDate.end}`}
             data={smpProductionData}
             isLoading={isLoading}
             error={error}

@@ -3,9 +3,9 @@
 import { exportHeatLoadVsGeneration, useHeatLoadVsGeneration } from "@/lib/api";
 import apiIcon from "@/public/images/API.png";
 import downloadIcon from "@/public/images/download_2.png";
-import { format, subDays } from "date-fns";
+import { format, parseISO, subDays } from "date-fns";
 import Image from "next/image";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -24,18 +24,24 @@ type DataPoint = {
   production: number; // MWh (right axis)
 };
 
+const getLastWeekDateRange = () => {
+  const today = new Date();
+  return {
+    startDate: format(subDays(today, 6), "yyyy-MM-dd"),
+    endDate: format(today, "yyyy-MM-dd"),
+  };
+};
+
+const toDateRangePickerValue = (range: {
+  startDate: string;
+  endDate: string;
+}): [Date, Date] => [parseISO(range.startDate), parseISO(range.endDate)];
+
 const HeatVsProductionChart: React.FC = () => {
   const [active, setActive] = useState({ heatLoad: true, production: true });
   const [hovered, setHovered] = useState<string | null>(null);
   const [showInfo, setShowInfo] = useState(false);
-  const [dateRange, setDateRange] = useState(() => {
-    const endDate = new Date();
-    const startDate = subDays(endDate, 365); // Default to last year
-    return {
-      startDate: format(startDate, "yyyy-MM-dd"),
-      endDate: format(endDate, "yyyy-MM-dd"),
-    };
-  });
+  const [dateRange, setDateRange] = useState(getLastWeekDateRange);
 
   // Determine view based on date range
   const view = useMemo<"month" | "year" | "custom">(() => {
@@ -59,6 +65,15 @@ const HeatVsProductionChart: React.FC = () => {
     dateRange.endDate,
     view,
   );
+
+  useEffect(() => {
+    if (!data?.start_date || !data?.end_date) return;
+    const { start_date, end_date } = data;
+    setDateRange((prev) => {
+      if (prev.startDate === start_date && prev.endDate === end_date) return prev;
+      return { startDate: start_date, endDate: end_date };
+    });
+  }, [data?.start_date, data?.end_date]);
 
   // Transform API data to chart format
   const currentData = useMemo<DataPoint[]>(() => {
@@ -109,8 +124,6 @@ const HeatVsProductionChart: React.FC = () => {
     if (!hovered) return 1;
     return hovered === key ? 1 : 0.6;
   };
-
-  console.log(currentData);
 
   // custom tooltip
   const CustomTooltip = ({ active: isActive, payload, label }: any) => {
@@ -226,8 +239,9 @@ const HeatVsProductionChart: React.FC = () => {
           <div className="flex items-center gap-3">
             <span className="text-sm text-slate-600">סינון לפי:</span>
             <DateRangePicker
+              value={toDateRangePickerValue(dateRange)}
               onDateRangeChange={handleDateRangeChange}
-              defaultPreset="lastYear"
+              defaultPreset="last7Days"
             />
           </div>
         </div>
@@ -275,6 +289,7 @@ const HeatVsProductionChart: React.FC = () => {
           <>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
+                key={`heat-vs-production-${dateRange.startDate}-${dateRange.endDate}`}
                 data={currentData}
                 margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
               >

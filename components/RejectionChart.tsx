@@ -1,4 +1,4 @@
-import { exportSwitchingRequests, useSwitchingRequests } from '@/lib/api'
+import { exportSwitchingRequests, useSwitchingRequests, buildExportDateRangeSuffix } from '@/lib/api'
 import api from '@/public/images/API.png'
 import download from '@/public/images/download_2.png'
 import { ChevronDown } from 'lucide-react'
@@ -72,10 +72,20 @@ const RejectionChart = () => {
     );
 
     // Handle export
+    const availableYears = initialData?.available_years ?? switchingData?.available_years ?? [];
+
     const handleExport = async () => {
         try {
             const year = selectedYear !== 'all' ? selectedYear : undefined;
-            await exportSwitchingRequests(year, customerType);
+            const dateRange = buildExportDateRangeSuffix({
+                year,
+                years: year ? undefined : availableYears.map(String),
+                fallbackStartYear: initialData?.start_year ?? switchingData?.start_year,
+                fallbackEndYear: availableYears.length
+                    ? Math.max(...availableYears)
+                    : undefined,
+            });
+            await exportSwitchingRequests(year, customerType, dateRange);
         } catch (error) {
             console.error('Failed to export data:', error);
         }
@@ -126,7 +136,7 @@ const RejectionChart = () => {
                                                                 rel="noopener noreferrer"
                                                                 className="whitespace-nowrap"
                                                             >
-                                                                gov.il
+                                                                https://www.gov.il/he/pages/bi_olam_haspaka
                                                             </a>
                                                         </p>
                                                         <p>הנתונים מתעדכנים מעת לעת.</p>

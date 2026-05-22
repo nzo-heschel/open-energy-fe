@@ -363,7 +363,7 @@ export default function RenewableChart() {
             style={{ backgroundColor: "#1E8025" }}
           />
           <span className="md:text-sm text-xs text-gray-800">
-            לפי ייצור בפועל
+            ייצור בפועל
           </span>
         </div>
 
@@ -381,7 +381,7 @@ export default function RenewableChart() {
           <span
             className={`md:text-sm text-xs ${activePredictions.ministry ? "text-gray-800" : "text-gray-400"}`}
           >
-            לפי יעד משרד האנרגיה
+            יעד ממשלתי
           </span>
         </div>
 
@@ -535,7 +535,7 @@ export default function RenewableChart() {
               transformOrigin: "left center",
             }}
           >
-            צפי ריאלי לפי יצור בפועל
+            צפי ריאלי ייצור בפועל
           </div>
           {activePredictions.nzo && (
             <div
@@ -562,7 +562,7 @@ export default function RenewableChart() {
                 transformOrigin: "left center",
               }}
             >
-              יעד אנרגיות מתחדשות לפי משרד האנרגיה
+              יעד אנרגיות מתחדשות יעד ממשלתי
             </div>
           )}
         </div>

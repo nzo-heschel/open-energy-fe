@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  buildExportDateRangeSuffix,
   exportInstalledCapacityCumulative,
   exportInstalledCapacityGrowth,
   InstalledCapacityFilters,
@@ -168,10 +169,25 @@ export default function InstalledCapacityOne() {
   const isLoading = tab === 1 ? cumulativeLoading : growthLoading;
   const error = tab === 1 ? cumulativeError : growthError;
 
+  const exportDateRange = useMemo(() => {
+    const seriesYears = (cumulativeData?.series ?? growthData?.series ?? [])
+      .map((item) => {
+        const period = 'period' in item ? item.period : String((item as { year: number }).year);
+        return period.split('-')[0];
+      })
+      .filter(Boolean);
+    const uniqueYears = Array.from(new Set(seriesYears)).sort(
+      (a, b) => Number(a) - Number(b),
+    );
+    return buildExportDateRangeSuffix({
+      years: uniqueYears.length > 0 ? uniqueYears : undefined,
+    });
+  }, [cumulativeData, growthData]);
+
   const handleExport = async () => {
     try {
       if (tab === 1) {
-        await exportInstalledCapacityCumulative(filters);
+        await exportInstalledCapacityCumulative(filters, exportDateRange);
       } else {
         await exportInstalledCapacityGrowth(filters);
       }
@@ -446,7 +462,7 @@ export default function InstalledCapacityOne() {
                             rel="noopener noreferrer"
                             className="whitespace-nowrap"
                           >
-                            gov.il
+                            https://www.gov.il/he/pages/bipua2024
                           </a>
                         </p>
                         <p>הנתונים מתעדכנים מעת לעת.</p>

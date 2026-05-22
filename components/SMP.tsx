@@ -3,23 +3,30 @@
 import { useSMP, exportSMP } from "@/lib/api";
 import api from "@/public/images/API.png";
 import download from "@/public/images/download_2.png";
-import { endOfYear, format, startOfYear } from "date-fns";
+import { format, parseISO, subDays } from "date-fns";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SMPGraph from "./Graph/SMPGraph";
 import TooltipInfo from "./TooltipInfo";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import DateRangePicker from "./ui/DateRangePicker";
 
+const getLast7DaysDateRange = () => {
+  const today = new Date();
+  return {
+    start: format(subDays(today, 6), "yyyy-MM-dd"),
+    end: format(today, "yyyy-MM-dd"),
+  };
+};
+
+const toDateRangePickerValue = (range: {
+  start: string;
+  end: string;
+}): [Date, Date] => [parseISO(range.start), parseISO(range.end)];
+
 const SMP = () => {
-  const [selectedPreset, setSelectedPreset] = useState<string>("שנה זו");
-  const [startEndDate, setStartEndDate] = useState(() => {
-    const today = new Date();
-    return {
-      start: format(startOfYear(today), "yyyy-MM-dd"),
-      end: format(endOfYear(today), "yyyy-MM-dd"),
-    };
-  });
+  const [selectedPreset, setSelectedPreset] = useState<string>("7 ימים אחרונים");
+  const [startEndDate, setStartEndDate] = useState(getLast7DaysDateRange);
   //tooltips
   const [showTooltip, setShowTooltip] = useState(false);
   const {
@@ -27,6 +34,15 @@ const SMP = () => {
     isLoading,
     error,
   } = useSMP(startEndDate.start, startEndDate.end);
+
+  useEffect(() => {
+    if (!smpData?.start_date || !smpData?.end_date) return;
+    const { start_date, end_date } = smpData;
+    setStartEndDate((prev) => {
+      if (prev.start === start_date && prev.end === end_date) return prev;
+      return { start: start_date, end: end_date };
+    });
+  }, [smpData?.start_date, smpData?.end_date]);
 
   const handleDateRangeChange = (startDate: string, endDate: string) => {
     setStartEndDate({
@@ -99,9 +115,10 @@ const SMP = () => {
                                 href="https://www.noga-iso.co.il/trade/smp/"
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                dir="ltr"
                                 className="whitespace-nowrap"
                               >
-                                noga-iso.co.il
+                                https://www.noga-iso.co.il/trade/smp/
                               </a>
                             </p>
                             <p>
@@ -154,6 +171,7 @@ const SMP = () => {
             <div className="flex items-center gap-2">
               <span className="text-sm text-slate-600">מיון לפי:</span>
               <DateRangePicker
+                value={toDateRangePickerValue(startEndDate)}
                 onDateRangeChange={handleDateRangeChange}
                 onPresetChange={setSelectedPreset}
                 defaultPreset="last7Days"
@@ -170,6 +188,7 @@ const SMP = () => {
             </div>
           ) : smpData ? (
             <SMPGraph
+              key={`smp-${startEndDate.start}-${startEndDate.end}`}
               data={smpData}
               startDate={startEndDate.start}
               endDate={startEndDate.end}

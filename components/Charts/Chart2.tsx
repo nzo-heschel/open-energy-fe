@@ -353,10 +353,6 @@ export default function Chart2({
                   name: "אנרגיה מתחדשת",
                   color: LEVEL1_COLORS["אנרגיות מתחדשות"],
                 },
-                "תרמו סולרי": {
-                  name: "אנרגיה מתחדשת",
-                  color: LEVEL1_COLORS["אנרגיות מתחדשות"],
-                },
                 "פוטו וולטאי משולב אגירה": {
                   name: "אנרגיה מתחדשת",
                   color: LEVEL1_COLORS["אנרגיות מתחדשות"],
@@ -365,7 +361,6 @@ export default function Chart2({
                 "אגירה שאובה": { name: "אחר", color: LEVEL1_COLORS["אחר"] },
               };
 
-            // Group series by category
             const grouped: Record<string, typeof data.series> = {};
             data.series.forEach((series) => {
               const category = categoryMap[series.name]?.name || "אחר";
@@ -375,12 +370,10 @@ export default function Chart2({
               grouped[category].push(series);
             });
 
-            // Order: Fossil, Renewable, Other, Total
             const categoryOrder = [
               "אנרגיה פוסילית",
               "אנרגיה מתחדשת",
               "אחר",
-              'סה"כ',
             ];
             const orderedGroups = categoryOrder
               .filter((cat) => grouped[cat] && grouped[cat].length > 0)

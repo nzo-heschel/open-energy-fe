@@ -31,6 +31,13 @@ import type {
 } from '@/types/dto';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { differenceInDays, differenceInMonths } from 'date-fns';
+import {
+  buildExportDateRangeSuffix,
+  downloadBlob,
+  resolveExportFilename,
+} from '@/lib/exportDownload';
+
+export { buildExportDateRangeSuffix } from '@/lib/exportDownload';
 
 const API_BASE = 'https://api.open-energy.madebyomnis.com/';
 const INTERNAL_API_KEY = 'int_api_9f3c7e2a4b8d6c1f0a5e9d2b7c4a1e6f';
@@ -540,7 +547,11 @@ export const useSwitchingRequests = (customerType?: 'residential' | 'non_residen
 };
 
 //++ Export switching requests data
-export const exportSwitchingRequests = async (year?: string, customerType?: 'residential' | 'non_residential') => {
+export const exportSwitchingRequests = async (
+  year?: string,
+  customerType?: 'residential' | 'non_residential',
+  dateRange?: string,
+) => {
   const params = new URLSearchParams();
   if (year) {
     params.set('year', year);
@@ -548,6 +559,10 @@ export const exportSwitchingRequests = async (year?: string, customerType?: 'res
   if (customerType) {
     params.set('customer_type', customerType);
   }
+
+  const dateRangeSuffix =
+    dateRange ??
+    buildExportDateRangeSuffix({ year: year ?? 'all' });
 
   try {
     const url = params.toString()
@@ -564,34 +579,16 @@ export const exportSwitchingRequests = async (year?: string, customerType?: 'res
       throw new Error('Export failed');
     }
 
-    // Get the filename from Content-Disposition header or use a default
-    const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = params.toString() ? `switching_requests-${year}.xlsx` : 'switching_requests.xlsx'; // default filename
+    const defaultFilename = dateRangeSuffix
+      ? `switching_requests-${dateRangeSuffix}.xlsx`
+      : 'switching_requests.xlsx';
+    const filename = resolveExportFilename(
+      defaultFilename,
+      response.headers.get('Content-Disposition'),
+      dateRangeSuffix,
+    );
 
-    if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-      if (filenameMatch && filenameMatch[1]) {
-        filename = filenameMatch[1].replace(/['"]/g, '');
-      }
-    } else if (year) {
-      // Fallback: use year in filename if provided
-      filename = `switching_requests_${year}.xlsx`;
-    }
-
-    // Get the blob from response
-    const blob = await response.blob();
-
-    // Create a temporary URL and trigger download
-    const urlObject = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = urlObject;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-
-    // Cleanup
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(urlObject);
+    downloadBlob(await response.blob(), filename);
   } catch (error) {
     console.error('Export error:', error);
     throw error;
@@ -1312,6 +1309,12 @@ export const exportRenewablesPotentialByIndustry = async (
     params.set('year', year);
   }
 
+  const dateRangeSuffix = buildExportDateRangeSuffix({
+    startDate,
+    endDate,
+    year,
+  });
+
   try {
     const url = params.toString()
       ? `${API_BASE}api/v1/renewables/potential-by-industry/export?${params}`
@@ -1327,33 +1330,16 @@ export const exportRenewablesPotentialByIndustry = async (
       throw new Error('Export failed');
     }
 
-    // Get the filename from Content-Disposition header or use a default
-    const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = params.toString() ? `renewables-potential-by-industry-${year}.xlsx` : 'renewables-potential-by-industry.xlsx'; // default filename
+    const defaultFilename = dateRangeSuffix
+      ? `renewables-potential-by-industry-${dateRangeSuffix}.xlsx`
+      : 'renewables-potential-by-industry.xlsx';
+    const filename = resolveExportFilename(
+      defaultFilename,
+      response.headers.get('Content-Disposition'),
+      dateRangeSuffix,
+    );
 
-    if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-      if (filenameMatch && filenameMatch[1]) {
-        filename = filenameMatch[1].replace(/['"]/g, '');
-      }
-    } else if (year) {
-      filename = `renewables-potential-by-industry-${year}.xlsx`;
-    }
-
-    // Get the blob from response
-    const blob = await response.blob();
-
-    // Create a temporary URL and trigger download
-    const urlObject = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = urlObject;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-
-    // Cleanup
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(urlObject);
+    downloadBlob(await response.blob(), filename);
   } catch (error) {
     console.error('Export error:', error);
     throw error;
@@ -1399,7 +1385,10 @@ export const useInstalledCapacityCumulative = (filters?: InstalledCapacityFilter
 };
 
 //++ Export Installed Capacity Cumulative data
-export const exportInstalledCapacityCumulative = async (filters?: InstalledCapacityFilters) => {
+export const exportInstalledCapacityCumulative = async (
+  filters?: InstalledCapacityFilters,
+  dateRange?: string,
+) => {
   const params = new URLSearchParams();
   if (filters?.year) {
     params.set('year', filters.year.toString());
@@ -1410,6 +1399,9 @@ export const exportInstalledCapacityCumulative = async (filters?: InstalledCapac
   if (filters?.technology) {
     params.set('technology', filters.technology);
   }
+
+  const dateRangeSuffix =
+    dateRange ?? buildExportDateRangeSuffix({ year: filters?.year });
 
   try {
     const url = params.toString()
@@ -1426,25 +1418,16 @@ export const exportInstalledCapacityCumulative = async (filters?: InstalledCapac
       throw new Error('Export failed');
     }
 
-    const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = params.toString() ? `installed-capacity-cumulative-${filters?.year}.xlsx` : 'installed-capacity-cumulative.xlsx';
+    const defaultFilename = dateRangeSuffix
+      ? `installed-capacity-cumulative-${dateRangeSuffix}.xlsx`
+      : 'installed-capacity-cumulative.xlsx';
+    const filename = resolveExportFilename(
+      defaultFilename,
+      response.headers.get('Content-Disposition'),
+      dateRangeSuffix,
+    );
 
-    if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-      if (filenameMatch && filenameMatch[1]) {
-        filename = filenameMatch[1].replace(/['"]/g, '');
-      }
-    }
-
-    const blob = await response.blob();
-    const urlObject = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = urlObject;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(urlObject);
+    downloadBlob(await response.blob(), filename);
   } catch (error) {
     console.error('Export error:', error);
     throw error;
@@ -1565,7 +1548,10 @@ export const useInstalledCapacityByFacilitySize = (filters?: InstalledCapacityBy
 };
 
 //++ Export Installed Capacity by Facility Size data
-export const exportInstalledCapacityByFacilitySize = async (filters?: InstalledCapacityByFacilitySizeFilters) => {
+export const exportInstalledCapacityByFacilitySize = async (
+  filters?: InstalledCapacityByFacilitySizeFilters,
+  dateRange?: string,
+) => {
   const params = new URLSearchParams();
   if (filters?.year) {
     params.set('year', filters.year.toString());
@@ -1573,6 +1559,9 @@ export const exportInstalledCapacityByFacilitySize = async (filters?: InstalledC
   if (filters?.district) {
     params.set('district', filters.district);
   }
+
+  const dateRangeSuffix =
+    dateRange ?? buildExportDateRangeSuffix({ year: filters?.year });
 
   try {
     const url = params.toString()
@@ -1589,25 +1578,16 @@ export const exportInstalledCapacityByFacilitySize = async (filters?: InstalledC
       throw new Error('Export failed');
     }
 
-    const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = params.toString() ? `installed-capacity-by-facility-size-${filters?.year}.xlsx` : 'installed-capacity-by-facility-size.xlsx';
+    const defaultFilename = dateRangeSuffix
+      ? `installed-capacity-by-facility-size-${dateRangeSuffix}.xlsx`
+      : 'installed-capacity-by-facility-size.xlsx';
+    const filename = resolveExportFilename(
+      defaultFilename,
+      response.headers.get('Content-Disposition'),
+      dateRangeSuffix,
+    );
 
-    if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-      if (filenameMatch && filenameMatch[1]) {
-        filename = filenameMatch[1].replace(/['"]/g, '');
-      }
-    }
-
-    const blob = await response.blob();
-    const urlObject = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = urlObject;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(urlObject);
+    downloadBlob(await response.blob(), filename);
   } catch (error) {
     console.error('Export error:', error);
     throw error;
@@ -1661,7 +1641,10 @@ export const useResponseCapacityByPeriod = (filters?: ResponseCapacityByPeriodFi
 };
 
 //++ Export Response Capacity by Period data
-export const exportResponseCapacityByPeriod = async (filters?: ResponseCapacityByPeriodFilters) => {
+export const exportResponseCapacityByPeriod = async (
+  filters?: ResponseCapacityByPeriodFilters,
+  dateRange?: string,
+) => {
   const params = new URLSearchParams();
   if (filters?.year) {
     params.set('year', filters.year.toString());
@@ -1679,6 +1662,9 @@ export const exportResponseCapacityByPeriod = async (filters?: ResponseCapacityB
     params.set('include_cancelled', filters.include_cancelled.toString());
   }
 
+  const dateRangeSuffix =
+    dateRange ?? buildExportDateRangeSuffix({ year: filters?.year });
+
   try {
     const url = params.toString()
       ? `${API_BASE}api/v1/renewables/response-capacity/by-period/export?${params}`
@@ -1694,25 +1680,16 @@ export const exportResponseCapacityByPeriod = async (filters?: ResponseCapacityB
       throw new Error('Export failed');
     }
 
-    const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = params.toString() ? `response-capacity-by-period-${filters?.year}.xlsx` : 'response-capacity-by-period.xlsx';
+    const defaultFilename = dateRangeSuffix
+      ? `response-capacity-by-period-${dateRangeSuffix}.xlsx`
+      : 'response-capacity-by-period.xlsx';
+    const filename = resolveExportFilename(
+      defaultFilename,
+      response.headers.get('Content-Disposition'),
+      dateRangeSuffix,
+    );
 
-    if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-      if (filenameMatch && filenameMatch[1]) {
-        filename = filenameMatch[1].replace(/['"]/g, '');
-      }
-    }
-
-    const blob = await response.blob();
-    const urlObject = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = urlObject;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(urlObject);
+    downloadBlob(await response.blob(), filename);
   } catch (error) {
     console.error('Export error:', error);
     throw error;
@@ -1758,7 +1735,10 @@ export const useResponseCapacityBySize = (filters?: ResponseCapacityBySizeFilter
 };
 
 //++ Export Response Capacity by Size data
-export const exportResponseCapacityBySize = async (filters?: ResponseCapacityBySizeFilters) => {
+export const exportResponseCapacityBySize = async (
+  filters?: ResponseCapacityBySizeFilters,
+  dateRange?: string,
+) => {
   const params = new URLSearchParams();
   if (filters?.year) {
     params.set('year', filters.year.toString());
@@ -1769,6 +1749,9 @@ export const exportResponseCapacityBySize = async (filters?: ResponseCapacityByS
   if (filters?.include_cancelled !== undefined) {
     params.set('include_cancelled', filters.include_cancelled.toString());
   }
+
+  const dateRangeSuffix =
+    dateRange ?? buildExportDateRangeSuffix({ year: filters?.year });
 
   try {
     const url = params.toString()
@@ -1785,25 +1768,16 @@ export const exportResponseCapacityBySize = async (filters?: ResponseCapacityByS
       throw new Error('Export failed');
     }
 
-    const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = params.toString() ? `response-capacity-by-size-${filters?.year}.xlsx` : 'response-capacity-by-size.xlsx';
+    const defaultFilename = dateRangeSuffix
+      ? `response-capacity-by-size-${dateRangeSuffix}.xlsx`
+      : 'response-capacity-by-size.xlsx';
+    const filename = resolveExportFilename(
+      defaultFilename,
+      response.headers.get('Content-Disposition'),
+      dateRangeSuffix,
+    );
 
-    if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-      if (filenameMatch && filenameMatch[1]) {
-        filename = filenameMatch[1].replace(/['"]/g, '');
-      }
-    }
-
-    const blob = await response.blob();
-    const urlObject = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = urlObject;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(urlObject);
+    downloadBlob(await response.blob(), filename);
   } catch (error) {
     console.error('Export error:', error);
     throw error;
@@ -1849,7 +1823,10 @@ export const useResponseCapacityByDistrict = (filters?: ResponseCapacityByDistri
 };
 
 //++ Export Response Capacity by District data
-export const exportResponseCapacityByDistrict = async (filters?: ResponseCapacityByDistrictFilters) => {
+export const exportResponseCapacityByDistrict = async (
+  filters?: ResponseCapacityByDistrictFilters,
+  dateRange?: string,
+) => {
   const params = new URLSearchParams();
   if (filters?.year) {
     params.set('year', filters.year.toString());
@@ -1860,6 +1837,9 @@ export const exportResponseCapacityByDistrict = async (filters?: ResponseCapacit
   if (filters?.include_cancelled !== undefined) {
     params.set('include_cancelled', filters.include_cancelled.toString());
   }
+
+  const dateRangeSuffix =
+    dateRange ?? buildExportDateRangeSuffix({ year: filters?.year });
 
   try {
     const url = params.toString()
@@ -1876,25 +1856,16 @@ export const exportResponseCapacityByDistrict = async (filters?: ResponseCapacit
       throw new Error('Export failed');
     }
 
-    const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = params.toString() ? `response-capacity-by-district-${filters?.year}.xlsx` : 'response-capacity-by-district.xlsx';
+    const defaultFilename = dateRangeSuffix
+      ? `response-capacity-by-district-${dateRangeSuffix}.xlsx`
+      : 'response-capacity-by-district.xlsx';
+    const filename = resolveExportFilename(
+      defaultFilename,
+      response.headers.get('Content-Disposition'),
+      dateRangeSuffix,
+    );
 
-    if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-      if (filenameMatch && filenameMatch[1]) {
-        filename = filenameMatch[1].replace(/['"]/g, '');
-      }
-    }
-
-    const blob = await response.blob();
-    const urlObject = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = urlObject;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(urlObject);
+    downloadBlob(await response.blob(), filename);
   } catch (error) {
     console.error('Export error:', error);
     throw error;

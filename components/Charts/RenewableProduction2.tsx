@@ -420,9 +420,10 @@ export default function RenewableProduction2() {
                             href="https://www.noga-iso.co.il/systemoperationunit/piechartspage/"
                             target="_blank"
                             rel="noopener noreferrer"
+                            dir="ltr"
                             className="whitespace-nowrap"
                           >
-                            noga-iso.co.il
+                            https://www.noga-iso.co.il/systemoperationunit/piechartspage/
                           </a>
                         </p>
                         <p>הנתונים מתעדכנים מעת לעת.</p>
@@ -531,7 +532,7 @@ export default function RenewableProduction2() {
             }`}
           onClick={() => setTab(1)}
         >
-          הספק
+          שיעור מהייצור
         </button>
         <button
           className={`rounded-full md:px-5 px-2 md:py-[6px] py-[2px] font-black md:text-base text-xs ${tab === 2
@@ -540,7 +541,7 @@ export default function RenewableProduction2() {
             }`}
           onClick={() => setTab(2)}
         >
-          ייצור
+          ”ייצור בפועל
         </button>
       </div>
     </div>

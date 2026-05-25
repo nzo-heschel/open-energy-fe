@@ -1,9 +1,9 @@
 'use client';
 
 import topleft from '@/public/images/Ellipse 89 (1).png';
-import frame2 from '@/public/images/Frame 427319914 (1).png';
+import frame1 from '@/public/images/heshel_logo.png';
 import frame3 from '@/public/images/Frame 427319914 (2).png';
-import frame1 from '@/public/images/Frame 427319914.png';
+import frame2 from '@/public/images/nzo_logo.png';
 import logo from '@/public/images/logo.png';
 import logoicon from '@/public/images/logoicon.png';
 import Image from "next/image";
@@ -36,11 +36,10 @@ export default function AboutSection() {
                       <br />
                       <a href="http://www.nzo.org.il" target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500">www.NZO.org.il</a>
                     </p>
-                    <Image src={logo} width={75} height={65} className='' alt='logo' />
 
                   </div>
                   <div className="w-full flex justify-end rounded-full">
-                    <Image src={frame2} width={350} height={230} className="w-[350px] md:h-[230px] h-[150px] object-cover rounded-full" alt="image" />
+                    <Image src={frame2} width={350} height={230} className="w-[350px] object-contain md:h-[230px] rounded-full" alt="image" />
 
                   </div>
                 </div>
@@ -49,7 +48,7 @@ export default function AboutSection() {
               <div className="bg-transparent md:px-[60px] px-5 md:py-[50px] py-10">
                 <div className="flex md:flex-row flex-col items-center md:gap-0 gap-5">
                   <div className="w-full flex justify-start">
-                    <Image src={frame1} width={350} height={230} className="w-[350px] md:h-[230px] h-[150px] object-cover rounded-full" alt="image" />
+                    <Image src={frame1} width={350} height={230} className="w-[350px] object-contain md:h-[230px]" alt="image" />
                   </div>
                   <div className="flex flex-col w-full md:gap-5 gap-3 text-right">
                     <h2 className="md:text-[34px] text-2xl font-extrabold text-[#276E4E]">
@@ -62,7 +61,6 @@ export default function AboutSection() {
                       <a href="http://www.heschel.org.il/" target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500">www.Heschel.org.il</a>
 
                     </p>
-                    <Image src={logoicon} width={75} height={65} className='' alt='logoicon' />
                   </div>
                 </div>
               </div>

@@ -541,7 +541,7 @@ export default function RenewableProduction2() {
             }`}
           onClick={() => setTab(2)}
         >
-          ”ייצור בפועל
+          ייצור בפועל
         </button>
       </div>
     </div>

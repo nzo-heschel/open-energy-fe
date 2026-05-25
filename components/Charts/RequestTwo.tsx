@@ -170,32 +170,25 @@ export default function RequestTwo() {
   const singleSelectedYear =
     selectedYears.length === 1 ? Number(selectedYears[0]) : undefined;
 
-  // API currently supports a single year filter. We fetch all and filter client-side for multi-select.
-  const filters: ResponseCapacityBySizeFilters = useMemo(
-    () => (singleSelectedYear ? { year: singleSelectedYear } : {}),
-    [singleSelectedYear],
-  );
-
-  // Fetch data from API
   const {
     data: apiData,
     isLoading,
     error,
-  } = useResponseCapacityBySize(filters);
+  } = useResponseCapacityBySize();
 
-  // Current year/month for "last month" view (by-size does not support month grouping)
+  const exportFilters: ResponseCapacityBySizeFilters = useMemo(
+    () => (singleSelectedYear ? { year: singleSelectedYear } : {}),
+    [singleSelectedYear],
+  );
+
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonthKey = `${currentYear}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
-  const periodQueryYear = showLatestMonth
-    ? currentYear
-    : (singleSelectedYear ?? currentYear);
-
-  // Fetch monthly data from by-period
-  const { data: periodData } = useResponseCapacityByPeriod({
-    year: periodQueryYear,
-  });
+  const { data: periodData } = useResponseCapacityByPeriod(
+    { year: currentYear },
+    { enabled: showLatestMonth },
+  );
 
   // Transform API data for chart — yearly_series uses kW-range labels + total_mw / count
   const allYearData = useMemo(() => {
@@ -229,13 +222,14 @@ export default function RequestTwo() {
       return { small, medium, large, xlarge };
     };
 
-    const firstBrackets = apiData.yearly_series[0]?.size_brackets ?? {};
-    const usesLegacyMwBands = "Up to 16 kW" in firstBrackets;
+  const isLegacyMwBands = (
+    brackets: Record<string, { total_mw?: number; count?: number }>,
+  ) => "Up to 16 kW" in brackets;
 
     return apiData.yearly_series
       .map((yearData) => {
         const brackets = yearData.size_brackets || {};
-        const { small, medium, large, xlarge } = usesLegacyMwBands
+        const { small, medium, large, xlarge } = isLegacyMwBands(brackets)
           ? mapLegacyInstalledStyleBrackets(brackets)
           : accumulateFourSegments(brackets as Record<string, unknown>, (raw) =>
             pick(
@@ -298,28 +292,6 @@ export default function RequestTwo() {
       ];
     }
 
-    if (singleSelectedYear) {
-      return (periodData?.series || [])
-        .filter((item: any) => item.period.startsWith(`${singleSelectedYear}-`))
-        .sort((a: any, b: any) => a.period.localeCompare(b.period))
-        .map((item: any) => {
-          const value =
-            activeTab === "supply"
-              ? Number(item.total_mw || 0)
-              : Number(item.request_count || 0);
-          const month = item.period.split("-")[1] || item.period;
-
-          return {
-            year: month,
-            small: 0,
-            medium: 0,
-            large: 0,
-            xlarge: isNaN(value) ? 0 : value,
-            total: isNaN(value) ? 0 : value,
-          };
-        });
-    }
-
     if (allYearData.length === 0) return [];
 
     if (selectedYears.length === 0) {
@@ -327,16 +299,8 @@ export default function RequestTwo() {
     }
 
     const yearSet = new Set(selectedYears.map((year) => Number(year)));
-    return allYearData.filter((item: any) => yearSet.has(item.year));
-  }, [
-    allYearData,
-    selectedYears,
-    singleSelectedYear,
-    showLatestMonth,
-    periodData,
-    activeTab,
-    currentMonthKey,
-  ]);
+    return allYearData.filter((item) => yearSet.has(item.year));
+  }, [allYearData, selectedYears, showLatestMonth, periodData, activeTab, currentMonthKey]);
 
   const chartDisplayData = useMemo(
     () =>
@@ -347,10 +311,8 @@ export default function RequestTwo() {
     [chartData, activeSeries],
   );
 
-  // Match RequestOne behavior for monthly (single-year) view
-  const barSize = singleSelectedYear
-    ? 36
-    : chartData.length <= 1
+  const barSize =
+    chartData.length <= 1
       ? 120
       : chartData.length <= 3
         ? 80
@@ -370,7 +332,7 @@ export default function RequestTwo() {
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      await exportResponseCapacityBySize(filters, exportDateRange);
+      await exportResponseCapacityBySize(exportFilters, exportDateRange);
     } catch (err) {
       console.error("Export failed:", err);
     } finally {

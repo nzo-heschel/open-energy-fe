@@ -109,8 +109,6 @@ function bucketByYearMonth(
       // still has something to draw. Otherwise compute the real share %.
       if (total <= 0) {
         result[y][m] = 0;
-      } else if (Math.abs(total - renewable) / Math.max(total, 1) < 0.01) {
-        result[y][m] = renewable;
       } else {
         result[y][m] = (renewable / total) * 100;
       }
@@ -332,6 +330,7 @@ export default function RenewableProduction2() {
     if (!active || !payload || payload.length === 0) return null;
 
     const rows = legendSeries
+      .filter((s) => !hiddenKeys.has(s.key))
       .map((s) => {
         const entry = payload.find((p: any) => p.dataKey === s.key);
         const value = entry ? Number(entry.value) : undefined;

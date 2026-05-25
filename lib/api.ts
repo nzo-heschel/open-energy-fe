@@ -1603,7 +1603,10 @@ export type ResponseCapacityByPeriodFilters = {
   include_cancelled?: boolean;
 };
 
-export const useResponseCapacityByPeriod = (filters?: ResponseCapacityByPeriodFilters) => {
+export const useResponseCapacityByPeriod = (
+  filters?: ResponseCapacityByPeriodFilters,
+  queryOptions?: { enabled?: boolean },
+) => {
   const params = new URLSearchParams();
   if (filters?.year) {
     params.set('year', filters.year.toString());
@@ -1622,6 +1625,7 @@ export const useResponseCapacityByPeriod = (filters?: ResponseCapacityByPeriodFi
   }
 
   return useQuery<ResponseCapacityByPeriodResponse>({
+    enabled: queryOptions?.enabled ?? true,
     queryKey: ['response-capacity-by-period', filters?.year, filters?.district, filters?.technology, filters?.response_type, filters?.include_cancelled],
     queryFn: async () => {
       try {

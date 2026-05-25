@@ -46,11 +46,11 @@ export const getEnergyColor = (variableName: string): string => {
  * Level 1 category colors mapping
  */
 export const LEVEL1_COLORS: Record<string, string> = {
-  'אנרגיות פוסיליות': ENERGY_COLORS.FOSSIL,
-  'אנרגיות מתחדשות': ENERGY_COLORS.RENEWABLE,
+  'אנרגיות פוסיליות': ENERGY_COLORS.NATURAL_GAS,
+  'אנרגיות מתחדשות': ENERGY_COLORS.WIND,
   'אחר': ENERGY_COLORS.OTHER_PRIMARY,
-  'Non-renewables': ENERGY_COLORS.FOSSIL,
-  'Renewables': ENERGY_COLORS.RENEWABLE,
+  'Non-renewables': ENERGY_COLORS.NATURAL_GAS,
+  'Renewables': ENERGY_COLORS.WIND,
   'Other': ENERGY_COLORS.OTHER_PRIMARY,
 };
 

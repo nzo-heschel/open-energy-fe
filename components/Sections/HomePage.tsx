@@ -16,6 +16,8 @@ import { getDieselFromNonRenewablesLevel2 } from "@/lib/energyMixFossilDiesel";
 import image2 from "@/public/Frame 427319913.png";
 import image3 from "@/public/Frame 427319914.png";
 import image1 from "@/public/Frame 427319915.png";
+import newImage from "@/public/images/main_img.jpg";
+
 import api from "@/public/images/API.png";
 import download from "@/public/images/download_2.png";
 import topleft from "@/public/images/Ellipse 89.png";
@@ -628,10 +630,10 @@ export default function HomePage() {
             <div className="flex justify-between gap-4 relative md:p-[30px] p-6 md:pr-0 w-full">
               <div className="w-full">
                 <Image
-                  src={image3}
+                  src={newImage}
                   width={192}
                   height={308}
-                  className="md:w-[192px] w-full md:h-[308px]"
+                  className="md:w-[192px] w-full md:h-[308px] rounded-full"
                   alt="image"
                 />
               </div>

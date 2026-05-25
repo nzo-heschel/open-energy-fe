@@ -183,7 +183,7 @@ const CO2EmissionsChart = () => {
                 </TooltipContent>
               </UITooltip>
             </TooltipProvider>
-            סך פליטות CO₂ מול יחס פליטות CO₂
+            ממקורות פוסיליים CO2 שיעור פליטות
           </h2>
           {/* Buttons SECOND - goes to LEFT in RTL */}
           <div className="flex items-start md:gap-4 gap-2">
@@ -346,9 +346,8 @@ const CO2EmissionsChart = () => {
             }}
           ></span>
           <span
-            className={`md:text-sm text-xs transition-all duration-200 ${
-              active.co2 ? "text-gray-800" : "text-gray-400"
-            }`}
+            className={`md:text-sm text-xs transition-all duration-200 ${active.co2 ? "text-gray-800" : "text-gray-400"
+              }`}
           >
             סך פליטות
           </span>
@@ -369,9 +368,8 @@ const CO2EmissionsChart = () => {
             }}
           ></span>
           <span
-            className={`md:text-sm text-xs transition-all duration-200 ${
-              active.savings ? "text-gray-800" : "text-gray-400"
-            }`}
+            className={`md:text-sm text-xs transition-all duration-200 ${active.savings ? "text-gray-800" : "text-gray-400"
+              }`}
           >
             יחס פליטות
           </span>

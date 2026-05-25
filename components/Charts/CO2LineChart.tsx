@@ -94,7 +94,7 @@ const getLevel1RenewableSavings = (item: CO2ChartRow): number => {
   return getRenewableSavings(item);
 };
 
-const RENEWABLE_SAVINGS_LABEL = "חיסכון בפליטות על ידי ייצור מאנרגיות מתחדשות";
+const RENEWABLE_SAVINGS_LABEL = " שנחסכו עקב השימוש באנרגיה CO2 מתחדשת ";
 
 const CO2_LEVEL2_LEGEND_GROUPS: Record<
   string,

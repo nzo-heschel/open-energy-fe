@@ -226,7 +226,7 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
     // Switching Requests Endpoints
     {
       id: 'switching-requests',
-      title: 'סטטוס בקשות ניוד',
+      title: 'סטטוס בקשות ניוד / בקשות ניוד - סיבות דחיה',
       description: 'Consumer electricity supplier switching request data',
       endpoint: 'GET /api/v1/switching-requests',
       method: 'GET',
@@ -934,7 +934,7 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
     { id: 'private-supplier-export', name: 'ייצוא צרכנים המחוברים למספקיי חשמל פרטיים', endpoint: 'api/v1/private-supplier-connected-consumers/export', method: 'GET', category: 'Suppliers' },
     { id: 'private-supplier-download-source', name: 'צרכנים המחוברים למספקיי חשמל פרטיים', endpoint: 'api/v1/private-supplier-connected-consumers/download-source', method: 'GET', category: 'Suppliers' },
     // Switching Requests
-    { id: 'switching-requests', name: 'סטטוס בקשות ניוד', endpoint: 'api/v1/switching-requests', method: 'GET', category: 'Switching' },
+    { id: 'switching-requests', name: 'סטטוס בקשות ניוד / בקשות ניוד - סיבות דחיה', endpoint: 'api/v1/switching-requests', method: 'GET', category: 'Switching' },
     { id: 'switching-requests-export', name: 'ייצוא סטטוס בקשות ניוד', endpoint: 'api/v1/switching-requests/export', method: 'GET', category: 'Switching' },
     // CO2 Emissions
     { id: 'co2-emissions-savings', name: 'פליטות CO2 שנחסכו עקב השימוש באנרגיה מתחדשת', endpoint: 'api/v1/co2/emissions-savings', method: 'GET', category: 'CO2' },

@@ -200,7 +200,6 @@ const RejectionChart = () => {
                                         value={selectedYear}
                                         onChange={(e) => setSelectedYear(e.target.value)}
                                     >
-                                        <option value="all">הכל</option>
                                         {switchingData?.available_years?.map((year) => (
                                             <option key={year} value={year.toString()}>
                                                 {year}

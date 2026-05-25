@@ -453,9 +453,13 @@ export default function RenewableProduction() {
   const currentMonth = today.getMonth() + 1;
   const [showTooltip, setShowTooltip] = useState(false);
   const [selectedYear, setSelectedYear] = useState<string>(String(currentYear));
-  const [selectedMonths, setSelectedMonths] = useState<string[]>([
-    String(currentMonth),
-  ]);
+  const [selectedMonths, setSelectedMonths] = useState<string[]>(() =>
+    monthsInRange(
+      1,
+      currentMonth,
+      MONTH_OPTIONS.map((m) => m.value),
+    ),
+  );
   const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
   const [startDate, setStartDate] = useState<string>(() => {
     return format(startOfMonth(new Date()), "yyyy-MM-dd");

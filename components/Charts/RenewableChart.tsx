@@ -371,22 +371,12 @@ export default function RenewableChart() {
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
               data={chartData}
-              margin={{ top: 10, right: 20, left: 20, bottom: 28 }}
+              margin={{ top: 10, right: 20, left: 20, bottom: 18 }}
             >
               <CartesianGrid vertical={false} />
               <XAxis
                 dataKey="year"
                 tick={{ fontSize: 12 }}
-                label={{
-                  value: "שיעור אנרגיה מתחדשת",
-                  position: "insideBottom",
-                  offset: -8,
-                  style: {
-                    textAnchor: "middle",
-                    fontFamily: "Heebo, sans-serif",
-                    fontSize: 12,
-                  },
-                }}
               />
               <YAxis
                 tick={{ fontSize: 12 }}

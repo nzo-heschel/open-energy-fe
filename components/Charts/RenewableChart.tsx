@@ -132,49 +132,6 @@ export default function RenewableChart() {
     }
   };
 
-  const getLineMetrics = () => {
-    if (chartData.length < 2)
-      return {
-        actual: { end: 0, angle: 0 },
-        ministry: { end: 0, angle: 0 },
-        nzo: { end: 0, angle: 0 },
-        historical: { end: 0, angle: 0 },
-      };
-
-    const firstYear = chartData[0];
-    const lastYear = chartData[chartData.length - 1];
-
-    const calculateAngle = (startVal: number, endVal: number) => {
-      const rise = endVal - startVal;
-      const run = (chartData.length - 1) * 8;
-      return -Math.atan(rise / run) * (180 / Math.PI);
-    };
-
-    return {
-      actual: {
-        end: lastYear.actualLinePct,
-        angle: calculateAngle(firstYear.actualLinePct, lastYear.actualLinePct),
-      },
-      ministry: {
-        end: lastYear.ministryPct,
-        angle: calculateAngle(firstYear.ministryPct, lastYear.ministryPct),
-      },
-      nzo: {
-        end: lastYear.nzoPct,
-        angle: calculateAngle(firstYear.nzoPct, lastYear.nzoPct),
-      },
-      historical: {
-        end: lastYear.historicalActualPct,
-        angle: calculateAngle(
-          firstYear.historicalActualPct,
-          lastYear.historicalActualPct,
-        ),
-      },
-    };
-  };
-
-  const lineMetrics = getLineMetrics();
-
   const CustomTooltip = ({
     active,
     payload,
@@ -522,49 +479,6 @@ export default function RenewableChart() {
               />
             </ComposedChart>
           </ResponsiveContainer>
-        </div>
-
-        <div className="absolute inset-0 pointer-events-none z-10">
-          <div
-            className="absolute text-sm font-medium whitespace-nowrap"
-            style={{
-              color: "#1E8025",
-              right: "20px",
-              top: `${100 - lineMetrics.actual.end}%`,
-              transform: `rotate(${lineMetrics.actual.angle}deg)`,
-              transformOrigin: "left center",
-            }}
-          >
-            צפי ריאלי ייצור בפועל
-          </div>
-          {activePredictions.nzo && (
-            <div
-              className="absolute text-sm font-medium whitespace-nowrap"
-              style={{
-                color: "#8BBFE1",
-                right: "20px",
-                top: `${100 - lineMetrics.nzo.end}%`,
-                transform: `rotate(${lineMetrics.nzo.angle}deg)`,
-                transformOrigin: "left center",
-              }}
-            >
-              לפי יעד NZO
-            </div>
-          )}
-          {activePredictions.ministry && (
-            <div
-              className="absolute text-sm font-medium whitespace-nowrap"
-              style={{
-                color: "#957669",
-                right: "20px",
-                top: `${100 - lineMetrics.ministry.end}%`,
-                transform: `rotate(${lineMetrics.ministry.angle}deg)`,
-                transformOrigin: "left center",
-              }}
-            >
-              יעד אנרגיות מתחדשות יעד ממשלתי
-            </div>
-          )}
         </div>
       </div>
     </div>

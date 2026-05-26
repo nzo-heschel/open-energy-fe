@@ -126,11 +126,18 @@ const YearMultiSelectDropdown = ({
 
   const toggleYear = (year: string) => {
     setIsOpen(true);
-    if (selectedYears.includes(year)) {
-      onChange(selectedYears.filter((y) => y !== year));
+    if (allSelected) {
+      // All are visually selected (empty = all); clicking one deselects it
+      onChange(options.filter((y) => y !== year));
       return;
     }
-    onChange([...selectedYears, year]);
+    if (selectedYears.includes(year)) {
+      onChange(selectedYears.filter((y) => y !== year));
+    } else {
+      const next = [...selectedYears, year];
+      // Normalize back to empty when all options are selected
+      onChange(next.length === options.length ? [] : next);
+    }
   };
 
   const toggleAll = () => {
@@ -319,7 +326,7 @@ const CustomLegend = ({
 
 export default function RequestThree() {
   const [activeTab, setActiveTab] = useState<"chart" | "text">("chart");
-  const [selectedYears, setSelectedYears] = useState<string[]>([]);
+  const [selectedYears, setSelectedYears] = useState<string[]>(yearOptions.map(String));
   const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [isExporting, setIsExporting] = useState(false);

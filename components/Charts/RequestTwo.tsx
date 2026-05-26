@@ -26,13 +26,21 @@ const SIZE_BRACKETS = [
   { key: "small", label: "קטן | 0-200 KW", color: "#A66565" },
 ];
 
+type SizeBracketTotals = {
+  small: number;
+  medium: number;
+  large: number;
+  xlarge: number;
+};
+
 const sumVisibleTotal = (
-  point: Record<string, number>,
+  point: SizeBracketTotals,
   activeSeries: Record<string, boolean>,
 ) => {
   let total = 0;
   for (const b of SIZE_BRACKETS) {
-    if (activeSeries[b.key]) total += point[b.key] || 0;
+    const key = b.key as keyof SizeBracketTotals;
+    if (activeSeries[b.key]) total += point[key] || 0;
   }
   return Math.round(total);
 };

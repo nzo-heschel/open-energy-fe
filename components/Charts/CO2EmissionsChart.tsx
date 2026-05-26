@@ -275,7 +275,7 @@ const CO2EmissionsChart = () => {
                   axisLine={false}
                   tick={{ fill: "#6b7280", fontSize: 12 }}
                   label={{
-                    value: "קצב פליטות [mTCO₂/MWh]",
+                    value: "[mTCO2/h] שיעור פליטות",
                     angle: -90,
                     position: "insideRight",
                     style: {
@@ -290,7 +290,7 @@ const CO2EmissionsChart = () => {
                     if (name === "total_emissions") {
                       return [formatTooltipNumber(value, 2), "סך פליטות"];
                     }
-                    return [formatTooltipNumber(value, 4), "יחס פליטות"];
+                    return [formatTooltipNumber(value, 4), "ממקורות פוסיליים" + " CO2 " + "שיעור פליטות "];
                   }}
                   labelFormatter={(label) =>
                     `תאריך: ${formatTooltipPeriod(label)}`
@@ -371,7 +371,7 @@ const CO2EmissionsChart = () => {
             className={`md:text-sm text-xs transition-all duration-200 ${active.savings ? "text-gray-800" : "text-gray-400"
               }`}
           >
-            יחס פליטות
+            {"ממקורות פוסיליים" + " CO2 " + "שיעור פליטות "}
           </span>
         </div>
       </div>

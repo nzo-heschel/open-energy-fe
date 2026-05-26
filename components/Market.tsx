@@ -138,7 +138,7 @@ const Market = () => {
                     </div>
                   )}
                 </div>
-                צרכנים המחוברים למספקיי חשמל פרטיים{" "}
+                צרכנים המחוברים למספקי חשמל פרטיים{" "}
               </CardTitle>
               <div className="flex items-start md:gap-4 gap-2">
                 <a

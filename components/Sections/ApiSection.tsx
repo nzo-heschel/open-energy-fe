@@ -274,7 +274,7 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
     },
     {
       id: 'co2-emissions-ratio',
-      title: 'שיעור פליטות CO2 ממקורות פוסיליים',
+      title: "ממקורות פוסיליים CO2 שיעור פליטות",
       description: 'Total CO2 emissions ratio (tons CO2 per MWh) for the selected period',
       endpoint: 'GET /api/v1/co2/emissions-ratio',
       method: 'GET',
@@ -938,7 +938,7 @@ ${endpointData.parameters ? `Parameters:\n${endpointData.parameters.map(p => `- 
     { id: 'switching-requests-export', name: 'ייצוא סטטוס בקשות ניוד', endpoint: 'api/v1/switching-requests/export', method: 'GET', category: 'Switching' },
     // CO2 Emissions
     { id: 'co2-emissions-savings', name: 'פליטות CO2 שנחסכו עקב השימוש באנרגיה מתחדשת', endpoint: 'api/v1/co2/emissions-savings', method: 'GET', category: 'CO2' },
-    { id: 'co2-emissions-ratio', name: 'שיעור פליטות CO2 ממקורות פוסיליים', endpoint: 'api/v1/co2/emissions-ratio', method: 'GET', category: 'CO2' },
+    { id: 'co2-emissions-ratio', name: "ממקורות פוסיליים CO2 שיעור פליטות", endpoint: 'api/v1/co2/emissions-ratio', method: 'GET', category: 'CO2' },
     { id: 'co2-total-production', name: 'ייצור חשמל', endpoint: 'api/v1/co2/total-production', method: 'GET', category: 'CO2' },
     { id: 'co2-emissions-mix', name: 'תמהיל פליטות CO2', endpoint: 'api/v1/co2/emissions-mix', method: 'GET', category: 'CO2' },
     { id: 'co2-emissions-mix-export', name: 'ייצוא תמהיל פליטות CO2', endpoint: 'api/v1/co2/emissions-mix/export', method: 'GET', category: 'CO2' },

@@ -172,9 +172,7 @@ export default function RenewableChart() {
             <span className="text-[#59687D] font-normal">{index === 0
               ? p.name
               : index === 1
-                ? isChangeTitle
-                  ? "יעד ממשלתי"
-                  : p.name
+                ? "יעד ממשלתי"
                 : index === 2
                   ? isChangeTitle
                     ? "ייצור בפועל"

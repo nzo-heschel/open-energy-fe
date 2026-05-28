@@ -156,51 +156,30 @@ export default function RenewableChart() {
         (p.dataKey === "ministryPct" && activePredictions.ministry) ||
         (p.dataKey === "nzoPct" && activePredictions.nzo),
     );
+
+    const isChangeTitle = row.year <= lastYearWithActual &&
+      lastYearWithActual > 0 &&
+      row.historicalActualPct > 0
+
     return (
       <div className="bg-white shadow-lg rounded-lg p-3 border border-gray-200 text-sm">
         <p className="font-medium">שנה {row.year}</p>
-        {row.year <= lastYearWithActual &&
-          lastYearWithActual > 0 &&
-          row.historicalActualPct > 0 && (
-            <>
-              <p className="mt-2 text-[#484C56] text-xs">
-                בפועל:{" "}
-                <span className="font-medium">
-                  {row.historicalActualPct.toFixed(1)}%
-                </span>
-              </p>
-              {activePredictions.ministry && (
-                <p className="mt-1 text-[#484C56] text-xs">
-                  יעד משרד:{" "}
-                  <span className="font-medium">
-                    {row.ministryPct.toFixed(1)}%
-                  </span>
-                  {" · "}
-                  פער:{" "}
-                  <span className="font-medium">
-                    {(row.ministryPct - actualPct).toFixed(1)}%
-                  </span>
-                </p>
-              )}
-              {activePredictions.nzo && (
-                <p className="mt-1 text-[#484C56] text-xs">
-                  יעד NZO:{" "}
-                  <span className="font-medium">{row.nzoPct.toFixed(1)}%</span>
-                  {" · "}
-                  פער:{" "}
-                  <span className="font-medium">
-                    {(row.nzoPct - actualPct).toFixed(1)}%
-                  </span>
-                </p>
-              )}
-            </>
-          )}
-        {lineItems.map((p) => (
+        {lineItems.reverse().map((p, index) => (
           <p
             key={String(p.dataKey)}
             className="mt-1.5 text-[#484C56] text-sm font-normal"
           >
-            <span className="text-[#59687D] font-normal">{p.name}</span>
+            <span className="text-[#59687D] font-normal">{index === 0
+              ? p.name
+              : index === 1
+                ? isChangeTitle
+                  ? "יעד ממשלתי"
+                  : p.name
+                : index === 2
+                  ? isChangeTitle
+                    ? "ייצור בפועל"
+                    : p.name
+                  : p.name}</span>
             <br />
             <span className="font-medium">
               {typeof p.value === "number" ? p.value.toFixed(1) : ""}%

@@ -290,7 +290,7 @@ const CO2EmissionsChart = () => {
                     if (name === "total_emissions") {
                       return [formatTooltipNumber(value, 2), "סך פליטות"];
                     }
-                    return [formatTooltipNumber(value, 4), "ממקורות פוסיליים" + " CO2 " + "שיעור פליטות "];
+                    return [formatTooltipNumber(value, 4), "שיעור פליטות " + " CO2 " + "ממקורות פוסיליים"];
                   }}
                   labelFormatter={(label) =>
                     `תאריך: ${formatTooltipPeriod(label)}`
@@ -371,7 +371,7 @@ const CO2EmissionsChart = () => {
             className={`md:text-sm text-xs transition-all duration-200 ${active.savings ? "text-gray-800" : "text-gray-400"
               }`}
           >
-            {"ממקורות פוסיליים" + " CO2 " + "שיעור פליטות "}
+            {"שיעור פליטות " + " CO2 " + "ממקורות פוסיליים"}
           </span>
         </div>
       </div>

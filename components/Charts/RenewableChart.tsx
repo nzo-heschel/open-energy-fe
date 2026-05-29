@@ -395,7 +395,7 @@ export default function RenewableChart() {
                 />
               </Bar>
 
-              <Bar
+              {/* <Bar
                 dataKey="ministryBar"
                 fill="#957669"
                 barSize={28}
@@ -404,16 +404,16 @@ export default function RenewableChart() {
                 opacity={
                   activePredictions.ministry ? opacity("ministry") : 0
                 }
-              />
+              /> */}
 
-              <Bar
+              {/* <Bar
                 dataKey="nzoBar"
                 fill="#8BBFE1"
                 barSize={28}
                 stackId="stack"
                 name="יעד NZO"
                 opacity={activePredictions.nzo ? opacity("nzo") : 0}
-              />
+              /> */}
 
               <Line
                 type="monotone"

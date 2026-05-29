@@ -41,7 +41,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                 </span>
               </div>
               <span className="text-sm text-[#484C56] leading-3">
-                {entry.value.toLocaleString()} MWh
+                ביקוש משקי | {entry.value.toLocaleString()} MWh
               </span>
             </div>
           ))}
@@ -75,9 +75,8 @@ const CustomLegend = (props: any) => {
             <div
               key={`legend-${index}`}
               onClick={() => handleClick(entry.dataKey)}
-              className={`flex items-center cursor-pointer px-3 py-1 rounded-lg ${
-                isActive ? "bg-transparent" : "opacity-50"
-              }`}
+              className={`flex items-center cursor-pointer px-3 py-1 rounded-lg ${isActive ? "bg-transparent" : "opacity-50"
+                }`}
             >
               <div
                 className="w-2 h-2 rounded-full ml-2"
@@ -301,12 +300,12 @@ export function ElectricityScatterGraph({
           <Tooltip content={<CustomTooltip />} />
           <Legend content={<CustomLegend />} />
           <Scatter
-            name="ביקוש נטו"
+            name="ביקוש משקי"
             data={scatterData1.filter((d) => d.type === "דוֹר")}
             fill="#166534"
           />
           <Scatter
-            name="מחיר שולים כולל אילוצים"
+            name="מחיר שולי כולל אילוצים"
             data={scatterData1.filter((d) => d.type !== "דוֹר")}
             fill="#eab308"
           />

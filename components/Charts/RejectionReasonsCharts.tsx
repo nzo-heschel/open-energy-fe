@@ -353,7 +353,7 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                     <ComposedChart
                         data={barData}
                         barCategoryGap="30%"
-                        margin={{ top: 10, right: 10, left: 20, bottom: 0 }}
+                        margin={{ top: 30, right: 10, left: 20, bottom: 0 }}
                     >
                         <XAxis dataKey="month" />
                         <YAxis

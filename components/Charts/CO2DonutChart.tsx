@@ -4,7 +4,6 @@ import DateRangePicker from "@/components/ui/DateRangePicker";
 import {
   exportCO2EmissionsMix,
   useCO2EmissionsMix,
-  useCO2EmissionsRatio,
   useCO2EmissionsSavings,
   useCO2TotalProduction,
 } from "@/lib/api";
@@ -20,6 +19,7 @@ import {
   TooltipTrigger,
   Tooltip as UITooltip,
 } from "../ui/tooltip";
+import type { CO2EmissionsAvoidedMetric } from "@/types/dto";
 
 type EnergyData = {
   name: string;
@@ -48,8 +48,6 @@ const CO2DonutChart = () => {
     dateRange.startDate,
     dateRange.endDate,
   );
-  const { data: emissionsRatioData, isLoading: isLoadingRatio } =
-    useCO2EmissionsRatio(dateRange.startDate, dateRange.endDate);
   const { data: totalProductionData, isLoading: isLoadingProduction } =
     useCO2TotalProduction(dateRange.startDate, dateRange.endDate);
 
@@ -108,16 +106,12 @@ const CO2DonutChart = () => {
     }
   };
 
-  // Calculate emissions savings percentage
-  const emissionsSavingsPercentage = emissionsMixData?.infographics
-    ?.emissions_avoided_through_renewables
-    ? (emissionsMixData.infographics.emissions_avoided_through_renewables
-      .value /
-      (emissionsMixData.total_emissions +
-        emissionsMixData.infographics.emissions_avoided_through_renewables
-          .value)) *
-    100
-    : 0;
+  const emissionsAvoided: CO2EmissionsAvoidedMetric | undefined =
+    emissionsMixData?.infographics?.emissions_avoided_through_renewables;
+  const emissionsSavingsPercentage =
+    emissionsAvoided?.percentage_of_actual_plus_savings ?? 0;
+  const fossilEmissionsRate =
+    emissionsMixData?.infographics?.total_emissions_excluding_renewables;
 
   return (
     <div className="bg-white border border-[#E9C863] md:rounded-[40px] rounded-[16px] py-4 md:py-6 overflow-hidden">
@@ -361,9 +355,9 @@ const CO2DonutChart = () => {
             <p className="text-center text-sm font-normal text-[#59687D]">
               שיעור פליטות CO2 ממקורות פוסיליים            </p>
             <p className="text-center text-lg font-normal text-[#484C56]">
-              {isLoadingRatio
+              {isLoadingMix
                 ? "..."
-                : `${formatNumber(emissionsRatioData?.total || 0, 4)}${"mTCO2/MWh"}`}
+                : `${fossilEmissionsRate?.value}${fossilEmissionsRate?.unit ?? ""}`}
             </p>
           </div>
         </div>

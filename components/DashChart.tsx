@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import Image from 'next/image'
@@ -14,7 +14,6 @@ const DashChart = () => {
     const [showTooltip, setShowTooltip] = useState(false);
     const [customerType, setCustomerType] = useState<'residential' | 'non_residential' | undefined>(undefined);
     const [selectedYears, setSelectedYears] = useState<string[]>([]);
-    const [hasDefaultYear, setHasDefaultYear] = useState(false);
     const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
     const [selectedRegulationType, setSelectedRegulationType] = useState<string>('all');
 
@@ -29,13 +28,6 @@ const DashChart = () => {
                 .sort((a, b) => Number(b) - Number(a)),
         [switchingData?.available_years],
     );
-
-    useEffect(() => {
-        if (!hasDefaultYear && yearOptions.length > 0) {
-            setSelectedYears([yearOptions[0]]);
-            setHasDefaultYear(true);
-        }
-    }, [yearOptions, hasDefaultYear]);
 
     const apiYears = useMemo(() => {
         if (selectedYears.length === 0 || selectedYears.length === yearOptions.length) {

@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -15,7 +13,7 @@ import {
 import { useState, useMemo } from "react";
 import { mapCombinedSeriesToHourlyChartRows } from "@/lib/smpCombinedSeriesHourly";
 import type { SMPProductionVsMarginalPriceResponse } from "@/types/dto";
-import { differenceInDays, differenceInMonths } from "date-fns";
+import { differenceInDays } from "date-fns";
 
 // --- Custom Tooltip Component ---
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -64,6 +62,7 @@ const CustomLegend = (props: any) => {
       setActiveSeries([...activeSeries, dataKey]);
     }
   };
+  console.log(payload);
 
   return (
     <div className="flex items-center justify-between md:ml-10 ml-0 mt-6 md:pr-10 pr-5">
@@ -300,134 +299,17 @@ export function ElectricityScatterGraph({
           <Tooltip content={<CustomTooltip />} />
           <Legend content={<CustomLegend />} />
           <Scatter
-            name="ביקוש משקי"
-            data={scatterData1.filter((d) => d.type === "דוֹר")}
+            name="מחיר שולי כולל אילוצים"
+            data={scatterData1.filter((d) => d.type !== "דוֹר")}
             fill="#166534"
           />
           <Scatter
-            name="מחיר שולי כולל אילוצים"
-            data={scatterData1.filter((d) => d.type !== "דוֹר")}
+            name="ביקוש משקי"
+            data={scatterData1.filter((d) => d.type === "דוֹר")}
             fill="#eab308"
           />
+
         </ScatterChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-// --- Component 2: Line Graph ---
-const lineData2 = [
-  {
-    time: "00:00",
-    withExc: 110,
-    withoutExc: 165,
-    demandWith: 2800,
-    demandWithout: 6300,
-  },
-  {
-    time: "02:00",
-    withExc: 90,
-    withoutExc: 140,
-    demandWith: 2600,
-    demandWithout: 6100,
-  },
-  {
-    time: "04:00",
-    withExc: 85,
-    withoutExc: 135,
-    demandWith: 2500,
-    demandWithout: 6000,
-  },
-  {
-    time: "06:00",
-    withExc: 100,
-    withoutExc: 160,
-    demandWith: 2700,
-    demandWithout: 6200,
-  },
-  {
-    time: "10:00",
-    withExc: 110,
-    withoutExc: 165,
-    demandWith: 2800,
-    demandWithout: 6300,
-  },
-  {
-    time: "14:00",
-    withExc: 95,
-    withoutExc: 140,
-    demandWith: 2600,
-    demandWithout: 6000,
-  },
-  {
-    time: "18:00",
-    withExc: 90,
-    withoutExc: 135,
-    demandWith: 2500,
-    demandWithout: 5900,
-  },
-  {
-    time: "22:00",
-    withExc: 100,
-    withoutExc: 145,
-    demandWith: 2650,
-    demandWithout: 6050,
-  },
-  {
-    time: "24:00",
-    withExc: 105,
-    withoutExc: 150,
-    demandWith: 2700,
-    demandWithout: 6100,
-  },
-];
-
-export function ElectricityLineGraph() {
-  return (
-    <div className="w-full h-[500px] bg-transparent">
-      {/* <h2 className="text-xl font-bold text-gray-800 mb-4 text-right">
-        ייצור חשמל אל מול המחיר השוליי
-      </h2> */}
-      <ResponsiveContainer width="100%" height="95%">
-        <LineChart
-          data={lineData2}
-          margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis dataKey="time" tick={{ fontSize: 12 }} />
-          <YAxis
-            yAxisId="left"
-            orientation="left"
-            tick={{ fontSize: 12 }}
-            domain={[0, 220]}
-          />
-          <YAxis
-            yAxisId="right"
-            orientation="right"
-            tick={{ fontSize: 12 }}
-            domain={[0, 11000]}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend content={<CustomLegend />} />
-          <Line
-            yAxisId="left"
-            type="linear"
-            dataKey="withoutExc"
-            stroke="#166534"
-            strokeWidth={2}
-            dot={false}
-            name="מחיר שולי ללא אילוצים"
-          />
-          <Line
-            yAxisId="left"
-            type="linear"
-            dataKey="withExc"
-            stroke="#eab308"
-            strokeWidth={2}
-            dot={false}
-            name="מחיר שולי כולל אילוצים"
-          />
-        </LineChart>
       </ResponsiveContainer>
     </div>
   );

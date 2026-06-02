@@ -342,6 +342,21 @@ export type SMPProductionVsMarginalPriceResponse = {
 };
 
 // CO2 Emissions Mix API response
+export type CO2InfographicMetric = {
+  value: number;
+  unit: string;
+  description: string;
+};
+
+export type CO2EmissionsAvoidedMetric = CO2InfographicMetric & {
+  percentage_of_actual_plus_savings?: number;
+};
+
+export type CO2EmissionsInfographics = {
+  total_emissions_excluding_renewables: CO2InfographicMetric;
+  emissions_avoided_through_renewables: CO2EmissionsAvoidedMetric;
+};
+
 export type CO2EmissionsMixResponse = {
   view: string;
   start_date: string;
@@ -368,18 +383,7 @@ export type CO2EmissionsMixResponse = {
       unit: string;
     };
   };
-  infographics: {
-    total_emissions_excluding_renewables: {
-      value: number;
-      unit: string;
-      description: string;
-    };
-    emissions_avoided_through_renewables: {
-      value: number;
-      unit: string;
-      description: string;
-    };
-  };
+  infographics: CO2EmissionsInfographics;
   time_series: Array<{
     period: string;
     label: string;
@@ -406,18 +410,7 @@ export type CO2EmissionsOverTimeResponse = {
   view: 'month' | 'year' | 'custom';
   start_date: string;
   end_date: string;
-  infographics: {
-    total_emissions_excluding_renewables: {
-      value: number;
-      unit: string;
-      description: string;
-    };
-    emissions_avoided_through_renewables: {
-      value: number;
-      unit: string;
-      description: string;
-    };
-  };
+  infographics: CO2EmissionsInfographics;
   chart_data: Array<{
     period: string;
     label: string;
@@ -472,18 +465,7 @@ export type CO2TotalVsRatioResponse = {
   view: 'month' | 'year' | 'custom';
   start_date: string;
   end_date: string;
-  infographics: {
-    total_emissions_excluding_renewables: {
-      value: number;
-      unit: string;
-      description: string;
-    };
-    emissions_avoided_through_renewables: {
-      value: number;
-      unit: string;
-      description: string;
-    };
-  };
+  infographics: CO2EmissionsInfographics;
   chart_data: Array<{
     period: string;
     total_emissions: number;

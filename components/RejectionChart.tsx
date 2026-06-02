@@ -15,7 +15,6 @@ const RejectionChart = () => {
 
     // State for filters
     const [selectedYears, setSelectedYears] = useState<string[]>([]);
-    const [hasDefaultYear, setHasDefaultYear] = useState(false);
     const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
     const [customerType, setCustomerType] = useState<'residential' | 'non_residential' | undefined>(undefined);
     const [selectedRegulationType, setSelectedRegulationType] = useState<string>('all');
@@ -67,14 +66,6 @@ const RejectionChart = () => {
                 .sort((a, b) => Number(b) - Number(a)),
         [initialData?.available_years],
     );
-
-    // Set default to last year when data is available
-    useEffect(() => {
-        if (!hasDefaultYear && yearOptions.length > 0) {
-            setSelectedYears([yearOptions[0]]);
-            setHasDefaultYear(true);
-        }
-    }, [yearOptions, hasDefaultYear]);
 
     const apiYears = useMemo(() => {
         if (selectedYears.length === 0 || selectedYears.length === yearOptions.length) {

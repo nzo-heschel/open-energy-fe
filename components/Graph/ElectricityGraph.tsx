@@ -574,7 +574,6 @@ interface ElectricityGraphWithTabsProps {
 }
 
 const ElectricityGraphWithTabs = ({ data, isLoading, error, startDate, endDate, selectedPreset }: ElectricityGraphWithTabsProps) => {
-    const [selectedTimeframe, setSelectedTimeframe] = useState('יומי');
     const [chartView, setChartView] = useState<'time' | 'scatter'>('time');
 
     return (

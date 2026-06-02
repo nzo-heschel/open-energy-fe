@@ -42,6 +42,21 @@ export { buildExportDateRangeSuffix } from '@/lib/exportDownload';
 const API_BASE = 'https://api.open-energy.madebyomnis.com/';
 const INTERNAL_API_KEY = 'int_api_9f3c7e2a4b8d6c1f0a5e9d2b7c4a1e6f';
 
+const normalizeYearsParam = (years?: string | string[]): string[] | undefined => {
+  if (years === undefined) return undefined;
+  const list = (Array.isArray(years) ? years : [years]).filter(Boolean);
+  return list.length > 0 ? list : undefined;
+};
+
+const appendYearParams = (params: URLSearchParams, years?: string | string[]) => {
+  const list = normalizeYearsParam(years);
+  if (!list) return;
+  list.forEach((year) => params.append('year', year));
+};
+
+const yearsQueryKey = (years?: string | string[]) =>
+  normalizeYearsParam(years)?.slice().sort().join(',') ?? 'all';
+
 // Helper function to calculate granularity based on preset and date range
 const getGranularityFromPresetAndDateRange = (presetLabel: string | undefined, startDate: string, endDate: string): 'day' | 'month' | 'year' => {
   // If preset is provided, use it to determine granularity
@@ -515,18 +530,19 @@ export const exportPrivateSupplierConnectedConsumers = async (startDate?: string
 };
 
 //++ Switching requests data
-export const useSwitchingRequests = (customerType?: 'residential' | 'non_residential', year?: string) => {
+export const useSwitchingRequests = (
+  customerType?: 'residential' | 'non_residential',
+  years?: string | string[],
+) => {
   return useQuery<SwitchingRequestsResponse>({
-    queryKey: ['switching-requests', customerType, year],
+    queryKey: ['switching-requests', customerType, yearsQueryKey(years)],
     queryFn: async () => {
       try {
         const params = new URLSearchParams();
         if (customerType) {
           params.set('customer_type', customerType);
         }
-        if (year) {
-          params.set('year', year);
-        }
+        appendYearParams(params, years);
 
         const url = params.toString()
           ? `${API_BASE}api/v1/switching-requests/?${params}`
@@ -548,21 +564,25 @@ export const useSwitchingRequests = (customerType?: 'residential' | 'non_residen
 
 //++ Export switching requests data
 export const exportSwitchingRequests = async (
-  year?: string,
+  years?: string | string[],
   customerType?: 'residential' | 'non_residential',
   dateRange?: string,
 ) => {
   const params = new URLSearchParams();
-  if (year) {
-    params.set('year', year);
-  }
+  appendYearParams(params, years);
   if (customerType) {
     params.set('customer_type', customerType);
   }
 
+  const normalizedYears = normalizeYearsParam(years);
   const dateRangeSuffix =
     dateRange ??
-    buildExportDateRangeSuffix({ year: year ?? 'all' });
+    (normalizedYears
+      ? buildExportDateRangeSuffix({
+          year: normalizedYears.length === 1 ? normalizedYears[0] : undefined,
+          years: normalizedYears.length > 1 ? normalizedYears : undefined,
+        })
+      : buildExportDateRangeSuffix({ year: 'all' }));
 
   try {
     const url = params.toString()

@@ -38,7 +38,7 @@ interface PieDataItem {
 interface RejectionReasonsChartsProps {
     data?: SwitchingRequestsResponse | null;
     customerType?: 'residential' | 'non_residential';
-    year?: string;
+    years?: string | string[];
     regulationType?: string;
     rejectionReasons?: string[];
 }
@@ -129,7 +129,7 @@ const PieChartTooltip = ({ active, payload, totalValue }: any) => {
 const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
     data: propData,
     customerType,
-    year,
+    years,
     regulationType,
     rejectionReasons = ['missing_power_of_attorney', 'meter_issues', 'request_form_issues', 'other']
 }) => {
@@ -137,7 +137,7 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
     const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
     // Fetch data if not provided as prop
-    const { data: queryData } = useSwitchingRequests(customerType, year);
+    const { data: queryData } = useSwitchingRequests(customerType, years);
     const switchingData = propData || queryData;
 
     // Transform pie chart data from API response with filtering

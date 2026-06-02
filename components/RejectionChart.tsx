@@ -3,17 +3,20 @@ import api from '@/public/images/API.png'
 import download from '@/public/images/download_2.png'
 import { ChevronDown } from 'lucide-react'
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import RejectionReasonsCharts from './Charts/RejectionReasonsCharts'
 import TooltipInfo from './TooltipInfo'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import YearMultiSelectDropdown from './ui/YearMultiSelectDropdown'
 
 const RejectionChart = () => {
     //tooltips
     const [showTooltip, setShowTooltip] = useState(false);
 
     // State for filters
-    const [selectedYear, setSelectedYear] = useState<string>('all');
+    const [selectedYears, setSelectedYears] = useState<string[]>([]);
+    const [hasDefaultYear, setHasDefaultYear] = useState(false);
+    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
     const [customerType, setCustomerType] = useState<'residential' | 'non_residential' | undefined>(undefined);
     const [selectedRegulationType, setSelectedRegulationType] = useState<string>('all');
     const [selectedRejectionReasons, setSelectedRejectionReasons] = useState<string[]>(['missing_power_of_attorney', 'meter_issues', 'request_form_issues', 'other']);
@@ -57,54 +60,71 @@ const RejectionChart = () => {
     // Fetch data to get available years (without filters initially)
     const { data: initialData } = useSwitchingRequests();
 
-    // Set default to last year when data is available
-    useEffect(() => {
-        if (initialData?.available_years && initialData.available_years.length > 0 && selectedYear === 'all') {
-            const lastYear = Math.max(...initialData.available_years).toString();
-            setSelectedYear(lastYear);
-        }
-    }, [initialData?.available_years, selectedYear]);
-
-    // Fetch data with filters
-    const { data: switchingData } = useSwitchingRequests(
-        customerType,
-        selectedYear !== 'all' ? selectedYear : undefined
+    const yearOptions = useMemo(
+        () =>
+            (initialData?.available_years ?? [])
+                .map(String)
+                .sort((a, b) => Number(b) - Number(a)),
+        [initialData?.available_years],
     );
 
-    // Handle export
+    // Set default to last year when data is available
+    useEffect(() => {
+        if (!hasDefaultYear && yearOptions.length > 0) {
+            setSelectedYears([yearOptions[0]]);
+            setHasDefaultYear(true);
+        }
+    }, [yearOptions, hasDefaultYear]);
+
+    const apiYears = useMemo(() => {
+        if (selectedYears.length === 0 || selectedYears.length === yearOptions.length) {
+            return undefined;
+        }
+        return selectedYears;
+    }, [selectedYears, yearOptions]);
+
+    // Fetch data with filters
+    const { data: switchingData } = useSwitchingRequests(customerType, apiYears);
+
     const availableYears = initialData?.available_years ?? switchingData?.available_years ?? [];
 
     const handleExport = async () => {
         try {
-            const year = selectedYear !== 'all' ? selectedYear : undefined;
+            const exportYears =
+                apiYears ??
+                (selectedYears.length > 0 ? selectedYears : yearOptions);
             const dateRange = buildExportDateRangeSuffix({
-                year,
-                years: year ? undefined : availableYears.map(String),
+                year: exportYears.length === 1 ? exportYears[0] : undefined,
+                years: exportYears.length > 1 ? exportYears : undefined,
                 fallbackStartYear: initialData?.start_year ?? switchingData?.start_year,
                 fallbackEndYear: availableYears.length
                     ? Math.max(...availableYears)
                     : undefined,
             });
-            await exportSwitchingRequests(year, customerType, dateRange);
+            await exportSwitchingRequests(exportYears.length > 0 ? exportYears : undefined, customerType, dateRange);
         } catch (error) {
             console.error('Failed to export data:', error);
         }
     };
-    // Close dropdown when clicking outside
+
+    // Close dropdowns when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as HTMLElement;
             if (!target.closest('.rejection-reason-dropdown')) {
                 setShowRejectionReasonDropdown(false);
             }
+            if (!target.closest('.year-filter-dropdown')) {
+                setIsYearDropdownOpen(false);
+            }
         };
-        if (showRejectionReasonDropdown) {
+        if (showRejectionReasonDropdown || isYearDropdownOpen) {
             document.addEventListener('mousedown', handleClickOutside);
         }
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [showRejectionReasonDropdown]);
+    }, [showRejectionReasonDropdown, isYearDropdownOpen]);
 
     return (
         <div className='flex flex-col md:gap-[30px] gap-5'>
@@ -192,24 +212,16 @@ const RejectionChart = () => {
                         <div className="flex flex-wrap items-center gap-5">
                             <span className="text-sm text-slate-600 mt-6">סינון לפי:</span>
 
-                            <div className="relative w-[113px]">
+                            <div className="relative w-[113px] year-filter-dropdown">
                                 <label htmlFor="" className='flex flex-col gap-1'>
                                     <span className='text-sm text-slate-600'>שנה:</span>
-                                    <select
-                                        className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
-                                        value={selectedYear}
-                                        onChange={(e) => setSelectedYear(e.target.value)}
-                                    >
-                                        {switchingData?.available_years?.map((year) => (
-                                            <option key={year} value={year.toString()}>
-                                                {year}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {/* Custom dropdown arrow */}
-                                    <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
-                                        <ChevronDown size={14} />
-                                    </span>
+                                    <YearMultiSelectDropdown
+                                        selectedYears={selectedYears}
+                                        onChange={setSelectedYears}
+                                        options={yearOptions}
+                                        isOpen={isYearDropdownOpen}
+                                        setIsOpen={setIsYearDropdownOpen}
+                                    />
                                 </label>
                             </div>
                             <div className="relative w-[179px]">
@@ -292,7 +304,7 @@ const RejectionChart = () => {
                     <RejectionReasonsCharts
                         data={switchingData}
                         customerType={customerType}
-                        year={selectedYear !== 'all' ? selectedYear : undefined}
+                        years={apiYears}
                         regulationType={selectedRegulationType}
                         rejectionReasons={selectedRejectionReasons}
                     />

@@ -363,7 +363,7 @@ const CO2DonutChart = () => {
             <p className="text-center text-lg font-normal text-[#484C56]">
               {isLoadingRatio
                 ? "..."
-                : `${formatNumber(emissionsRatioData?.total || 0, 4)}${emissionsRatioData?.unit || "tons CO2/MWh"}`}
+                : `${formatNumber(emissionsRatioData?.total || 0, 4)}${"mTCO2/MWh"}`}
             </p>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import Image from 'next/image'
@@ -7,43 +7,68 @@ import api from '@/public/images/API.png'
 import DashboardCharts from './Charts/DashboardChart'
 import TooltipInfo from './TooltipInfo'
 import { useSwitchingRequests, exportSwitchingRequests, buildExportDateRangeSuffix } from '@/lib/api'
+import YearMultiSelectDropdown from './ui/YearMultiSelectDropdown'
 
 const DashChart = () => {
     //tooltips
     const [showTooltip, setShowTooltip] = useState(false);
     const [customerType, setCustomerType] = useState<'residential' | 'non_residential' | undefined>(undefined);
-    const [selectedYear, setSelectedYear] = useState<string>('all');
+    const [selectedYears, setSelectedYears] = useState<string[]>([]);
+    const [hasDefaultYear, setHasDefaultYear] = useState(false);
+    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
     const [selectedRegulationType, setSelectedRegulationType] = useState<string>('all');
 
     // Fetch switching requests data to get available years
     // First fetch without year filter to get available years
     const { data: switchingData } = useSwitchingRequests(customerType);
 
-    // Get available years from API response, default to empty array
-    const availableYears = switchingData?.available_years || [];
-
-    // Fetch data with selected year filter (only if year is not 'all')
-    const { data: filteredData } = useSwitchingRequests(
-        customerType,
-        selectedYear !== 'all' ? selectedYear : undefined
+    const yearOptions = useMemo(
+        () =>
+            (switchingData?.available_years ?? [])
+                .map(String)
+                .sort((a, b) => Number(b) - Number(a)),
+        [switchingData?.available_years],
     );
 
-    // Use filtered data if year is selected, otherwise use all data
+    useEffect(() => {
+        if (!hasDefaultYear && yearOptions.length > 0) {
+            setSelectedYears([yearOptions[0]]);
+            setHasDefaultYear(true);
+        }
+    }, [yearOptions, hasDefaultYear]);
+
+    const apiYears = useMemo(() => {
+        if (selectedYears.length === 0 || selectedYears.length === yearOptions.length) {
+            return undefined;
+        }
+        return selectedYears;
+    }, [selectedYears, yearOptions]);
+
+    // Get available years from API response, default to empty array
+    const availableYears = switchingData?.available_years ?? [];
+
+    // Fetch data with selected years filter
+    const { data: filteredData } = useSwitchingRequests(
+        customerType,
+        apiYears
+    );
+
+    // Use filtered data if year(s) selected, otherwise use all data
     // Note: regulation_type filtering is done client-side in the chart component
-    const chartData = selectedYear !== 'all' && filteredData ? filteredData : switchingData;
+    const chartData = apiYears && filteredData ? filteredData : switchingData;
 
     const handleExport = async () => {
         try {
-            const year = selectedYear !== 'all' ? selectedYear : undefined;
+            const exportYears = apiYears ?? (selectedYears.length > 0 ? selectedYears : yearOptions);
             const dateRange = buildExportDateRangeSuffix({
-                year,
-                years: year ? undefined : availableYears.map(String),
+                year: exportYears.length === 1 ? exportYears[0] : undefined,
+                years: exportYears.length > 1 ? exportYears : undefined,
                 fallbackStartYear: switchingData?.start_year,
                 fallbackEndYear: availableYears.length
                     ? Math.max(...availableYears)
                     : undefined,
             });
-            await exportSwitchingRequests(year, customerType, dateRange);
+            await exportSwitchingRequests(exportYears.length > 0 ? exportYears : undefined, customerType, dateRange);
         } catch (error) {
             console.error('Failed to export data:', error);
             // You could add a toast notification here
@@ -138,27 +163,16 @@ const DashChart = () => {
                         <div className="flex items-center gap-5">
                             <span className="text-sm text-slate-600 mt-6">סינון לפי:</span>
 
-                            <div className="relative w-[113px]">
-                                <label htmlFor="year-selector" className='flex flex-col gap-1'>
+                            <div className="relative w-[113px] year-filter-dropdown">
+                                <label htmlFor="" className='flex flex-col gap-1'>
                                     <span className='text-sm text-slate-600'>שנה:</span>
-                                    <select
-                                        id="year-selector"
-                                        value={selectedYear}
-                                        onChange={(e) => setSelectedYear(e.target.value)}
-                                        className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
-                                        disabled={availableYears.length === 0}
-                                    >
-                                        <option value="all">הכל</option>
-                                        {availableYears
-                                            .sort((a, b) => b - a) // Sort descending (newest first)
-                                            .map(year => (
-                                                <option key={year} value={year.toString()}>{year}</option>
-                                            ))}
-                                    </select>
-                                    {/* Custom dropdown arrow */}
-                                    <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
-                                        <ChevronDown size={14} />
-                                    </span>
+                                    <YearMultiSelectDropdown
+                                        selectedYears={selectedYears}
+                                        onChange={setSelectedYears}
+                                        options={yearOptions}
+                                        isOpen={isYearDropdownOpen}
+                                        setIsOpen={setIsYearDropdownOpen}
+                                    />
                                 </label>
                             </div>
                             <div className="relative w-[179px]">

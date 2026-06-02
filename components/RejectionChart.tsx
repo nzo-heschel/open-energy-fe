@@ -298,6 +298,7 @@ const RejectionChart = () => {
                         years={apiYears}
                         regulationType={selectedRegulationType}
                         rejectionReasons={selectedRejectionReasons}
+                        selectedYears={selectedYears}
                     />
                 </CardContent>
             </Card>

@@ -41,7 +41,10 @@ interface RejectionReasonsChartsProps {
     years?: string | string[];
     regulationType?: string;
     rejectionReasons?: string[];
+    selectedYears?: string[];
 }
+
+type MonthlyRejectionRow = SwitchingRequestsResponse['monthly_rejections_by_reason'][number];
 
 // Label mapping from API to Hebrew
 const rejectionReasonLabelMap: Record<string, string> = {
@@ -123,6 +126,11 @@ const PieChartTooltip = ({ active, payload, totalValue }: any) => {
     return null;
 };
 
+const formatMonthLabel = (monthKey: string) => {
+    const [year, month] = monthKey.split('-');
+    return `${month}/${year.slice(-2)}`;
+};
+
 // -------------------------
 // Main Component
 // -------------------------
@@ -131,7 +139,8 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
     customerType,
     years,
     regulationType,
-    rejectionReasons = ['missing_power_of_attorney', 'meter_issues', 'request_form_issues', 'other']
+    rejectionReasons = ['missing_power_of_attorney', 'meter_issues', 'request_form_issues', 'other'],
+    selectedYears = [],
 }) => {
     const [hiddenKeys, setHiddenKeys] = useState<string[]>([]);
     const [hoveredItem, setHoveredItem] = useState<string | null>(null);
@@ -170,13 +179,13 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
         });
     }, [switchingData, rejectionReasons]);
 
-    // Transform bar chart data from monthly_rejections_by_reason with filtering and thousands formatting
+    const showMonthlyBars = selectedYears.length === 1;
+
     const barData = useMemo<DataItem[]>(() => {
         if (!switchingData?.monthly_rejections_by_reason) {
             return [];
         }
 
-        // Calculate regulation type ratio for filtering (client-side)
         let regulationTypeRatio = 1;
         if (regulationType && regulationType !== 'all' && switchingData?.charts?.requests_by_regulation_type?.data) {
             const selectedRegulation = switchingData.charts.requests_by_regulation_type.data.find(
@@ -191,18 +200,12 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
             }
         }
 
-        return switchingData.monthly_rejections_by_reason.map((item) => {
-            // Format month from "2021-09" to "09/21"
-            const [year, month] = item.month.split('-');
-            const formattedMonth = `${month}/${year.slice(-2)}`;
-
-            // Apply regulation type filter by scaling proportionally
+        const toBarPoint = (label: string, item: MonthlyRejectionRow): DataItem => {
             let missingDocs = (item.missing_power_of_attorney || 0) * regulationTypeRatio;
             let photoIssues = (item.meter_issues || 0) * regulationTypeRatio;
             let formErrors = (item.request_form_issues || 0) * regulationTypeRatio;
             let other = (item.other || 0) * regulationTypeRatio;
 
-            // Filter by selected rejection reasons
             if (rejectionReasons && rejectionReasons.length > 0 && rejectionReasons.length < 4) {
                 if (!rejectionReasons.includes('missing_power_of_attorney')) {
                     missingDocs = 0;
@@ -218,18 +221,48 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                 }
             }
 
-            // Keep original values (no rounding, no conversion to thousands)
             const total = missingDocs + photoIssues + formErrors + other;
             return {
-                month: formattedMonth,
-                missingDocs: missingDocs,
-                photoIssues: photoIssues,
-                formErrors: formErrors,
-                other: other,
-                total: total,
+                month: label,
+                missingDocs,
+                photoIssues,
+                formErrors,
+                other,
+                total,
             };
+        };
+
+        if (showMonthlyBars) {
+            const year = selectedYears[0];
+            return switchingData.monthly_rejections_by_reason
+                .filter((item) => item.month.startsWith(`${year}-`))
+                .map((item) => toBarPoint(formatMonthLabel(item.month), item));
+        }
+
+        const yearlyTotals = new Map<string, MonthlyRejectionRow>();
+        switchingData.monthly_rejections_by_reason.forEach((item) => {
+            const year = item.month.split('-')[0];
+            const existing = yearlyTotals.get(year);
+            if (!existing) {
+                yearlyTotals.set(year, { ...item, month: year });
+                return;
+            }
+            existing.missing_power_of_attorney =
+                (existing.missing_power_of_attorney || 0) + (item.missing_power_of_attorney || 0);
+            existing.meter_issues = (existing.meter_issues || 0) + (item.meter_issues || 0);
+            existing.request_form_issues =
+                (existing.request_form_issues || 0) + (item.request_form_issues || 0);
+            existing.other = (existing.other || 0) + (item.other || 0);
+            existing.total_rejections =
+                (existing.total_rejections || 0) + (item.total_rejections || 0);
         });
-    }, [switchingData, regulationType, rejectionReasons]);
+
+        return Array.from(yearlyTotals.entries())
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([year, item]) => toBarPoint(year, item));
+    }, [switchingData, regulationType, rejectionReasons, showMonthlyBars, selectedYears]);
+
+    const barSize = showMonthlyBars ? 28 : 48;
 
     // Get total rejections for center display
     const totalRejections = switchingData?.total_rejections || 0;
@@ -370,7 +403,7 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                         {!hiddenKeys.includes("ייפוי כח חסר") &&
                             (!rejectionReasons || rejectionReasons.length === 4 || rejectionReasons.includes('missing_power_of_attorney')) && (
                                 <Bar
-                                    barSize={28}
+                                    barSize={barSize}
                                     dataKey="missingDocs"
                                     name="ייפוי כח חסר"
                                     fill="#8B0000"
@@ -381,7 +414,7 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                         {!hiddenKeys.includes("בעיות במונה") &&
                             (!rejectionReasons || rejectionReasons.length === 4 || rejectionReasons.includes('meter_issues')) && (
                                 <Bar
-                                    barSize={28}
+                                    barSize={barSize}
                                     dataKey="photoIssues"
                                     name="בעיות במונה"
                                     fill="#DC143C"
@@ -392,7 +425,7 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                         {!hiddenKeys.includes("בעיות במילוי הבקשה") &&
                             (!rejectionReasons || rejectionReasons.length === 4 || rejectionReasons.includes('request_form_issues')) && (
                                 <Bar
-                                    barSize={28}
+                                    barSize={barSize}
                                     dataKey="formErrors"
                                     name="בעיות במילוי הבקשה"
                                     fill="#FF6347"
@@ -403,7 +436,7 @@ const RejectionReasonsCharts: React.FC<RejectionReasonsChartsProps> = ({
                         {!hiddenKeys.includes("אחר") &&
                             (!rejectionReasons || rejectionReasons.length === 4 || rejectionReasons.includes('other')) && (
                                 <Bar
-                                    barSize={28}
+                                    barSize={barSize}
                                     radius={[4, 4, 0, 0]}
                                     dataKey="other"
                                     name="אחר"

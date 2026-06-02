@@ -213,6 +213,7 @@ const DashChart = () => {
                         customerType={customerType}
                         data={chartData}
                         regulationType={selectedRegulationType}
+                        selectedYears={selectedYears}
                     />
                 </CardContent>
             </Card>

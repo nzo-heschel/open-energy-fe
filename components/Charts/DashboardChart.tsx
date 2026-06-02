@@ -21,6 +21,7 @@ interface DashboardChartsProps {
     customerType?: 'residential' | 'non_residential';
     data?: SwitchingRequestsResponse | null;
     regulationType?: string;
+    selectedYears?: string[];
 }
 
 const COMPLETED_COLOR = "#276E4E";
@@ -94,7 +95,17 @@ const BarChartTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: propData, regulationType }) => {
+const formatMonthLabel = (monthKey: string) => {
+    const [year, month] = monthKey.split('-');
+    return `${month}/${year.slice(-2)}`;
+};
+
+const DashboardCharts: React.FC<DashboardChartsProps> = ({
+    customerType,
+    data: propData,
+    regulationType,
+    selectedYears = [],
+}) => {
     const [hiddenKeys, setHiddenKeys] = useState<string[]>([]);
     const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
@@ -167,14 +178,15 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
         };
     }, [switchingData]);
 
+    const showMonthlyBars = selectedYears.length === 1;
+
     // Transform bar chart data from monthly_requests with client-side filtering
     const barData = useMemo(() => {
         if (!switchingData?.monthly_requests) {
             return [];
         }
 
-        // Calculate regulation type percentage for filtering
-        let regulationTypeRatio = 1; // Default: show 100% of data
+        let regulationTypeRatio = 1;
         if (regulationType && regulationType !== 'all' && switchingData?.charts?.requests_by_regulation_type?.data) {
             const selectedRegulation = switchingData.charts.requests_by_regulation_type.data.find(
                 item => item.label === regulationType
@@ -184,32 +196,40 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
             );
 
             if (selectedRegulation && totalRegulation > 0) {
-                // Calculate the ratio of selected regulation type to total
                 regulationTypeRatio = selectedRegulation.count / totalRegulation;
             }
         }
 
-        // Format monthly requests data and apply regulation type filter
-        return switchingData.monthly_requests.map((item) => {
-            // Format month from "2021-09" to "09/21"
-            const [year, month] = item.month.split('-');
-            const formattedMonth = `${month}/${year.slice(-2)}`;
-
-            // Apply regulation type filter by scaling the requests proportionally
-            const filteredRequests = Math.round(item.requests * regulationTypeRatio);
-
-            // Calculate approved and rejected based on overall ratio
+        const toBarPoint = (label: string, requests: number) => {
+            const filteredRequests = Math.round(requests * regulationTypeRatio);
             const approved = Math.round(filteredRequests * statusRatios.approvedRatio);
-            const rejected = filteredRequests - approved; // Use remainder to ensure total matches
+            const rejected = filteredRequests - approved;
 
             return {
-                month: formattedMonth,
+                month: label,
                 requests: filteredRequests,
                 approved,
                 rejected,
             };
+        };
+
+        if (showMonthlyBars) {
+            const year = selectedYears[0];
+            return switchingData.monthly_requests
+                .filter((item) => item.month.startsWith(`${year}-`))
+                .map((item) => toBarPoint(formatMonthLabel(item.month), item.requests));
+        }
+
+        const yearlyTotals = new Map<string, number>();
+        switchingData.monthly_requests.forEach((item) => {
+            const year = item.month.split('-')[0];
+            yearlyTotals.set(year, (yearlyTotals.get(year) ?? 0) + item.requests);
         });
-    }, [switchingData, regulationType, statusRatios]);
+
+        return Array.from(yearlyTotals.entries())
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([year, requests]) => toBarPoint(year, requests));
+    }, [switchingData, regulationType, statusRatios, showMonthlyBars, selectedYears]);
 
     // Filter pie data to exclude hidden segments
     const visiblePieData = useMemo(() => {
@@ -368,7 +388,7 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
                         <Tooltip content={<BarChartTooltip />} cursor={{ fill: 'transparent' }} />
                         {/* Approved bar (bottom of stack) */}
                         <Bar
-                            barSize={28}
+                            barSize={showMonthlyBars ? 28 : 48}
                             dataKey="approved"
                             name="הושלמו"
                             fill={COMPLETED_COLOR}
@@ -377,7 +397,7 @@ const DashboardCharts: React.FC<DashboardChartsProps> = ({ customerType, data: p
                         />
                         {/* Rejected bar (top of stack) */}
                         <Bar
-                            barSize={28}
+                            barSize={showMonthlyBars ? 28 : 48}
                             radius={[4, 4, 0, 0]}
                             dataKey="rejected"
                             name="נדחו"

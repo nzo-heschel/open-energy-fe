@@ -46,7 +46,75 @@ const sumVisibleTotal = (
 const getTopVisibleStackKey = (hiddenBars: string[]) =>
     [...STACK_KEYS].reverse().find((key) => !hiddenBars.includes(key));
 
-// Custom Tooltip
+const getActiveMonth = (
+    data: PrivateSupplierConnectedConsumersResponse,
+): string | undefined => {
+    if (data.end_date) return data.end_date.slice(0, 7);
+    const districtMonths = data.segments.district?.map((row) => row.month) ?? [];
+    return districtMonths.sort().at(-1);
+};
+
+const getDistrictRows = (
+    data: PrivateSupplierConnectedConsumersResponse,
+    month?: string,
+) => {
+    const allRows = data.segments.district ?? [];
+    if (!month) return allRows;
+
+    const filteredRows = allRows.filter((row) => row.month === month);
+    if (filteredRows.length > 0) return filteredRows;
+
+    const latestByDistrict = new Map<string, (typeof allRows)[number]>();
+    for (const row of allRows) {
+        const existing = latestByDistrict.get(row.district);
+        if (!existing || row.month > existing.month) {
+            latestByDistrict.set(row.district, row);
+        }
+    }
+
+    return Array.from(latestByDistrict.values());
+};
+
+const getDistrictMeters = (
+    breakdown: Record<string, { smart: number; basic: number }>,
+    districtKey: string,
+) => {
+    if (breakdown[districtKey]) return breakdown[districtKey];
+
+    const spacedKey = districtKey.replaceAll('_', ' ');
+    if (breakdown[spacedKey]) return breakdown[spacedKey];
+
+    const underscoredKey = districtKey.replaceAll(' ', '_');
+    if (breakdown[underscoredKey]) return breakdown[underscoredKey];
+
+    return undefined;
+};
+
+const getSectorMultiplier = (
+    data: PrivateSupplierConnectedConsumersResponse,
+    month?: string,
+    selectedSector?: string,
+): number => {
+    if (!selectedSector || !data.segments.sector?.length) return 1;
+
+    let sectorRows = month
+        ? data.segments.sector.filter((row) => row.month === month)
+        : data.segments.sector;
+
+    if (sectorRows.length === 0) {
+        sectorRows = data.segments.sector;
+    }
+
+    const totalSectorConsumers = sectorRows.reduce(
+        (acc, item) => acc + item.total_consumers,
+        0,
+    );
+    const selectedSectorData = sectorRows.find((item) => item.sector === selectedSector);
+    if (!selectedSectorData || totalSectorConsumers <= 0) return 1;
+
+    return selectedSectorData.total_consumers / totalSectorConsumers;
+};
+
 const CustomTooltip = ({
     active,
     payload,
@@ -101,46 +169,38 @@ const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
 
     // Transform data for chart - districts on X-axis, meter types as stacked bars
     const chartData = useMemo(() => {
-        if (!data?.segments?.district) return [];
+        if (!data?.segments?.district?.length) return [];
 
-        const districtData = data.segments.district;
+        const month = getActiveMonth(data);
+        const districtRows = getDistrictRows(data, month);
+        const breakdown = data.district_meter_breakdown ?? {};
+        const sectorMultiplier = getSectorMultiplier(data, month, selectedSector);
 
-        // Get meter type proportions from the overall data
-        const meterTypeData = data.segments.meter_type || [];
-        const totalMeterConsumers = meterTypeData.reduce((acc, item) => acc + item.total_consumers, 0);
+        return districtRows
+            .map((item) => {
+                const meters = getDistrictMeters(breakdown, item.district);
+                const districtLabel = item.district.replaceAll('_', ' ');
+                const total = Math.round(item.total_consumers * sectorMultiplier);
 
-        // Calculate proportions for each meter type
-        const meterProportions: Record<string, number> = {};
-        meterTypeData.forEach(item => {
-            meterProportions[item.meter_type] = totalMeterConsumers > 0
-                ? item.total_consumers / totalMeterConsumers
-                : 0;
-        });
+                if (meters) {
+                    const smart = Math.round(meters.smart * sectorMultiplier);
+                    const basic = Math.round(meters.basic * sectorMultiplier);
+                    return {
+                        district: districtLabel,
+                        smart,
+                        basic,
+                        total: smart + basic || total,
+                    };
+                }
 
-        // If sector filter is applied, adjust the totals based on sector proportions
-        let sectorMultiplier = 1;
-        if (selectedSector && data.segments.sector) {
-            const sectorData = data.segments.sector;
-            const totalSectorConsumers = sectorData.reduce((acc, item) => acc + item.total_consumers, 0);
-            const selectedSectorData = sectorData.find(item => item.sector === selectedSector);
-            if (selectedSectorData && totalSectorConsumers > 0) {
-                sectorMultiplier = selectedSectorData.total_consumers / totalSectorConsumers;
-            }
-        }
-
-        // Create chart data with districts on X-axis
-        return districtData.map(item => {
-            const adjustedTotal = item.total_consumers * sectorMultiplier;
-            const smart = Math.round(adjustedTotal * (meterProportions['smart'] || 0));
-            const basic = Math.round(adjustedTotal * (meterProportions['basic'] || 0));
-
-            return {
-                district: item.district.replaceAll('_', ' '), // Replace underscores with spaces for display
-                smart,
-                basic,
-                total: smart + basic,
-            };
-        }).sort((a, b) => b.total - a.total); // Sort by total consumers descending
+                return {
+                    district: districtLabel,
+                    smart: 0,
+                    basic: 0,
+                    total,
+                };
+            })
+            .sort((a, b) => b.total - a.total);
     }, [data, selectedSector]);
 
     const chartDisplayData = useMemo(
@@ -154,13 +214,15 @@ const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
 
     const topVisibleStackKey = getTopVisibleStackKey(hiddenBars);
 
-    const handleLegendClick = (payload: any) => {
-        const { dataKey } = payload;
-        if (hiddenBars.includes(dataKey)) {
-            setHiddenBars(hiddenBars.filter(key => key !== dataKey));
-        } else {
-            setHiddenBars([...hiddenBars, dataKey]);
-        }
+    const handleLegendClick = (entry: { dataKey?: string }) => {
+        const { dataKey } = entry;
+        if (!dataKey) return;
+
+        setHiddenBars((prev) =>
+            prev.includes(dataKey)
+                ? prev.filter((key) => key !== dataKey)
+                : [...prev, dataKey],
+        );
     };
 
     const handleLegendMouseEnter = (dataKey: string) => {
@@ -251,13 +313,14 @@ const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
                     />
                     <Tooltip content={<CustomTooltip hiddenBars={hiddenBars} />} />
                     <Legend
-                        content={
+                        content={(props) => (
                             <CustomLegend
+                                {...props}
                                 onClick={handleLegendClick}
                                 onMouseEnter={handleLegendMouseEnter}
                                 onMouseLeave={handleLegendMouseLeave}
                             />
-                        }
+                        )}
                     />
                     <Bar
                         dataKey="basic"
@@ -289,7 +352,9 @@ const PrivateConsumersChart: React.FC<PrivateConsumersChartProps> = ({
                         stackId="a"
                         fill={meterTypeColors.smart}
                         barSize={40}
-                        radius={[4, 4, 0, 0]}
+                        radius={
+                            topVisibleStackKey === 'smart' ? [4, 4, 0, 0] : [0, 0, 0, 0]
+                        }
                         hide={hiddenBars.includes('smart')}
                         opacity={getBarOpacity('smart')}
                     >

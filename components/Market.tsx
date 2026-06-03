@@ -17,40 +17,18 @@ import {
 const Market = () => {
   //tooltips
   const [showTooltip, setShowTooltip] = useState(false);
-  const [selectedYear, setSelectedYear] = useState<string>("2026");
   const [selectedSector, setSelectedSector] = useState<string>("");
-
-  // Calculate start and end dates based on selected year
-  const startEndDate = useMemo(() => {
-    const year = parseInt(selectedYear);
-    const start = new Date(year, 0, 1); // January 1st
-    const end = new Date(year, 11, 31); // December 31st
-    return {
-      start: format(start, "yyyy-MM-dd"),
-      end: format(end, "yyyy-MM-dd"),
-    };
-  }, [selectedYear]);
 
   // Fetch private supplier connected consumers data
   const {
     data: privateConsumersData,
     isLoading,
     error,
-  } = usePrivateSupplierConnectedConsumers(
-    startEndDate.start,
-    startEndDate.end,
-  );
-
-  const handleYearChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedYear(event.target.value);
-  };
+  } = usePrivateSupplierConnectedConsumers();
 
   const handleExport = async () => {
     try {
-      await exportPrivateSupplierConnectedConsumers(
-        startEndDate.start,
-        startEndDate.end,
-      );
+      await exportPrivateSupplierConnectedConsumers();
     } catch (error) {
       console.error("Failed to export data:", error);
       // You could add a toast notification here
@@ -176,27 +154,6 @@ const Market = () => {
           <div className="-mt-4 flex items-center gap-4">
             <div className="flex flex-wrap items-center gap-5">
               <span className="text-sm text-slate-600 mt-6">מיון לפי:</span>
-
-              <div className="relative w-[113px]">
-                <label htmlFor="year-selector" className="flex flex-col gap-1">
-                  <span className="text-sm text-slate-600">שנה:</span>
-                  <select
-                    id="year-selector"
-                    value={selectedYear}
-                    onChange={handleYearChange}
-                    className="w-full border rounded-full px-3 py-1 text-xs h-8 appearance-none bg-white pr-6"
-                  >
-                    <option value="2026">2026</option>
-                    <option value="2025">2025</option>
-                    <option value="2024">2024</option>
-                    <option value="2023">2023</option>
-                  </select>
-                  {/* Custom dropdown arrow */}
-                  <span className="pointer-events-none absolute left-3 top-[40px] -translate-y-1/2 text-black text-xs">
-                    <ChevronDown size={14} />
-                  </span>
-                </label>
-              </div>
               <div className="relative w-[179px]">
                 <label
                   htmlFor="sector-selector"

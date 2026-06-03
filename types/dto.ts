@@ -263,6 +263,13 @@ export type PrivateSupplierConnectedConsumersResponse = {
       new_additions: number;
     }>;
   };
+  district_meter_breakdown?: Record<
+    string,
+    {
+      smart: number;
+      basic: number;
+    }
+  >;
   note?: string;
 };
 
@@ -778,12 +785,12 @@ export type InstalledCapacityGrowthResponse = {
 export type InstalledCapacityByFacilitySizeBracketValue =
   | number
   | {
-      total_mw?: number;
-      /** New API */
-      count?: number;
-      /** Legacy name */
-      facility_count?: number;
-    };
+    total_mw?: number;
+    /** New API */
+    count?: number;
+    /** Legacy name */
+    facility_count?: number;
+  };
 
 // Installed Capacity by Facility Size API response
 export type InstalledCapacityByFacilitySizeResponse = {
@@ -893,9 +900,9 @@ export type ResponseCapacityBySizeResponse = {
 export type ResponseCapacityDistrictBreakdownValue =
   | number
   | {
-      total_mw?: number;
-      count?: number;
-    };
+    total_mw?: number;
+    count?: number;
+  };
 
 export type ResponseCapacityDistrictBreakdown = Partial<
   Record<

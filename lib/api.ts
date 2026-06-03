@@ -452,16 +452,12 @@ export const exportSMPProductionVsMarginalPrice = async (startDate: string, endD
 };
 
 //++ Private supplier connected consumers data
-export const usePrivateSupplierConnectedConsumers = (startDate: string, endDate: string) => {
+export const usePrivateSupplierConnectedConsumers = () => {
   return useQuery<PrivateSupplierConnectedConsumersResponse>({
-    queryKey: ['private-supplier-connected-consumers', startDate, endDate],
+    queryKey: ['private-supplier-connected-consumers'],
     queryFn: async () => {
       try {
-        const params = new URLSearchParams();
-        params.set('start_date', startDate);
-        params.set('end_date', endDate);
-
-        const data = await fetcher(`${API_BASE}api/v1/private-supplier-connected-consumers/?${params}`);
+        const data = await fetcher(`${API_BASE}api/v1/private-supplier-connected-consumers/`);
         return data;
       } catch (error) {
         console.warn('API call failed:', error);
@@ -579,9 +575,9 @@ export const exportSwitchingRequests = async (
     dateRange ??
     (normalizedYears
       ? buildExportDateRangeSuffix({
-          year: normalizedYears.length === 1 ? normalizedYears[0] : undefined,
-          years: normalizedYears.length > 1 ? normalizedYears : undefined,
-        })
+        year: normalizedYears.length === 1 ? normalizedYears[0] : undefined,
+        years: normalizedYears.length > 1 ? normalizedYears : undefined,
+      })
       : buildExportDateRangeSuffix({ year: 'all' }));
 
   try {

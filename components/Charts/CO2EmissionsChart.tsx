@@ -183,7 +183,7 @@ const CO2EmissionsChart = () => {
                 </TooltipContent>
               </UITooltip>
             </TooltipProvider>
-            ממקורות פוסיליים CO2 שיעור פליטות
+            {"שיעור פליטות " + " CO2 " + "ממקורות פוסיליים"}
           </h2>
           {/* Buttons SECOND - goes to LEFT in RTL */}
           <div className="flex items-start md:gap-4 gap-2">

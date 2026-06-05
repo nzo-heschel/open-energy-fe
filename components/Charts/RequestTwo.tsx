@@ -68,7 +68,7 @@ const CustomTooltip = ({
     (sum, entry) => sum + (Number(entry.value) || 0),
     0,
   );
-  const unit = activeTab === "supply" ? "KW" : "מתקנים";
+  const unit = activeTab === "supply" ? "MW" : "מתקנים";
 
   return (
     <div className="rounded-lg shadow-xl border border-[#DEDEDE] bg-white p-4 min-w-[160px] text-sm">
@@ -230,9 +230,9 @@ export default function RequestTwo() {
       return { small, medium, large, xlarge };
     };
 
-  const isLegacyMwBands = (
-    brackets: Record<string, { total_mw?: number; count?: number }>,
-  ) => "Up to 16 kW" in brackets;
+    const isLegacyMwBands = (
+      brackets: Record<string, { total_mw?: number; count?: number }>,
+    ) => "Up to 16 kW" in brackets;
 
     return apiData.yearly_series
       .map((yearData) => {
@@ -503,7 +503,7 @@ export default function RequestTwo() {
             data={chartDisplayData}
             xAxisDataKey="year"
             yAxisLabel={
-              activeTab === "supply" ? "הספק [KW]" : "מספר מתקנים"
+              activeTab === "supply" ? "הספק [MW]" : "מספר מתקנים"
             }
             tooltipContent={
               <CustomTooltip

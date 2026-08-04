@@ -14,8 +14,9 @@ import type {
   SwitchingRequestsResponse
 } from '@/types/dto';
 
-const API_BASE = 'https://api.open-energy.madebyomnis.com/';
-const INTERNAL_API_KEY = 'int_api_9f3c7e2a4b8d6c1f0a5e9d2b7c4a1e6f';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.open-energy.madebyomnis.com/';
+const INTERNAL_API_KEY = process.env.NEXT_PUBLIC_INTERNAL_API_KEY || 'int_api_9f3c7e2a4b8d6c1f0a5e9d2b7c4a1e6f';
+
 
 // Helper function to calculate granularity based on preset and date range
 const getGranularityFromPresetAndDateRange = (presetLabel: string | undefined, startDate: string, endDate: string): 'day' | 'month' | 'year' => {

@@ -39,8 +39,9 @@ import {
 
 export { buildExportDateRangeSuffix } from '@/lib/exportDownload';
 
-const API_BASE = 'https://api.open-energy.madebyomnis.com/';
-const INTERNAL_API_KEY = 'int_api_9f3c7e2a4b8d6c1f0a5e9d2b7c4a1e6f';
+// All backend calls go through the same-origin proxy in app/api/backend/[...path]/route.ts,
+// which attaches the API key server-side.
+const API_BASE = '/api/backend/';
 
 const normalizeYearsParam = (years?: string | string[]): string[] | undefined => {
   if (years === undefined) return undefined;
@@ -96,11 +97,7 @@ const getGranularityFromPresetAndDateRange = (presetLabel: string | undefined, s
 
 // Generic fetcher
 const fetcher = async (url: string) => {
-  const response = await fetch(url, {
-    headers: {
-      'x-api-key': INTERNAL_API_KEY,
-    },
-  });
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error('Network response was not ok');
   }
@@ -115,7 +112,7 @@ export const useMarketOverview = (filters: Partial<FilterOptions>) => {
 
   return useQuery<MarketOverviewResponse>({
     queryKey: ['market-overview', filters],
-    queryFn: () => fetcher(`${API_BASE}/market/overview?${params}`),
+    queryFn: () => fetcher(`${API_BASE}market/overview?${params}`),
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchInterval: 15 * 60 * 1000, // 15 minutes
   });
@@ -129,7 +126,7 @@ export const useSmpLine = (filters: Partial<FilterOptions>) => {
 
   return useQuery<SmpLineResponse>({
     queryKey: ['smp-line', filters],
-    queryFn: () => fetcher(`${API_BASE}/smp/line?${params}`),
+    queryFn: () => fetcher(`${API_BASE}smp/line?${params}`),
     staleTime: 5 * 60 * 1000,
     refetchInterval: 15 * 60 * 1000,
   });
@@ -143,7 +140,7 @@ export const useSmpScatter = (filters: Partial<FilterOptions>) => {
 
   return useQuery<SmpScatterResponse>({
     queryKey: ['smp-scatter', filters],
-    queryFn: () => fetcher(`${API_BASE}/smp/scatter?${params}`),
+    queryFn: () => fetcher(`${API_BASE}smp/scatter?${params}`),
     staleTime: 5 * 60 * 1000,
     refetchInterval: 15 * 60 * 1000,
   });
@@ -186,11 +183,7 @@ export const exportEnergyMix = async (startDate: string, endDate: string) => {
   const dateRange = `${startDate}-${endDate}`;
 
   try {
-    const response = await fetch(`${API_BASE}api/v1/energy/overview/export?${params}`, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(`${API_BASE}api/v1/energy/overview/export?${params}`);
     if (!response.ok) {
       throw new Error('Export failed');
     }
@@ -263,11 +256,7 @@ export const exportEnergyOverview = async (startDate: string, endDate: string) =
   params.set('end_date', endDate);
 
   try {
-    const response = await fetch(`${API_BASE}api/v1/energy/production-mix/export?${params}`, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(`${API_BASE}api/v1/energy/production-mix/export?${params}`);
     if (!response.ok) {
       throw new Error('Export failed');
     }
@@ -339,11 +328,7 @@ export const exportSMP = async (startDate: string, endDate: string) => {
   params.set('end_date', endDate);
 
   try {
-    const response = await fetch(`${API_BASE}api/v1/energy/smp/export?${params}`, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(`${API_BASE}api/v1/energy/smp/export?${params}`);
 
     if (!response.ok) {
       throw new Error('Export failed');
@@ -410,11 +395,7 @@ export const exportSMPProductionVsMarginalPrice = async (startDate: string, endD
   params.set('end_date', endDate);
 
   try {
-    const response = await fetch(`${API_BASE}api/v1/energy/smp-production-vs-marginal-price/export?${params}`, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(`${API_BASE}api/v1/energy/smp-production-vs-marginal-price/export?${params}`);
 
     if (!response.ok) {
       throw new Error('Export failed');
@@ -484,11 +465,7 @@ export const exportPrivateSupplierConnectedConsumers = async (startDate?: string
       ? `${API_BASE}api/v1/private-supplier-connected-consumers/export?${params}`
       : `${API_BASE}api/v1/private-supplier-connected-consumers/export`;
 
-    const response = await fetch(url, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error('Export failed');
@@ -585,11 +562,7 @@ export const exportSwitchingRequests = async (
       ? `${API_BASE}api/v1/switching-requests/export?${params}`
       : `${API_BASE}api/v1/switching-requests/export`;
 
-    const response = await fetch(url, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error('Export failed');
@@ -641,11 +614,7 @@ export const exportCO2EmissionsMix = async (startDate: string, endDate: string) 
   params.set('end_date', endDate);
 
   try {
-    const response = await fetch(`${API_BASE}api/v1/co2/emissions-mix/export?${params}`, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(`${API_BASE}api/v1/co2/emissions-mix/export?${params}`);
 
     if (!response.ok) {
       throw new Error('Export failed');
@@ -780,11 +749,7 @@ export const exportCO2EmissionsOverTime = async (startDate: string, endDate: str
   params.set('end_date', endDate);
 
   try {
-    const response = await fetch(`${API_BASE}api/v1/co2/emissions-over-time/export?${params}`, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(`${API_BASE}api/v1/co2/emissions-over-time/export?${params}`);
 
     if (!response.ok) {
       throw new Error('Export failed');
@@ -853,11 +818,7 @@ export const exportCO2TotalVsRatio = async (startDate: string, endDate: string) 
   params.set('end_date', endDate);
 
   try {
-    const response = await fetch(`${API_BASE}api/v1/co2/total-vs-ratio/export-csv?${params}`, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(`${API_BASE}api/v1/co2/total-vs-ratio/export-csv?${params}`);
 
     if (!response.ok) {
       throw new Error('Export failed');
@@ -950,11 +911,7 @@ export const exportHeatLoadVsGeneration = async (startDate?: string, endDate?: s
       ? `${API_BASE}api/v1/heat-load-vs-generation/export?${params}`
       : `${API_BASE}api/v1/heat-load-vs-generation/export`;
 
-    const response = await fetch(url, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error('Export failed');
@@ -1029,11 +986,7 @@ export const exportRenewablesProductionMix = async (startDate: string, endDate: 
   }
 
   try {
-    const response = await fetch(`${API_BASE}api/v1/renewables/production-mix/export?${params}`, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(`${API_BASE}api/v1/renewables/production-mix/export?${params}`);
 
     if (!response.ok) {
       throw new Error('Export failed');
@@ -1087,12 +1040,7 @@ export const useRenewablesDelivery4 = () => {
 export const exportRenewablesDelivery4RenewableForecastIsrael = async () => {
   try {
     const response = await fetch(
-      `${API_BASE}api/v1/renewables/delivery-4/renewable-forecast-israel/export`,
-      {
-        headers: {
-          'x-api-key': INTERNAL_API_KEY,
-        },
-      }
+      `${API_BASE}api/v1/renewables/delivery-4/renewable-forecast-israel/export`
     );
 
     if (!response.ok) {
@@ -1158,12 +1106,7 @@ export const exportRenewablesDelivery4InternationalComparison = async (
   const params = buildInternationalComparisonParams(include2050, includeSolar);
   try {
     const response = await fetch(
-      `${API_BASE}api/v1/renewables/delivery-4/international-renewable-comparison/export?${params}`,
-      {
-        headers: {
-          'x-api-key': INTERNAL_API_KEY,
-        },
-      }
+      `${API_BASE}api/v1/renewables/delivery-4/international-renewable-comparison/export?${params}`
     );
 
     if (!response.ok) {
@@ -1233,11 +1176,7 @@ export const exportRenewablesTransition = async (year?: string) => {
       ? `${API_BASE}api/v1/renewables/transition/export?${params}`
       : `${API_BASE}api/v1/renewables/transition/export`;
 
-    const response = await fetch(url, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error('Export failed');
@@ -1336,11 +1275,7 @@ export const exportRenewablesPotentialByIndustry = async (
       ? `${API_BASE}api/v1/renewables/potential-by-industry/export?${params}`
       : `${API_BASE}api/v1/renewables/potential-by-industry/export`;
 
-    const response = await fetch(url, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error('Export failed');
@@ -1424,11 +1359,7 @@ export const exportInstalledCapacityCumulative = async (
       ? `${API_BASE}api/v1/renewables/installed-capacity/cumulative/export?${params}`
       : `${API_BASE}api/v1/renewables/installed-capacity/cumulative/export`;
 
-    const response = await fetch(url, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error('Export failed');
@@ -1494,11 +1425,7 @@ export const exportInstalledCapacityGrowth = async (filters?: Omit<InstalledCapa
       ? `${API_BASE}api/v1/renewables/installed-capacity/growth/export?${params}`
       : `${API_BASE}api/v1/renewables/installed-capacity/growth/export`;
 
-    const response = await fetch(url, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error('Export failed');
@@ -1584,11 +1511,7 @@ export const exportInstalledCapacityByFacilitySize = async (
       ? `${API_BASE}api/v1/renewables/installed-capacity/by-facility-size/export?${params}`
       : `${API_BASE}api/v1/renewables/installed-capacity/by-facility-size/export`;
 
-    const response = await fetch(url, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error('Export failed');
@@ -1690,11 +1613,7 @@ export const exportResponseCapacityByPeriod = async (
       ? `${API_BASE}api/v1/renewables/response-capacity/by-period/export?${params}`
       : `${API_BASE}api/v1/renewables/response-capacity/by-period/export`;
 
-    const response = await fetch(url, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error('Export failed');
@@ -1778,11 +1697,7 @@ export const exportResponseCapacityBySize = async (
       ? `${API_BASE}api/v1/renewables/response-capacity/by-size/export?${params}`
       : `${API_BASE}api/v1/renewables/response-capacity/by-size/export`;
 
-    const response = await fetch(url, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error('Export failed');
@@ -1866,11 +1781,7 @@ export const exportResponseCapacityByDistrict = async (
       ? `${API_BASE}api/v1/renewables/response-capacity/by-district/export?${params}`
       : `${API_BASE}api/v1/renewables/response-capacity/by-district/export`;
 
-    const response = await fetch(url, {
-      headers: {
-        'x-api-key': INTERNAL_API_KEY,
-      },
-    });
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error('Export failed');

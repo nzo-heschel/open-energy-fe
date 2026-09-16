@@ -1,0 +1,29 @@
+# AWS Amplify Hosting build spec for this Next.js app (SSR, App Router).
+#
+# Environment variables set in the Amplify console are only visible inside the
+# build container. Anything server code needs at runtime must be written into
+# .env.production before `next build` so it is baked into the server bundle.
+# Add further variables to the grep pattern below as they are introduced.
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # Use the Node version pinned in .nvmrc
+        - nvm install
+        - nvm use
+        - yarn install --frozen-lockfile
+    build:
+      commands:
+        - nvm use
+        # Expose server-side secrets to the Next.js server runtime
+        - env | grep -e OPEN_ENERGY_API_KEY >> .env.production
+        - yarn build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*

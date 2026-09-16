@@ -5,10 +5,10 @@ import { NextResponse } from 'next/server';
  *
  * The browser calls `/api/backend/<path>` and this handler forwards the
  * request to the backend with the API key attached. The key lives only on
- * the server:
- *   - production / previews: a Cloudflare Worker secret named OPEN_ENERGY_API_KEY
- *   - `wrangler dev`:        .dev.vars
- *   - `next dev`:            .env.local
+ * the server, in the OPEN_ENERGY_API_KEY environment variable:
+ *   - production / previews: set in the Amplify console; amplify.yml copies it
+ *                            into .env.production at build time
+ *   - `next dev`:            .env.local (see .env.example)
  *
  * Because the browser only talks to its own origin, the backend's CORS
  * allowlist no longer matters for the site.

@@ -2,7 +2,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "open-energy-fe",
   "main": ".open-next/worker.js",
-  "compatibility_date": "2025-03-01",
+  // 2025-04-01 or later is required for secrets to be exposed on process.env
+  "compatibility_date": "2025-09-01",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": ".open-next/assets",

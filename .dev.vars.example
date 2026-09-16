@@ -1,0 +1,4 @@
+# Copy to `.dev.vars` (used by `wrangler dev` / `yarn preview`)
+# and to `.env.local` (used by `next dev`). Both are git-ignored.
+# Each developer uses their own key.
+OPEN_ENERGY_API_KEY=
